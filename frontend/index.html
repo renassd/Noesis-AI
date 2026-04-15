@@ -1,0 +1,826 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Buddy</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: rgba(255, 255, 255, 0.78);
+      --surface-strong: #ffffff;
+      --primary: #1740a6;
+      --primary-bright: #3e74f2;
+      --primary-soft: #dbe7ff;
+      --ink: #102042;
+      --muted: #52627f;
+      --line: rgba(16, 32, 66, 0.12);
+      --success: #1a8f68;
+      --shadow: 0 24px 70px rgba(18, 43, 112, 0.16);
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --max-width: 1200px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background:
+        radial-gradient(circle at top left, rgba(62, 116, 242, 0.18), transparent 32%),
+        radial-gradient(circle at 88% 18%, rgba(23, 64, 166, 0.18), transparent 24%),
+        linear-gradient(180deg, #fbfdff 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .page-shell { overflow: hidden; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(243, 246, 251, 0.74);
+      border-bottom: 1px solid rgba(16, 32, 66, 0.07);
+    }
+
+    .topbar-inner, .section-inner, .footer-inner {
+      width: min(var(--max-width), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 78px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 52px;
+      height: 52px;
+      display: block;
+      filter: drop-shadow(0 10px 20px rgba(23, 64, 166, 0.22));
+    }
+
+    .brand-mark svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .brand-text { display: flex; flex-direction: column; line-height: 1; }
+    .brand-text small {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .nav a:hover { color: var(--primary); }
+    .nav-cta {
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: var(--surface-strong);
+      border: 1px solid var(--line);
+      color: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(62, 116, 242, 0.12);
+    }
+
+    section { position: relative; padding: 34px 0; }
+    .hero { padding-top: 54px; padding-bottom: 28px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .hero-copy, .hero-demo, .split-card, .mockup, .comparison, .cta-panel {
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-copy { padding: 34px; position: relative; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    h1, h2, h3, h4, p { margin: 0; }
+    h1 {
+      margin-top: 20px;
+      font-size: clamp(2.9rem, 6vw, 5.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      max-width: 11ch;
+    }
+
+    .hero-copy p {
+      margin-top: 22px;
+      max-width: 58ch;
+      font-size: 1.06rem;
+      line-height: 1.75;
+      color: var(--muted);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 50px;
+      padding: 0 22px;
+      border-radius: 999px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-weight: 700;
+      border: 1px solid transparent;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .button:hover { transform: translateY(-2px); }
+    .button-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-bright) 100%);
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(23, 64, 166, 0.24);
+    }
+
+    .button-secondary {
+      background: #fff;
+      color: var(--primary);
+      border-color: rgba(23, 64, 166, 0.18);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .stat {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(16, 32, 66, 0.08);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .stat span {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--muted);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .hero-demo {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(219, 231, 255, 0.62)), var(--surface);
+    }
+
+    .window-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(16, 32, 66, 0.08);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .window-dots { display: flex; gap: 6px; }
+    .window-dots span { width: 10px; height: 10px; border-radius: 50%; background: rgba(23, 64, 166, 0.25); }
+    .app-layout { display: grid; grid-template-columns: 208px 1fr; gap: 14px; min-height: 520px; }
+    .sidebar, .workspace {
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid rgba(16, 32, 66, 0.08);
+      padding: 20px;
+    }
+
+    .sidebar { display: flex; flex-direction: column; gap: 18px; }
+    .sidebar-title, .mini-title, .tag, .tool-item, .card-tag, .pricing-title, .footer-note { font-family: "Trebuchet MS", "Segoe UI", sans-serif; }
+    .sidebar-title {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-weight: 800;
+    }
+
+    .tool-list, .flashcards, .deck-grid, ul, .report-points, .feature-list, .stack { display: grid; gap: 10px; }
+    .tool-item {
+      padding: 13px 14px;
+      border-radius: 16px;
+      background: rgba(23, 64, 166, 0.05);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.35;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .tool-item.active {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-bright) 100%);
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(23, 64, 166, 0.22);
+    }
+
+    .workspace { display: grid; gap: 16px; align-content: start; }
+    .workspace-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .workspace-header h3 { font-size: 1.5rem; line-height: 1.1; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(26, 143, 104, 0.12);
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .workspace-copy, .section-copy p, .pricing-card p, .cta-panel p, .big-box p {
+      color: var(--muted);
+      line-height: 1.75;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .demo-panels { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 14px; }
+    .panel, .mini-panel {
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid rgba(16, 32, 66, 0.08);
+      padding: 18px;
+    }
+
+    .mini-panel { align-content: start; }
+    .mini-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .report-title { margin-top: 8px; font-size: 1.25rem; line-height: 1.2; }
+    .report-points div, .feature, .deck-item {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: var(--bg);
+      line-height: 1.5;
+      color: var(--muted);
+      border: 1px solid rgba(16, 32, 66, 0.06);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .flashcard {
+      padding: 14px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(23, 64, 166, 0.08), rgba(62, 116, 242, 0.12));
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      min-height: 94px;
+    }
+
+    .flashcard strong {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .section-copy { max-width: 62ch; }
+    .section-copy h2 {
+      font-size: clamp(2rem, 4vw, 3.35rem);
+      letter-spacing: -0.04em;
+      line-height: 0.96;
+      margin-bottom: 12px;
+    }
+
+    .split-grid, .mockup-grid, .comparison-grid { display: grid; gap: 22px; }
+    .split-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mockup-grid { grid-template-columns: 1.05fr 0.95fr; }
+    .comparison-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .split-card, .comparison { padding: 28px; display: grid; gap: 20px; }
+    .split-top, .board-head, .footer-inner {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .split-card h3, .board-head h3 { font-size: 1.8rem; line-height: 1; }
+    .card-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .card-tag.research { background: rgba(23, 64, 166, 0.12); color: var(--primary); }
+    .card-tag.study { background: rgba(26, 143, 104, 0.12); color: var(--success); }
+    .feature { background: rgba(255, 255, 255, 0.82); padding: 14px 16px; border-radius: 18px; }
+    .feature strong { display: block; margin-bottom: 5px; font-size: 15px; color: var(--ink); }
+    .feature span { display: block; font-size: 14px; }
+
+    .mockup {
+      padding: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(226,235,255,0.96)), var(--surface);
+    }
+
+    .study-board { background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(236,245,240,0.96)), var(--surface); }
+    .board-columns { display: grid; grid-template-columns: 220px 1fr; gap: 14px; }
+    .board-side, .board-main {
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(16, 32, 66, 0.08);
+      padding: 16px;
+    }
+
+    .stack .tool-item { background: rgba(16, 32, 66, 0.04); }
+    .stack .tool-item.active { background: linear-gradient(135deg, #0f215e 0%, #1740a6 100%); }
+
+    .big-box {
+      min-height: 260px;
+      border-radius: 22px;
+      padding: 18px;
+      background: linear-gradient(135deg, rgba(23, 64, 166, 0.05), rgba(62, 116, 242, 0.12)), #fff;
+      border: 1px solid rgba(16, 32, 66, 0.08);
+    }
+
+    .big-box p { margin-top: 10px; }
+    .deck-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 18px;
+      padding: 14px 16px;
+    }
+
+    .comparison { padding: 30px; }
+    .pricing-card {
+      padding: 20px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(16, 32, 66, 0.08);
+    }
+
+    .pricing-card.featured {
+      background: linear-gradient(180deg, rgba(15, 33, 94, 0.96), rgba(23, 64, 166, 0.96));
+      color: #fff;
+    }
+
+    .pricing-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .pricing-card.featured .pricing-title { color: rgba(255, 255, 255, 0.72); }
+    .price { font-size: 2.2rem; line-height: 1; margin-bottom: 14px; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li {
+      position: relative;
+      padding-left: 18px;
+      line-height: 1.55;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--primary-bright);
+    }
+
+    .pricing-card.featured li::before { background: #fff; }
+    .cta-panel {
+      padding: 34px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+      background: radial-gradient(circle at top right, rgba(62, 116, 242, 0.2), transparent 32%), linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(219, 231, 255, 0.95));
+    }
+
+    footer { padding: 24px 0 50px; }
+    .footer-inner { color: var(--muted); font-size: 14px; font-family: "Trebuchet MS", "Segoe UI", sans-serif; }
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    @media (max-width: 1100px) {
+      .hero-grid, .mockup-grid, .split-grid, .comparison-grid, .cta-panel, .app-layout, .demo-panels, .board-columns { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .nav a:not(.nav-cta) { display: none; }
+      .hero-copy, .split-card, .mockup, .comparison, .cta-panel { padding: 22px; }
+      .hero-stats { grid-template-columns: 1fr; }
+      h1 { max-width: none; }
+      .section-head, .workspace-header, .board-head, .footer-inner { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a href="#home" class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Study Buddy AI logo">
+              <circle cx="60" cy="60" r="58" fill="#3e74f2"></circle>
+              <path d="M17 50c3-27 25-44 43-44s40 17 43 44c8 0 16 1 18 5 2 5-3 10-14 13-13 3-25 3-47 3S26 71 13 68C2 65-3 60-1 55c2-4 10-5 18-5z" fill="#1740a6" transform="translate(1 0)"></path>
+              <path d="M15 50c8 0 16 1 18 5 2 5-3 10-14 13 10-1 22-1 41-1s31 0 41 1c-11-3-16-8-14-13 2-4 10-5 18-5-6 2-13 4-18 8-8 5-13 12-18 20H51c-5-8-10-15-18-20-5-4-12-6-18-8z" fill="#ffffff"></path>
+              <circle cx="36" cy="67" r="12" fill="#1740a6" stroke="#ffffff" stroke-width="4"></circle>
+              <circle cx="84" cy="67" r="12" fill="#1740a6" stroke="#ffffff" stroke-width="4"></circle>
+              <path d="M52 80h16l-5 8-3 15c-.2 1.7-2.8 1.7-3 0l-3-15-5-8z" fill="#1740a6" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"></path>
+            </svg>
+          </span>
+          <span class="brand-text">
+            <small>Study Helper</small>
+            <span>Study Buddy</span>
+          </span>
+        </a>
+        <nav class="nav">
+          <a href="#research">Research</a>
+          <a href="#study">Study</a>
+          <a href="#inside">Inside the app</a>
+          <a href="#pricing" class="nav-cta">Join the waitlist</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="home">
+      <section class="hero">
+        <div class="section-inner hero-grid">
+          <div class="hero-copy reveal">
+            <span class="eyebrow">Research smarter. Study deeper.</span>
+            <h1>Your AI research and study buddy.</h1>
+            <p>
+              Understand any topic in minutes. Turn dense papers, classes, and messy notes
+              into clear explanations, literature reviews, flashcards, and study plans.
+              One place for the work Elicit helps you research and Anki helps you remember.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#inside">See the product flow</a>
+              <a class="button button-secondary" href="#research">Explore features</a>
+            </div>
+            <div class="hero-stats">
+              <div class="stat"><strong>2 worlds</strong><span>Research workflows and study tools in one focused interface.</span></div>
+              <div class="stat"><strong>AI to memory</strong><span>Go from paper summary to key concepts to flashcards without switching apps.</span></div>
+              <div class="stat"><strong>Built for clarity</strong><span>Complex science becomes simple teaching, reports, and revisions.</span></div>
+            </div>
+          </div>
+
+          <div class="hero-demo reveal">
+            <div class="window-bar">
+              <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+              <div>studybuddy.ai / workspace</div>
+            </div>
+
+            <div class="app-layout">
+              <aside class="sidebar">
+                <div>
+                  <div class="sidebar-title">Research</div>
+                  <div class="tool-list">
+                    <div class="tool-item active">Paper summary</div>
+                    <div class="tool-item">Literature review</div>
+                    <div class="tool-item">Find papers by question</div>
+                    <div class="tool-item">Research report</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="sidebar-title">Study</div>
+                  <div class="tool-list">
+                    <div class="tool-item">AI flashcards</div>
+                    <div class="tool-item">Simple summaries</div>
+                    <div class="tool-item">Teach me this topic</div>
+                  </div>
+                </div>
+              </aside>
+              <div class="workspace">
+                <div class="workspace-header">
+                  <div>
+                    <div class="mini-title">Active workflow</div>
+                    <h3>Academic research</h3>
+                  </div>
+                  <span class="tag">Live demo</span>
+                </div>
+
+                <p class="workspace-copy">
+                  Ask a question, upload a paper, or start from a topic. The app organizes the
+                  input, pulls the important concepts, and turns the output into something you can
+                  actually use: a report, a cleaner explanation, or a flashcard deck.
+                </p>
+
+                <div class="demo-panels">
+                  <div class="panel">
+                    <div class="mini-title">Research report</div>
+                    <h4 class="report-title">How does sleep affect memory consolidation in students?</h4>
+                    <div class="report-points">
+                      <div>Summarized recent findings across cognitive psychology and neuroscience.</div>
+                      <div>Compared methodological differences between classroom and lab studies.</div>
+                      <div>Generated a short literature review and extracted gaps for future work.</div>
+                    </div>
+                  </div>
+
+                  <div class="mini-panel">
+                    <div class="mini-title">Flashcards from report</div>
+                    <div class="flashcards">
+                      <div class="flashcard"><strong>Card 01</strong>What role does slow-wave sleep play in memory consolidation?</div>
+                      <div class="flashcard"><strong>Card 02</strong>Why do experimental designs on student sleep often conflict?</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="research">
+        <div class="section-inner">
+          <div class="section-head reveal">
+            <div class="section-copy">
+              <h2>Two sides of the same learning system.</h2>
+              <p>
+                The structure follows your idea exactly: one side focused on academic research,
+                the other on learning and retention. Instead of sending users to separate tools,
+                the product keeps both workflows connected.
+              </p>
+            </div>
+          </div>
+
+          <div class="split-grid">
+            <article class="split-card reveal">
+              <div class="split-top">
+                <div><h3>Research</h3></div>
+                <span class="card-tag research">Elicit-inspired</span>
+              </div>
+              <div class="feature-list">
+                <div class="feature"><strong>Summarize papers</strong><span>Upload a paper or paste a DOI and get the core findings, methods, and limitations in plain language.</span></div>
+                <div class="feature"><strong>Generate literature reviews</strong><span>Turn a topic or research question into a structured overview of themes, agreements, and gaps.</span></div>
+                <div class="feature"><strong>Find papers from a prompt</strong><span>Ask a question in natural language and get relevant sources, directions, and starting points.</span></div>
+                <div class="feature"><strong>Build a research report</strong><span>Ask something complex and receive a report-style answer with organized takeaways and next steps.</span></div>
+                <div class="feature"><strong>Structure manuscripts</strong><span>Get help outlining sections, discussion points, and clearer scientific writing for drafts or revisions.</span></div>
+                <div class="feature"><strong>Explain complex science clearly</strong><span>Rewrite difficult ideas into cleaner language for yourself, your team, or your readers.</span></div>
+              </div>
+            </article>
+
+            <article class="split-card reveal" id="study">
+              <div class="split-top">
+                <div><h3>Study</h3></div>
+                <span class="card-tag study">Anki-inspired</span>
+              </div>
+              <div class="feature-list">
+                <div class="feature"><strong>Generate flashcards with AI</strong><span>Transform papers, lectures, PDFs, or notes into ready-to-review question and answer cards.</span></div>
+                <div class="feature"><strong>Create simple summaries</strong><span>Get fast and friendly summaries that remove jargon and keep only the parts that matter.</span></div>
+                <div class="feature"><strong>Extract key concepts</strong><span>Highlight the ideas, terms, and definitions that should actually stick in memory.</span></div>
+                <div class="feature"><strong>Teach me this topic</strong><span>Switch into tutor mode and have the app explain the subject step by step at your level.</span></div>
+                <div class="feature"><strong>Create your own flashcards</strong><span>Keep a classic card workflow too, so the user can write, edit, and organize their own decks.</span></div>
+                <div class="feature"><strong>Go from understanding to retention</strong><span>Every explanation can become a deck, revision sheet, or quick review pack in one click.</span></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="inside">
+        <div class="section-inner">
+          <div class="section-head reveal">
+            <div class="section-copy">
+              <h2>Inside the app.</h2>
+              <p>
+                I translated your paper sketches into cleaner product mockups so the page feels
+                like a real startup landing page, not just a concept list.
+              </p>
+            </div>
+          </div>
+
+          <div class="mockup-grid">
+            <article class="mockup reveal">
+              <div class="board-head">
+                <div>
+                  <div class="mini-title">Screen 01</div>
+                  <h3>Research workspace</h3>
+                </div>
+                <span class="tag">Question to report</span>
+              </div>
+              <div class="board-columns">
+                <div class="board-side">
+                  <div class="mini-title">Tools</div>
+                  <div class="stack">
+                    <div class="tool-item active">Research report</div>
+                    <div class="tool-item">Paper summary</div>
+                    <div class="tool-item">Find papers</div>
+                    <div class="tool-item">Literature review</div>
+                    <div class="tool-item">AI science writing</div>
+                  </div>
+                </div>
+                <div class="board-main">
+                  <div class="big-box">
+                    <div class="mini-title">Workspace preview</div>
+                    <h3>Drop a paper, ask a question, or paste notes.</h3>
+                    <p>
+                      The main canvas is intentionally large, matching your sketch. It gives room
+                      for uploads, report generation, and chat-style research prompts without
+                      overwhelming the user.
+                    </p>
+                    <div class="hero-actions">
+                      <a class="button button-primary" href="#pricing">Start for free</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="mockup study-board reveal">
+              <div class="board-head">
+                <div>
+                  <div class="mini-title">Screen 02</div>
+                  <h3>Flashcard and study view</h3>
+                </div>
+                <span class="tag">Learn and review</span>
+              </div>
+              <div class="board-main">
+                <div class="big-box">
+                  <div class="mini-title">My decks</div>
+                  <div class="deck-grid">
+                    <div class="deck-item"><span>Neuroscience exam prep</span><strong>42 cards</strong></div>
+                    <div class="deck-item"><span>Biochemistry pathways</span><strong>28 cards</strong></div>
+                    <div class="deck-item"><span>Psychology midterm review</span><strong>67 cards</strong></div>
+                  </div>
+                  <p>
+                    This screen follows your idea of a deck-based study area while keeping it soft,
+                    modern, and product-ready. Users can review AI-made cards or create their own.
+                  </p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section id="pricing">
+        <div class="section-inner">
+          <article class="comparison reveal">
+            <div class="section-copy">
+              <h2>One product, not three subscriptions.</h2>
+              <p>
+                Your pitch is strong because the value is easy to understand: instead of paying for
+                separate research and memorization tools, this product connects the full workflow.
+              </p>
+            </div>
+            <div class="comparison-grid">
+              <div class="pricing-card">
+                <div class="pricing-title">Current stack</div>
+                <div class="price">$49/month</div>
+                <ul>
+                  <li>Great for paper search and reports</li>
+                  <li>Not built around memorization</li>
+                  <li>Learning workflow still fragmented</li>
+                </ul>
+              </div>
+              <div class="pricing-card">
+                <div class="pricing-title">Current stack</div>
+                <div class="price">$30/year</div>
+                <ul>
+                  <li>Strong retention system</li>
+                  <li>Limited research assistance</li>
+                  <li>Manual setup for many users</li>
+                </ul>
+              </div>
+              <div class="pricing-card featured">
+                <div class="pricing-title">Study Buddy AI</div>
+                <div class="price">All in one</div>
+                <p>Research, explanation, key concepts, tutoring, and flashcards in a single product story.</p>
+                <ul>
+                  <li>Ask, understand, remember</li>
+                  <li>Research to review in one flow</li>
+                  <li>Built for students and researchers</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-inner">
+          <article class="cta-panel reveal">
+            <div>
+              <div class="mini-title">Final message</div>
+              <h2>Understand any topic in minutes.</h2>
+              <p>
+                Turn complex research and classes into clear explanations, summaries,
+                and flashcards. This is the study buddy that helps you think like a researcher
+                and remember like a top student.
+              </p>
+            </div>
+            <a class="button button-primary" href="#home">Back to top</a>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <div class="footer-note">Study Buddy AI concept landing page</div>
+    </footer>
+  </div>
+
+  <script>
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.15 });
+    reveals.forEach((item) => observer.observe(item));
+  </script>
+</body>
+</html>

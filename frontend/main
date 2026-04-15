@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Buddy AI</title>
+  <style>
+    :root {
+      --bg: #eef4ff;
+      --paper: #fbfcfe;
+      --surface: #ffffff;
+      --surface-alt: #f4f7fc;
+      --surface-blue: #e9f0ff;
+      --ink: #13213e;
+      --muted: #5b6885;
+      --line: #d8e1f0;
+      --line-strong: #b8c7e5;
+      --blue-900: #173c9b;
+      --blue-700: #2e63de;
+      --blue-500: #69a0ff;
+      --green: #1d8a63;
+      --warm: #f4ede0;
+      --shadow: 0 18px 50px rgba(23, 60, 155, 0.10);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Aptos", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(105, 160, 255, 0.22), transparent 26%),
+        radial-gradient(circle at 100% 12%, rgba(23, 60, 155, 0.12), transparent 22%),
+        linear-gradient(180deg, #f9fbff 0%, var(--bg) 100%);
+    }
+
+    h1, h2, h3, h4, p { margin: 0; }
+    a { color: inherit; text-decoration: none; }
+
+    .wrap {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(249, 251, 255, 0.84);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(184, 199, 229, 0.55);
+    }
+
+    .topbar .wrap {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-mark {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid rgba(23, 60, 155, 0.10);
+      box-shadow: 0 12px 28px rgba(23, 60, 155, 0.16);
+    }
+
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .brand-text small {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .brand-text span {
+      font-size: 1.05rem;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav a:hover { color: var(--blue-900); }
+
+    .nav .cta-link {
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--blue-900);
+      font-weight: 700;
+    }
+
+    section {
+      padding: 36px 0;
+    }
+
+    .hero {
+      padding-top: 44px;
+      padding-bottom: 26px;
+    }
+
+    .hero-shell {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .hero-copy,
+    .hero-product,
+    .feature-rail,
+    .workflow-board,
+    .pricing-shell,
+    .cta-shell {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(216, 225, 240, 0.9);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy {
+      padding: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-copy::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      right: -60px;
+      top: -70px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(105, 160, 255, 0.22), transparent 66%);
+      pointer-events: none;
+    }
+
+    .eyebrow,
+    .mini-label,
+    .pill,
+    .compare-label {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .eyebrow {
+      padding: 8px 14px;
+      background: var(--surface-blue);
+      color: var(--blue-900);
+    }
+
+    h1, h2 {
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+    }
+
+    h1 {
+      margin-top: 22px;
+      font-size: clamp(3rem, 6vw, 5.6rem);
+      max-width: 10.5ch;
+    }
+
+    .hero-copy > p {
+      margin-top: 20px;
+      max-width: 60ch;
+      font-size: 1.04rem;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 26px;
+    }
+
+    .button {
+      min-height: 50px;
+      padding: 0 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-weight: 700;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .button:hover { transform: translateY(-2px); }
+
+    .button.primary {
+      background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+      color: #fff;
+      box-shadow: 0 18px 36px rgba(46, 99, 222, 0.24);
+    }
+
+    .button.secondary {
+      background: #fff;
+      border-color: var(--line);
+      color: var(--blue-900);
+    }
+
+    .hero-proof {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .proof-card {
+      padding: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+    }
+
+    .proof-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1.05rem;
+      color: var(--blue-900);
+    }
+
+    .proof-card span {
+      display: block;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .hero-product {
+      padding: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.95), rgba(233,240,255,0.9)),
+        #fff;
+    }
+
+    .product-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(23, 60, 155, 0.24);
+    }
+
+    .product-body {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 14px;
+      margin-top: 14px;
+      min-height: 560px;
+    }
+
+    .left-nav,
+    .workspace,
+    .timeline-card,
+    .workflow-card,
+    .compare-card,
+    .feature-card,
+    .cta-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+    }
+
+    .left-nav {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .mini-label {
+      padding: 7px 11px;
+      background: var(--surface-alt);
+      color: var(--muted);
+    }
+
+    .tool-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tool {
+      padding: 13px 14px;
+      border-radius: 16px;
+      background: var(--surface-alt);
+      color: var(--ink);
+      border: 1px solid transparent;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .tool.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+      box-shadow: 0 14px 26px rgba(46, 99, 222, 0.20);
+    }
+
+    .workspace {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .workspace-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .workspace-top h3,
+    .section-header h2,
+    .cta-shell h2 {
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    }
+
+    .workspace-top h3 {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      background: rgba(29, 138, 99, 0.12);
+      color: var(--green);
+    }
+
+    .workspace-copy {
+      color: var(--muted);
+      line-height: 1.72;
+      max-width: 62ch;
+    }
+
+    .workspace-panels {
+      display: grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 14px;
+    }
+
+    .panel {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--paper);
+    }
+
+    .report-list,
+    .card-list,
+    .feature-list,
+    .timeline-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .report-list div,
+    .micro-card,
+    .feature-item,
+    .timeline-step {
+      padding: 14px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      line-height: 1.58;
+    }
+
+    .panel h4 {
+      margin-top: 8px;
+      font-size: 1.18rem;
+      line-height: 1.25;
+    }
+
+    .micro-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--blue-900);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      margin-bottom: 10px;
+    }
+
+    .section-header p {
+      max-width: 62ch;
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .feature-rail {
+      padding: 22px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.94), rgba(244,247,252,0.96)),
+        #fff;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .feature-card {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .feature-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+    }
+
+    .feature-top h3 {
+      font-size: 1.85rem;
+      line-height: 1;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    }
+
+    .compare-label {
+      padding: 8px 12px;
+      background: var(--surface-blue);
+      color: var(--blue-900);
+    }
+
+    .compare-label.study {
+      background: rgba(29, 138, 99, 0.12);
+      color: var(--green);
+    }
+
+    .feature-item strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .workflow-board {
+      padding: 22px;
+    }
+
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: 0.96fr 1.04fr;
+      gap: 18px;
+    }
+
+    .timeline-card,
+    .workflow-card {
+      padding: 22px;
+    }
+
+    .timeline-card {
+      background:
+        linear-gradient(180deg, rgba(233,240,255,0.85), rgba(255,255,255,1)),
+        #fff;
+    }
+
+    .timeline-step {
+      position: relative;
+      padding-left: 44px;
+    }
+
+    .timeline-step::before {
+      content: "";
+      position: absolute;
+      left: 15px;
+      top: 17px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--blue-700);
+      box-shadow: 0 0 0 6px rgba(105, 160, 255, 0.18);
+    }
+
+    .timeline-step strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .workflow-card {
+      display: grid;
+      gap: 14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,247,252,0.96)),
+        #fff;
+    }
+
+    .workflow-canvas {
+      min-height: 285px;
+      border-radius: 20px;
+      background:
+        linear-gradient(135deg, rgba(23, 60, 155, 0.05), rgba(105, 160, 255, 0.12)),
+        #fff;
+      border: 1px solid var(--line);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .canvas-row {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 12px;
+    }
+
+    .canvas-box {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(184, 199, 229, 0.86);
+    }
+
+    .canvas-box strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: var(--blue-900);
+    }
+
+    .canvas-box span {
+      display: block;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .pricing-shell {
+      padding: 24px;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .compare-card {
+      padding: 22px;
+      background: rgba(255,255,255,0.95);
+    }
+
+    .compare-card.featured {
+      background: linear-gradient(180deg, #173c9b 0%, #234fbf 100%);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 20px 40px rgba(23, 60, 155, 0.22);
+    }
+
+    .compare-card .compare-label {
+      margin-bottom: 16px;
+    }
+
+    .compare-card.featured .compare-label {
+      background: rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.88);
+    }
+
+    .price {
+      font-size: 2.25rem;
+      line-height: 1;
+      margin-bottom: 12px;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    }
+
+    .compare-card p,
+    .compare-card li,
+    .cta-shell p,
+    footer {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .compare-card.featured p,
+    .compare-card.featured li {
+      color: rgba(255,255,255,0.86);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+      display: grid;
+      gap: 9px;
+    }
+
+    li {
+      position: relative;
+      padding-left: 18px;
+    }
+
+    li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 11px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--blue-700);
+    }
+
+    .compare-card.featured li::before {
+      background: #fff;
+    }
+
+    .cta-shell {
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      background:
+        radial-gradient(circle at top right, rgba(105, 160, 255, 0.24), transparent 28%),
+        linear-gradient(135deg, rgba(255,255,255,0.98), rgba(233,240,255,0.95));
+    }
+
+    .cta-shell h2 {
+      font-size: clamp(2rem, 3.8vw, 3rem);
+      margin-bottom: 10px;
+    }
+
+    footer {
+      padding: 26px 0 50px;
+    }
+
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      font-size: 14px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1080px) {
+      .hero-shell,
+      .workflow-grid,
+      .pricing-grid,
+      .feature-grid,
+      .cta-shell,
+      .product-body,
+      .workspace-panels,
+      .canvas-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .nav a:not(.cta-link) {
+        display: none;
+      }
+
+      .hero-copy,
+      .hero-product,
+      .feature-rail,
+      .workflow-board,
+      .pricing-shell,
+      .cta-shell {
+        padding: 20px;
+      }
+
+      .hero-proof {
+        grid-template-columns: 1fr;
+      }
+
+      .section-header,
+      .workspace-top,
+      .footer-row {
+        flex-direction: column;
+        align-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a href="#home" class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="./logo.jpeg" alt="Study Buddy AI logo">
+        </span>
+        <span class="brand-text">
+          <small>Research + Retention</small>
+          <span>Study Buddy AI</span>
+        </span>
+      </a>
+
+      <nav class="nav">
+        <a href="#research">Research</a>
+        <a href="#study">Study</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#pricing" class="cta-link">Join the waitlist</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="wrap hero-shell">
+        <article class="hero-copy reveal">
+          <span class="eyebrow">Research workflows, memory tools, and your own AI layer</span>
+          <h1>The study buddy built for research-heavy learners.</h1>
+          <p>
+            Understand any topic in minutes, then turn that understanding into summaries,
+            flashcards, concept maps, and review flows. Study Buddy AI combines the clarity of
+            a serious learning tool with the speed of an AI research assistant.
+          </p>
+          <div class="action-row">
+            <a class="button primary" href="#workflow">See the workflow</a>
+            <a class="button secondary" href="#research">Explore features</a>
+          </div>
+          <div class="hero-proof">
+            <div class="proof-card">
+              <strong>Research first</strong>
+              <span>Find papers, summarize evidence, generate literature reviews, and structure reports.</span>
+            </div>
+            <div class="proof-card">
+              <strong>Retention built in</strong>
+              <span>Convert outputs into flashcards, simpler explanations, and decks you can actually review.</span>
+            </div>
+            <div class="proof-card">
+              <strong>Feels like a tool</strong>
+              <span>Less generic AI chat. More guided workflows, clean panels, and focused study actions.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="hero-product reveal">
+          <div class="product-bar">
+            <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div>studybuddy.ai / workspace</div>
+          </div>
+
+          <div class="product-body">
+            <aside class="left-nav">
+              <div>
+                <span class="mini-label">Research tools</span>
+                <div class="tool-stack" style="margin-top: 10px;">
+                  <div class="tool active">Research report</div>
+                  <div class="tool">Paper summary</div>
+                  <div class="tool">Find papers</div>
+                  <div class="tool">Literature review</div>
+                </div>
+              </div>
+
+              <div>
+                <span class="mini-label">Study tools</span>
+                <div class="tool-stack" style="margin-top: 10px;">
+                  <div class="tool">AI flashcards</div>
+                  <div class="tool">Teach me this topic</div>
+                  <div class="tool">Simple summary</div>
+                  <div class="tool">My decks</div>
+                </div>
+              </div>
+            </aside>
+
+            <div class="workspace">
+              <div class="workspace-top">
+                <div>
+                  <span class="mini-label">Active workflow</span>
+                  <h3 style="margin-top: 10px;">From research question to memory-ready output</h3>
+                </div>
+                <span class="pill">Live product concept</span>
+              </div>
+
+              <p class="workspace-copy">
+                Start with a question, topic, or paper. The app organizes the material into a
+                structured answer, then pushes the important parts into study mode so the user can
+                go from reading to remembering without switching tools.
+              </p>
+
+              <div class="workspace-panels">
+                <div class="panel">
+                  <span class="mini-label">Research output</span>
+                  <h4>How does sleep affect memory consolidation in students?</h4>
+                  <div class="report-list" style="margin-top: 14px;">
+                    <div>Summarized recent findings across cognitive psychology and neuroscience.</div>
+                    <div>Compared classroom studies, lab studies, and conflicting methodologies.</div>
+                    <div>Generated a short literature review with evidence clusters and open gaps.</div>
+                  </div>
+                </div>
+
+                <div class="panel">
+                  <span class="mini-label">Study output</span>
+                  <div class="card-list" style="margin-top: 14px;">
+                    <div class="micro-card">
+                      <strong>Card 01</strong>
+                      What role does slow-wave sleep play in memory consolidation?
+                    </div>
+                    <div class="micro-card">
+                      <strong>Card 02</strong>
+                      Why do student sleep studies often produce conflicting results?
+                    </div>
+                    <div class="micro-card">
+                      <strong>Teach mode</strong>
+                      Explain the topic simply, then quiz me on the weak spots.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="research">
+      <div class="wrap">
+        <div class="section-header reveal">
+          <div>
+            <h2>Two systems, one product story.</h2>
+            <p>
+              The layout follows the product logic you described. Research helps users understand
+              dense material. Study helps them retain it. The point is not to choose one side.
+              The point is to connect both naturally.
+            </p>
+          </div>
+        </div>
+
+        <div class="feature-rail reveal">
+          <div class="feature-grid">
+            <article class="feature-card">
+              <div class="feature-top">
+                <div>
+                  <span class="mini-label">Academic workflows</span>
+                  <h3 style="margin-top: 10px;">Research</h3>
+                </div>
+                <span class="compare-label">Research engine</span>
+              </div>
+              <div class="feature-list">
+                <div class="feature-item">
+                  <strong>Summarize papers</strong>
+                  Upload a paper or paste a DOI and get methods, findings, limits, and plain-language takeaways.
+                </div>
+                <div class="feature-item">
+                  <strong>Generate literature reviews</strong>
+                  Turn a question into a structured overview of themes, agreements, and evidence gaps.
+                </div>
+                <div class="feature-item">
+                  <strong>Find papers from a prompt</strong>
+                  Ask in natural language and get relevant sources, directions, and starting points.
+                </div>
+                <div class="feature-item">
+                  <strong>Structure writing</strong>
+                  Get help organizing manuscripts, discussion sections, and clearer scientific language.
+                </div>
+              </div>
+            </article>
+
+            <article class="feature-card" id="study">
+              <div class="feature-top">
+                <div>
+                  <span class="mini-label">Retention workflows</span>
+                  <h3 style="margin-top: 10px;">Study</h3>
+                </div>
+                <span class="compare-label study">Study engine</span>
+              </div>
+              <div class="feature-list">
+                <div class="feature-item">
+                  <strong>Generate flashcards with AI</strong>
+                  Transform papers, lectures, PDFs, and notes into review-ready question and answer cards.
+                </div>
+                <div class="feature-item">
+                  <strong>Teach me this topic</strong>
+                  Switch into tutor mode for simpler explanations, guided walkthroughs, and active recall.
+                </div>
+                <div class="feature-item">
+                  <strong>Extract key concepts</strong>
+                  Pull out definitions, frameworks, and memory anchors that matter most.
+                </div>
+                <div class="feature-item">
+                  <strong>Create your own decks</strong>
+                  Keep a classic deck workflow too, so advanced users can build and organize their own cards.
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow">
+      <div class="wrap">
+        <div class="section-header reveal">
+          <div>
+            <h2>A workflow that feels more intentional.</h2>
+            <p>
+              This is where the hybrid direction shows up: clear study logic, strong research value,
+              and a startup AI presentation that feels alive without turning into generic AI fluff.
+            </p>
+          </div>
+        </div>
+
+        <div class="workflow-board reveal">
+          <div class="workflow-grid">
+            <article class="timeline-card">
+              <span class="mini-label">Study path</span>
+              <div class="timeline-list" style="margin-top: 14px;">
+                <div class="timeline-step">
+                  <strong>1. Ask or upload</strong>
+                  Start with a research question, a paper, class notes, or a full lecture PDF.
+                </div>
+                <div class="timeline-step">
+                  <strong>2. Understand the material</strong>
+                  Generate summaries, literature reviews, or simple explanations before memorizing anything.
+                </div>
+                <div class="timeline-step">
+                  <strong>3. Extract what matters</strong>
+                  Pull key concepts, definitions, weak areas, and likely exam targets.
+                </div>
+                <div class="timeline-step">
+                  <strong>4. Turn it into review</strong>
+                  Build flashcards, mini-quizzes, and decks from the exact same source material.
+                </div>
+              </div>
+            </article>
+
+            <article class="workflow-card">
+              <div>
+                <span class="mini-label">Inside the app</span>
+                <h3 style="margin-top: 10px; font-size: 1.7rem;">Research mode and study mode share the same canvas.</h3>
+              </div>
+              <div class="workflow-canvas">
+                <div class="canvas-row">
+                  <div class="canvas-box">
+                    <strong>Research mode</strong>
+                    <span>Paper summary, literature review, research report, find sources.</span>
+                  </div>
+                  <div class="canvas-box">
+                    <strong>Main canvas</strong>
+                    <span>Large focused workspace for uploads, prompts, generated reports, and side-by-side evidence.</span>
+                  </div>
+                </div>
+                <div class="canvas-row">
+                  <div class="canvas-box">
+                    <strong>Study mode</strong>
+                    <span>Flashcards, key concepts, teach mode, simple summary, my decks.</span>
+                  </div>
+                  <div class="canvas-box">
+                    <strong>Review output</strong>
+                    <span>Turn any explanation into an active recall set, revision sheet, or deck in one click.</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing">
+      <div class="wrap">
+        <div class="pricing-shell reveal">
+          <div class="section-header" style="margin-bottom: 18px;">
+            <div>
+              <h2>One workflow, not scattered subscriptions.</h2>
+              <p>
+                The positioning is strongest when the user immediately sees the merge:
+                research assistance on one side, retention and review on the other, all in one place.
+              </p>
+            </div>
+          </div>
+
+          <div class="pricing-grid">
+            <article class="compare-card">
+              <span class="compare-label">Current stack</span>
+              <div class="price">$49/mo</div>
+              <p>Standalone research assistant.</p>
+              <ul>
+                <li>Strong for source discovery and reports</li>
+                <li>Not centered on memorization</li>
+                <li>Users still need a second study tool</li>
+              </ul>
+            </article>
+
+            <article class="compare-card">
+              <span class="compare-label">Current stack</span>
+              <div class="price">$30/yr</div>
+              <p>Standalone flashcard workflow.</p>
+              <ul>
+                <li>Excellent for long-term retention</li>
+                <li>Very limited research assistance</li>
+                <li>Manual setup for many learners</li>
+              </ul>
+            </article>
+
+            <article class="compare-card featured">
+              <span class="compare-label">Study Buddy AI</span>
+              <div class="price">All in one</div>
+              <p>Research, explanation, key concepts, tutoring, and flashcards in one product story.</p>
+              <ul>
+                <li>Ask, understand, remember</li>
+                <li>Research to review in one flow</li>
+                <li>Built for students and researchers</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="cta-shell reveal">
+          <div>
+            <span class="mini-label">Final pitch</span>
+            <h2>Understand first. Remember second. Do both in one place.</h2>
+            <p>
+              Study Buddy AI is not just another flashcard app and not just another AI research tool.
+              It is the layer that connects understanding, synthesis, and memory.
+            </p>
+          </div>
+          <a class="button primary" href="#home">Back to top</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-row">
+      <div>Study Buddy AI concept landing page</div>
+      <div>Designed from your idea: research + study + your own product logic</div>
+    </div>
+  </footer>
+
+  <script>
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.15 });
+    reveals.forEach((item) => observer.observe(item));
+  </script>
+</body>
+</html>
