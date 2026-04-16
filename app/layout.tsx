@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import "./workspace.css";
+import "./standalone.css";
+import "./globals-patch.css";
 
 export const metadata: Metadata = {
   title: "Noesis AI",

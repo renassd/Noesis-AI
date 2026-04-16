@@ -7,6 +7,26 @@ interface Props {
   onSaveDeck: (name: string, cards: Flashcard[]) => Promise<boolean>;
 }
 
+function extractJsonArray(rawText: string) {
+  const cleaned = rawText.replace(/```json|```/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned) as Array<{ question: string; answer: string }>;
+  } catch {
+    const start = cleaned.indexOf("[");
+    const end = cleaned.lastIndexOf("]");
+
+    if (start === -1 || end === -1 || end <= start) {
+      throw new Error("La respuesta de IA no trajo un JSON valido para las flashcards.");
+    }
+
+    return JSON.parse(cleaned.slice(start, end + 1)) as Array<{
+      question: string;
+      answer: string;
+    }>;
+  }
+}
+
 export default function FlashcardGenerator({ onSaveDeck }: Props) {
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState(8);
@@ -58,12 +78,15 @@ ${text.slice(0, 4000)}`,
         throw new Error(data.error || "Error al generar las tarjetas.");
       }
 
-      const raw = (data.text || "").replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(raw) as Array<{ question: string; answer: string }>;
+      const parsed = extractJsonArray(data.text || "");
       const withIds = parsed.map((card, index) => ({
         ...card,
         id: `${Date.now()}-${index}`,
       }));
+
+      if (withIds.length === 0) {
+        throw new Error("La IA no devolvio tarjetas para este texto.");
+      }
 
       setCards(withIds);
 

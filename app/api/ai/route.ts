@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+const DEFAULT_MODEL = "claude-sonnet-4-6";
+
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
@@ -14,6 +16,11 @@ type AnthropicResponse = {
     message?: string;
   };
 };
+
+function getRequestedFlashcardCount(message: string) {
+  const match = message.match(/genera exactamente\s+(\d+)\s+flashcards/i);
+  return match ? Number(match[1]) : 8;
+}
 
 function createMockFlashcards(sourceText: string, maxCards: number) {
   const cleaned = sourceText.replace(/\s+/g, " ").trim();
@@ -47,7 +54,7 @@ function buildMockResponse(body: {
 
   if (lastMessage.includes('Formato exacto: [{"question":"...","answer":"..."},...]')) {
     const textBlock = lastMessage.split("Texto:").pop()?.trim() || lastMessage;
-    const flashcards = createMockFlashcards(textBlock, 8);
+    const flashcards = createMockFlashcards(textBlock, getRequestedFlashcardCount(lastMessage));
     return JSON.stringify(flashcards, null, 2);
   }
 
@@ -79,14 +86,21 @@ function buildMockResponse(body: {
 }
 
 export async function POST(req: Request) {
+  let body:
+    | {
+        system?: string;
+        messages?: ChatMessage[];
+        max_tokens?: number;
+      }
+    | undefined;
+
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
-    const body = (await req.json()) as {
+    body = (await req.json()) as {
       system?: string;
       messages?: ChatMessage[];
       max_tokens?: number;
-      model?: string;
     };
 
     if (!body.messages?.length) {
@@ -108,7 +122,7 @@ export async function POST(req: Request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: body.model ?? "claude-sonnet-4-20250514",
+        model: DEFAULT_MODEL,
         max_tokens: body.max_tokens ?? 1000,
         system: body.system,
         messages: body.messages,
@@ -118,19 +132,40 @@ export async function POST(req: Request) {
     const data = (await response.json()) as AnthropicResponse;
 
     if (!response.ok) {
+      console.error("Anthropic API error", {
+        model: DEFAULT_MODEL,
+        status: response.status,
+        error: data.error?.message ?? "Unknown error",
+      });
+
       return NextResponse.json(
-        { error: data.error?.message ?? "Error al consultar el modelo de IA." },
-        { status: response.status },
+        {
+          text: buildMockResponse(body),
+          mock: true,
+          warning:
+            data.error?.message ??
+            "Anthropic no respondio correctamente. Se devolvio una respuesta local de respaldo.",
+        },
+        { status: 200 },
       );
     }
 
     const text = data.content?.map((block) => block.text || "").join("") || "";
 
     return NextResponse.json({ text });
-  } catch {
+  } catch (error) {
+    console.error("AI route failed", {
+      model: DEFAULT_MODEL,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+
     return NextResponse.json(
-      { error: "No se pudo procesar la solicitud de IA." },
-      { status: 500 },
+      {
+        text: buildMockResponse(body ?? {}),
+        mock: true,
+        warning: "No se pudo contactar Anthropic. Se devolvio una respuesta local de respaldo.",
+      },
+      { status: 200 },
     );
   }
 }
