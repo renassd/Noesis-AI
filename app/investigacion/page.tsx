@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import ResearchMode from "../ResearchMode";
+import ThemeToggle from "../theme/ThemeToggle";
 
 export default function InvestigacionPage() {
   return (
@@ -27,6 +28,8 @@ export default function InvestigacionPage() {
           <ResearchMode />
         </main>
       </div>
+
+      <ThemeToggle />
     </div>
   );
 }

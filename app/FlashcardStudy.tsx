@@ -1,20 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import CardEditor from "./CardEditor";
 import type { Flashcard, Deck } from "./types";
+import type { CardVisual } from "./theme/types";
+import FlashCard from "./FlashCard";
 
 interface Props {
   deck: Deck | null;
   decks: Deck[];
   onSelectDeck: (d: Deck) => void;
+  onSaveCardVisuals?: (
+    deckId: string,
+    cardVisuals: Record<string, Partial<CardVisual>>,
+  ) => Promise<void>;
 }
 
-export default function FlashcardStudy({ deck, decks, onSelectDeck }: Props) {
+export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVisuals }: Props) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [results, setResults] = useState<Record<string, "easy" | "hard" | "wrong">>({});
   const [done, setDone] = useState(false);
   const [queue, setQueue] = useState<Flashcard[]>([]);
+  const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
+  const [cardVisuals, setCardVisuals] = useState<Record<string, Partial<CardVisual>>>({});
 
   useEffect(() => {
     if (deck) {
@@ -23,6 +32,13 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck }: Props) {
       setFlipped(false);
       setResults({});
       setDone(false);
+      setCardVisuals(
+        Object.fromEntries(
+          deck.cards
+            .filter((card) => !!card.visual)
+            .map((card) => [card.id, card.visual as Partial<CardVisual>]),
+        ),
+      );
     }
   }, [deck]);
 
@@ -76,6 +92,19 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck }: Props) {
       setDone(true);
     } else {
       setIndex((i) => i + 1);
+    }
+  }
+
+  async function updateCardVisual(cardId: string, visual: Partial<CardVisual>) {
+    if (!deck) return;
+
+    const nextVisuals = { ...cardVisuals, [cardId]: visual };
+    setCardVisuals(nextVisuals);
+    setQueue((prev) => prev.map((card) => (card.id === cardId ? { ...card, visual } : card)));
+    setEditingCard((prev) => (prev?.id === cardId ? { ...prev, visual } : prev));
+
+    if (onSaveCardVisuals) {
+      await onSaveCardVisuals(deck.id, { [cardId]: visual });
     }
   }
 
@@ -152,22 +181,21 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck }: Props) {
 
       {/* Card */}
       <div className="study-stage">
-        <div
-          className={`study-card${flipped ? " flipped" : ""}`}
-          onClick={() => setFlipped((f) => !f)}
-        >
-          <div className="study-card-inner">
-            <div className="study-card-front">
-              <span className="study-card-label">Pregunta</span>
-              <p className="study-card-text">{card?.question}</p>
-              <span className="study-card-hint">Clic para ver la respuesta</span>
-            </div>
-            <div className="study-card-back">
-              <span className="study-card-label">Respuesta</span>
-              <p className="study-card-text">{card?.answer}</p>
-            </div>
-          </div>
-        </div>
+        {card && (
+          <FlashCard
+            card={{ ...card, visual: { ...card.visual, ...(cardVisuals[card.id] ?? {}) } }}
+            flipped={flipped}
+            onClick={() => setFlipped((f) => !f)}
+            onEdit={(currentCard) =>
+              setEditingCard({
+                ...currentCard,
+                visual: { ...currentCard.visual, ...(cardVisuals[currentCard.id] ?? {}) },
+              })
+            }
+            variant="study"
+            showLabel={true}
+          />
+        )}
 
         {flipped && (
           <div className="study-actions">
@@ -183,6 +211,15 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck }: Props) {
           </div>
         )}
       </div>
+      {editingCard && (
+        <CardEditor
+          card={editingCard}
+          onSave={(cardId, visual) => {
+            void updateCardVisual(cardId, visual);
+          }}
+          onClose={() => setEditingCard(null)}
+        />
+      )}
     </div>
   );
 }

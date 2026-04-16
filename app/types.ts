@@ -1,4 +1,11 @@
-export type Flashcard = { id: string; question: string; answer: string };
+import type { CardVisual } from "./theme/types";
+
+export type Flashcard = {
+  id: string;
+  question: string;
+  answer: string;
+  visual?: Partial<CardVisual>;
+};
 
 export type Deck = {
   id: string;

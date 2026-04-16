@@ -4,6 +4,9 @@ import "./globals.css";
 import "./workspace.css";
 import "./standalone.css";
 import "./globals-patch.css";
+import "./theme/theme.css";
+import "./card-visual.css";
+import { ThemeProvider } from "./theme/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Noesis AI",
@@ -18,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

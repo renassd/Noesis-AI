@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { CardVisual } from "./theme/types";
 import type { Deck } from "./types";
 
 const DECKS_STORAGE_KEY = "noesis_decks";
@@ -46,7 +47,8 @@ export function useDecks() {
       const res = await fetch(`/api/decks?userId=${encodeURIComponent(userId)}`);
 
       if (!res.ok) {
-        throw new Error("Deck API unavailable");
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || `Deck API unavailable (${res.status})`);
       }
 
       const data = (await res.json()) as Deck[];
@@ -66,10 +68,7 @@ export function useDecks() {
     void fetchDecks();
   }, [fetchDecks]);
 
-  async function addDeck(
-    name: string,
-    cards: Array<{ question: string; answer: string }>,
-  ): Promise<Deck | null> {
+  async function addDeck(name: string, cards: Deck["cards"]): Promise<Deck | null> {
     try {
       if (usingLocalFallback) {
         const localDeck: Deck = {
@@ -77,9 +76,10 @@ export function useDecks() {
           name,
           createdAt: new Date().toISOString(),
           cards: cards.map((card) => ({
-            id: crypto.randomUUID(),
+            id: card.id || crypto.randomUUID(),
             question: card.question,
             answer: card.answer,
+            visual: card.visual,
           })),
         };
 
@@ -96,7 +96,15 @@ export function useDecks() {
       const res = await fetch("/api/decks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, name, cards }),
+        body: JSON.stringify({
+          userId,
+          name,
+          cards: cards.map((card) => ({
+            question: card.question,
+            answer: card.answer,
+            visual: card.visual ?? null,
+          })),
+        }),
       });
 
       if (!res.ok) {
@@ -114,9 +122,10 @@ export function useDecks() {
         name,
         createdAt: new Date().toISOString(),
         cards: cards.map((card) => ({
-          id: crypto.randomUUID(),
+          id: card.id || crypto.randomUUID(),
           question: card.question,
           answer: card.answer,
+          visual: card.visual,
         })),
       };
 
@@ -128,6 +137,55 @@ export function useDecks() {
         return updated;
       });
       return localDeck;
+    }
+  }
+
+  async function saveCardVisuals(
+    deckId: string,
+    cardVisuals: Record<string, Partial<CardVisual>>,
+  ): Promise<void> {
+    setDecks((prev) => {
+      const updated = prev.map((deck) =>
+        deck.id === deckId
+          ? {
+              ...deck,
+              cards: deck.cards.map((card) =>
+                Object.prototype.hasOwnProperty.call(cardVisuals, card.id)
+                  ? {
+                      ...card,
+                      visual:
+                        Object.keys(cardVisuals[card.id] ?? {}).length > 0
+                          ? cardVisuals[card.id]
+                          : undefined,
+                    }
+                  : card,
+              ),
+            }
+          : deck,
+      );
+      saveLocalDecks(updated);
+      return updated;
+    });
+
+    if (usingLocalFallback) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/decks/${deckId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardVisuals }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Error guardando estilos de tarjetas");
+      }
+    } catch (err) {
+      console.error(err);
+      setUsingLocalFallback(true);
+      setError("Modo local activo: los mazos se guardan solo en este navegador.");
     }
   }
 
@@ -214,6 +272,7 @@ export function useDecks() {
     addDeck,
     deleteDeck,
     renameDeck,
+    saveCardVisuals,
     refetch: fetchDecks,
   };
 }

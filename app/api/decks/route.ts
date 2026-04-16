@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     const { data: decks, error } = await supabaseAdmin
       .from("decks")
-      .select("id, name, created_at, flashcards(id, question, answer)")
+      .select("id, name, created_at, flashcards(id, question, answer, visual)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -23,17 +23,41 @@ export async function GET(req: NextRequest) {
     }
 
     const normalizedDecks =
-      decks?.map((deck: { id: string; name: string; created_at: string; flashcards: Array<{ id: string; question: string; answer: string }> | null }) => ({
-        id: deck.id,
-        name: deck.name,
-        createdAt: deck.created_at,
-        cards: deck.flashcards ?? [],
-      })) ?? [];
+      decks?.map(
+        (deck: {
+          id: string;
+          name: string;
+          created_at: string;
+          flashcards: Array<{ id: string; question: string; answer: string; visual?: unknown }> | null;
+        }) => ({
+          id: deck.id,
+          name: deck.name,
+          createdAt: deck.created_at,
+          cards: (deck.flashcards ?? []).map((card) => ({
+            id: card.id,
+            question: card.question,
+            answer: card.answer,
+            visual:
+              typeof card.visual === "string"
+                ? (() => {
+                    try {
+                      return JSON.parse(card.visual);
+                    } catch {
+                      return undefined;
+                    }
+                  })()
+                : (card.visual ?? undefined),
+          })),
+        }),
+      ) ?? [];
 
     return NextResponse.json(normalizedDecks);
   } catch (error) {
     console.error("Error en GET /api/decks:", error);
-    return NextResponse.json({ error: "Deck API unavailable" }, { status: 503 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Deck API unavailable" },
+      { status: 503 },
+    );
   }
 }
 
@@ -43,7 +67,7 @@ export async function POST(req: NextRequest) {
     const { userId, name, cards } = (await req.json()) as {
       userId?: string;
       name?: string;
-      cards?: Array<{ question?: string; answer?: string }>;
+      cards?: Array<{ question?: string; answer?: string; visual?: unknown }>;
     };
 
     if (!userId || !name || !cards?.length) {
@@ -81,12 +105,13 @@ export async function POST(req: NextRequest) {
       deck_id: deck.id,
       question: card.question!.trim(),
       answer: card.answer!.trim(),
+      visual: card.visual ?? null,
     }));
 
     const { data: insertedCards, error: cardsError } = await supabaseAdmin
       .from("flashcards")
       .insert(flashcards)
-      .select("id, question, answer");
+      .select("id, question, answer, visual");
 
     if (cardsError) {
       await supabaseAdmin.from("decks").delete().eq("id", deck.id);
@@ -99,7 +124,13 @@ export async function POST(req: NextRequest) {
         id: deck.id,
         name: deck.name,
         createdAt: deck.created_at,
-        cards: insertedCards ?? [],
+        cards:
+          insertedCards?.map((card) => ({
+            id: card.id,
+            question: card.question,
+            answer: card.answer,
+            visual: card.visual ?? undefined,
+          })) ?? [],
       },
       { status: 201 },
     );

@@ -6,6 +6,7 @@ import FlashcardGenerator from "../FlashcardGenerator";
 import FlashcardStudy from "../FlashcardStudy";
 import MyDecks from "../MyDecks";
 import TutorMode from "../TutorMode";
+import ThemeToggle from "../theme/ThemeToggle";
 import type { Deck, Flashcard } from "../types";
 import { useDecks } from "../useDecks";
 
@@ -21,7 +22,7 @@ const TOOLS: { id: Tool; label: string; icon: string }[] = [
 export default function EstudioPage() {
   const [tool, setTool] = useState<Tool>("generate");
   const [activeDeck, setActiveDeck] = useState<Deck | null>(null);
-  const { decks, loading, error, addDeck, deleteDeck, renameDeck } = useDecks();
+  const { decks, loading, error, addDeck, deleteDeck, renameDeck, saveCardVisuals } = useDecks();
 
   useEffect(() => {
     if (activeDeck) {
@@ -115,6 +116,7 @@ export default function EstudioPage() {
               deck={activeDeck}
               decks={decks}
               onSelectDeck={(deck) => setActiveDeck(deck)}
+              onSaveCardVisuals={saveCardVisuals}
             />
           )}
           {tool === "tutor" && <TutorMode />}
@@ -132,6 +134,8 @@ export default function EstudioPage() {
           )}
         </main>
       </div>
+
+      <ThemeToggle />
     </div>
   );
 }

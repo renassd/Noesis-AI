@@ -7,6 +7,7 @@ import FlashcardStudy from "./FlashcardStudy";
 import TutorMode from "./TutorMode";
 import ResearchMode from "./ResearchMode";
 import MyDecks from "./MyDecks";
+import ThemeToggle from "./theme/ThemeToggle";
 import type { Flashcard, Deck } from "./types";
 import { useDecks } from "./useDecks";
 
@@ -31,7 +32,7 @@ export default function WorkspaceApp({
 }: WorkspaceAppProps) {
   const [internalTool, setInternalTool] = useState<Tool>("research");
   const [activeDeck, setActiveDeck] = useState<Deck | null>(null);
-  const { decks, loading, error, addDeck, deleteDeck, renameDeck } = useDecks();
+  const { decks, loading, error, addDeck, deleteDeck, renameDeck, saveCardVisuals } = useDecks();
   const tool = activeTool ?? internalTool;
 
   function setTool(toolName: Tool) {
@@ -143,6 +144,7 @@ export default function WorkspaceApp({
               deck={activeDeck}
               decks={decks}
               onSelectDeck={(deck) => setActiveDeck(deck)}
+              onSaveCardVisuals={saveCardVisuals}
             />
           )}
           {tool === "tutor" && <TutorMode />}
@@ -161,6 +163,8 @@ export default function WorkspaceApp({
           )}
         </main>
       </div>
+
+      <ThemeToggle />
     </div>
   );
 }

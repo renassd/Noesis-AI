@@ -1,30 +1,56 @@
 "use client";
 
 import { useState } from "react";
+import CardEditor from "./CardEditor";
+import FlashCard from "./FlashCard";
+import type { CardVisual } from "./theme/types";
 import type { Flashcard } from "./types";
 
 interface Props {
   onSaveDeck: (name: string, cards: Flashcard[]) => Promise<boolean>;
 }
 
-function extractJsonArray(rawText: string) {
-  const cleaned = rawText.replace(/```json|```/g, "").trim();
+function extractJsonArray(raw: string): unknown[] | null {
+  const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
 
   try {
-    return JSON.parse(cleaned) as Array<{ question: string; answer: string }>;
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) return parsed;
   } catch {
-    const start = cleaned.indexOf("[");
-    const end = cleaned.lastIndexOf("]");
-
-    if (start === -1 || end === -1 || end <= start) {
-      throw new Error("La respuesta de IA no trajo un JSON valido para las flashcards.");
-    }
-
-    return JSON.parse(cleaned.slice(start, end + 1)) as Array<{
-      question: string;
-      answer: string;
-    }>;
+    // continue with extraction
   }
+
+  const start = cleaned.indexOf("[");
+  const end = cleaned.lastIndexOf("]");
+  if (start === -1 || end === -1 || end <= start) return null;
+
+  const candidate = cleaned.slice(start, end + 1);
+  try {
+    const parsed = JSON.parse(candidate);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function buildPrompt(quantity: number, text: string): string {
+  return `Sos un asistente de estudio. Genera exactamente ${quantity} flashcards en espanol a partir del texto que te voy a dar.
+
+INSTRUCCIONES ESTRICTAS:
+- Responde UNICAMENTE con un array JSON. Sin introduccion, sin explicacion, sin texto antes o despues.
+- No uses bloques de codigo markdown.
+- El array debe tener exactamente ${quantity} objetos.
+- Cada objeto debe tener exactamente dos campos: "question" y "answer".
+- Las preguntas deben evaluar comprension, no solo memoria literal.
+- Las respuestas deben ser concisas (1 a 3 oraciones).
+
+FORMATO EXACTO:
+[{"question":"...","answer":"..."},{"question":"...","answer":"..."}]
+
+TEXTO:
+${text.slice(0, 4000)}`;
 }
 
 export default function FlashcardGenerator({ onSaveDeck }: Props) {
@@ -36,6 +62,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
+  const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
 
   async function generate() {
     if (text.trim().length < 30) {
@@ -53,40 +80,43 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: `Sos un asistente de estudio. A partir del siguiente texto, genera exactamente ${quantity} flashcards de estudio en espanol.
-
-Reglas:
-- Cada tarjeta debe tener una pregunta clara y una respuesta concisa de 1 a 3 oraciones.
-- Las preguntas deben evaluar comprension, no solo memoria literal.
-- Responde SOLO con un array JSON valido, sin markdown ni texto extra.
-- Formato exacto: [{"question":"...","answer":"..."},...]
-
-Texto:
-${text.slice(0, 4000)}`,
-            },
-          ],
+          max_tokens: 2000,
+          messages: [{ role: "user", content: buildPrompt(quantity, text) }],
         }),
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data.error || "Error al generar las tarjetas.");
       }
 
-      const parsed = extractJsonArray(data.text || "");
-      const withIds = parsed.map((card, index) => ({
+      const rawText = data.text || "";
+      if (!rawText.trim()) {
+        throw new Error("La IA no devolvio contenido. Intenta de nuevo.");
+      }
+
+      const parsed = extractJsonArray(rawText);
+      if (!parsed || parsed.length === 0) {
+        console.error("Respuesta cruda de la IA:", rawText);
+        throw new Error("No se pudo leer el formato de las tarjetas. Intenta con un texto mas claro o mas corto.");
+      }
+
+      const validCards = parsed.filter(
+        (item): item is { question: string; answer: string } =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as Record<string, unknown>).question === "string" &&
+          typeof (item as Record<string, unknown>).answer === "string",
+      );
+
+      if (validCards.length === 0) {
+        throw new Error("Las tarjetas generadas no tienen el formato esperado.");
+      }
+
+      const withIds = validCards.map((card, index) => ({
         ...card,
         id: `${Date.now()}-${index}`,
       }));
-
-      if (withIds.length === 0) {
-        throw new Error("La IA no devolvio tarjetas para este texto.");
-      }
 
       setCards(withIds);
 
@@ -110,13 +140,16 @@ ${text.slice(0, 4000)}`,
     setFlipped((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
+  function updateCardVisual(cardId: string, visual: Partial<CardVisual>) {
+    setCards((prev) => prev.map((card) => (card.id === cardId ? { ...card, visual } : card)));
+    setEditingCard((prev) => (prev?.id === cardId ? { ...prev, visual } : prev));
+  }
+
   return (
     <div className="ws-panel">
       <div className="ws-panel-header">
         <h2 className="ws-panel-title">Generar flashcards con IA</h2>
-        <p className="ws-panel-sub">
-          Pega cualquier texto y la IA genera tarjetas de estudio listas para repasar.
-        </p>
+        <p className="ws-panel-sub">Pega cualquier texto y la IA genera tarjetas de estudio listas para repasar.</p>
       </div>
 
       <div className="gen-layout">
@@ -203,28 +236,28 @@ ${text.slice(0, 4000)}`,
             {cards.length > 0 && (
               <div className="gen-cards-grid">
                 {cards.map((card) => (
-                  <div
+                  <FlashCard
                     key={card.id}
-                    className={`gen-card${flipped[card.id] ? " flipped" : ""}`}
+                    card={card}
+                    flipped={!!flipped[card.id]}
                     onClick={() => toggleFlip(card.id)}
-                  >
-                    <div className="gen-card-inner">
-                      <div className="gen-card-front">
-                        <span className="gen-card-side-label">Pregunta</span>
-                        <p>{card.question}</p>
-                      </div>
-                      <div className="gen-card-back">
-                        <span className="gen-card-side-label">Respuesta</span>
-                        <p>{card.answer}</p>
-                      </div>
-                    </div>
-                  </div>
+                    onEdit={(currentCard) => setEditingCard(currentCard)}
+                    variant="grid"
+                    showLabel={true}
+                  />
                 ))}
               </div>
             )}
           </div>
         )}
       </div>
+      {editingCard && (
+        <CardEditor
+          card={editingCard}
+          onSave={updateCardVisual}
+          onClose={() => setEditingCard(null)}
+        />
+      )}
     </div>
   );
 }

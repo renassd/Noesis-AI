@@ -162,3 +162,105 @@
     padding: 6px 10px;
   }
 }
+
+/* ══════════════════════════════════════════
+   RESEARCH MODE — Markdown rendering
+══════════════════════════════════════════ */
+
+/* Container for rendered markdown in assistant bubbles */
+.rm-content {
+  font-size: 14px;
+  line-height: 1.75;
+  color: inherit;
+}
+
+.rm-content p {
+  margin: 0 0 6px;
+}
+.rm-content p:last-child { margin-bottom: 0; }
+
+.rm-content h3 {
+  font-family: var(--font-display, 'Lora', Georgia, serif);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink, #0d1b36);
+  margin: 14px 0 5px;
+  letter-spacing: -0.01em;
+}
+
+.rm-content h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink, #0d1b36);
+  margin: 10px 0 4px;
+}
+
+.rm-content ul {
+  margin: 4px 0 8px 0;
+  padding-left: 20px;   /* indentation for bullets */
+  list-style: disc;
+  display: block;
+}
+
+.rm-content li {
+  margin: 3px 0;
+  padding-left: 0;      /* remove extra padding inherited from global li */
+  line-height: 1.65;
+  /* Reset the global li::before pseudo-element that draws a colored dot */
+  position: static;
+}
+
+.rm-content li::before {
+  display: none;        /* hide the global colored dot — browser disc is enough */
+}
+
+.rm-content strong {
+  font-weight: 700;
+  color: var(--ink, #0d1b36);
+}
+
+.rm-content em {
+  font-style: italic;
+}
+
+.rm-content code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 12px;
+  background: var(--surface-alt, #f4f7fc);
+  border: 1px solid var(--line, #d6e0f0);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--blue-900, #173c9b);
+}
+
+.rm-content hr {
+  border: none;
+  border-top: 1px solid var(--line, #d6e0f0);
+  margin: 12px 0;
+}
+
+.rm-content .rm-spacer {
+  height: 6px;
+}
+
+/* Inside user bubble — override color for user messages */
+.chat-msg.user .rm-content strong { color: rgba(255,255,255,0.95); }
+.chat-msg.user .rm-content code { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.2); color: #fff; }
+
+/* Inline markdown in flashcard text */
+.gen-card-front p strong,
+.gen-card-back p strong { font-weight: 700; }
+.gen-card-front p em,
+.gen-card-back p em { font-style: italic; }
+.gen-card-front p code,
+.gen-card-back p code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+/* Study card markdown */
+.study-card-text strong { font-weight: 700; }
+.study-card-text em { font-style: italic; }
