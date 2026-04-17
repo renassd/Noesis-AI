@@ -5,31 +5,33 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
+import { ImageAccordionPanels } from "@/components/ui/interactive-image-accordion";
 
 function useScrollReveal() {
   useEffect(() => {
-    const els = document.querySelectorAll(".reveal");
-    const obs = new IntersectionObserver(
+    const elements = document.querySelectorAll(".reveal");
+    const observer = new IntersectionObserver(
       (entries) =>
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            obs.unobserve(entry.target);
-          }
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
         }),
       { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
     );
-    els.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
   }, []);
 }
 
 function useTopbarScroll() {
   useEffect(() => {
-    const bar = document.querySelector(".topbar");
-    const fn = () => bar?.classList.toggle("scrolled", window.scrollY > 12);
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
+    const topbar = document.querySelector(".topbar");
+    const onScroll = () => topbar?.classList.toggle("scrolled", window.scrollY > 12);
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 }
 
@@ -39,21 +41,24 @@ function WaitlistForm() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
-  const [err, setErr] = useState("");
+  const [error, setError] = useState("");
 
   async function submit() {
     if (!email.includes("@")) {
-      setErr(lang === "en" ? "Please enter a valid email." : "Ingresa un email valido.");
+      setError(lang === "en" ? "Please enter a valid email." : "Ingresa un email valido.");
       return;
     }
-    setErr("");
+
+    setError("");
     setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 800));
     setLoading(false);
     setDone(true);
   }
 
-  if (done) return <div className="waitlist-success visible">{l.waitlistDone}</div>;
+  if (done) {
+    return <div className="waitlist-success visible">{l.waitlistDone}</div>;
+  }
 
   return (
     <div>
@@ -64,14 +69,25 @@ function WaitlistForm() {
           placeholder={l.waitlistPlaceholder}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          onKeyDown={(event) => event.key === "Enter" && void submit()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") void submit();
+          }}
           disabled={loading}
         />
-        <button className="waitlist-btn" onClick={() => void submit()} disabled={loading} type="button">
+        <button
+          className="waitlist-btn"
+          onClick={() => void submit()}
+          disabled={loading}
+          type="button"
+        >
           {loading ? l.waitlistJoining : l.waitlistBtn}
         </button>
       </div>
-      {err && <p style={{ fontSize: 13, color: "#d85a30", marginTop: 8, textAlign: "center" }}>{err}</p>}
+      {error && (
+        <p style={{ fontSize: 13, color: "#d85a30", marginTop: 8, textAlign: "center" }}>
+          {error}
+        </p>
+      )}
       <p className="waitlist-count">{l.waitlistCount.replace("{n}", "412")}</p>
     </div>
   );
@@ -99,8 +115,7 @@ export default function HomePage() {
           </a>
           <div className="nav-group">
             <nav className="nav">
-              <a href="#research">{nav.research}</a>
-              <a href="#study">{nav.study}</a>
+              <a href="#features">{nav.research}</a>
               <a href="#workflow">{nav.howItWorks}</a>
               <Link href="/estudio" className="cta-link">
                 {nav.openApp}
@@ -112,90 +127,20 @@ export default function HomePage() {
       </header>
 
       <main id="home">
-        <section className="hero">
+        <section className="hero" id="features">
           <div className="wrap">
             <div className="landing-hero-grid reveal">
               <div className="landing-hero-copy">
                 <span className="eyebrow">{l.eyebrow}</span>
                 <h1 className="landing-headline">{l.headline}</h1>
                 <p className="landing-sub">{l.sub}</p>
-                <div className="action-row">
-                  <Link className="button primary" href="/estudio">{l.ctaPrimary}</Link>
-                  <Link className="button secondary" href="/investigacion">{l.ctaSecondary}</Link>
+                <div className="hero-scroll-hint reveal reveal-delay-1" aria-hidden="true">
+                  <span className="hero-scroll-line" />
+                  <span className="hero-scroll-label">scroll</span>
                 </div>
               </div>
 
-              <div className="landing-proof-cards">
-                <div className="landing-proof-card lpc-blue">
-                  <span className="lpc-icon">R</span>
-                  <strong>{l.proofResearch}</strong>
-                  <p>{l.proofResearchDesc}</p>
-                  <Link href="/investigacion" className="lpc-link">{nav.research} -&gt;</Link>
-                </div>
-                <div className="landing-proof-card lpc-green">
-                  <span className="lpc-icon">S</span>
-                  <strong>{l.proofRetention}</strong>
-                  <p>{l.proofRetentionDesc}</p>
-                  <Link href="/estudio" className="lpc-link">{nav.study} -&gt;</Link>
-                </div>
-                <div className="landing-proof-card lpc-slate">
-                  <span className="lpc-icon">+</span>
-                  <strong>{l.proofTool}</strong>
-                  <p>{l.proofToolDesc}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="research">
-          <div className="wrap">
-            <div className="section-header reveal">
-              <div>
-                <h2>{l.featuresTitle}</h2>
-                <p>{l.featuresSub}</p>
-              </div>
-            </div>
-            <div className="feature-rail reveal">
-              <div className="feature-grid">
-                <article className="feature-card">
-                  <div className="feature-top">
-                    <div>
-                      <span className="mini-label">{l.researchLabel}</span>
-                      <h3 className="space-top-sm">{l.researchHeading}</h3>
-                    </div>
-                    <span className="compare-label">{l.researchEngine}</span>
-                  </div>
-                  <div className="feature-list">
-                    {t.researchFeatures.map((feature) => (
-                      <div key={feature.title} className="feature-item">
-                        <strong>{feature.title}</strong>
-                        {feature.description}
-                      </div>
-                    ))}
-                  </div>
-                  <Link className="button primary" href="/investigacion" style={{ marginTop: 8 }}>{l.goResearch}</Link>
-                </article>
-
-                <article className="feature-card" id="study">
-                  <div className="feature-top">
-                    <div>
-                      <span className="mini-label">{l.studyLabel}</span>
-                      <h3 className="space-top-sm">{l.studyHeading}</h3>
-                    </div>
-                    <span className="compare-label study">{l.studyEngine}</span>
-                  </div>
-                  <div className="feature-list">
-                    {t.studyFeatures.map((feature) => (
-                      <div key={feature.title} className="feature-item">
-                        <strong>{feature.title}</strong>
-                        {feature.description}
-                      </div>
-                    ))}
-                  </div>
-                  <Link className="button primary" href="/estudio" style={{ marginTop: 8 }}>{l.goStudy}</Link>
-                </article>
-              </div>
+              <ImageAccordionPanels />
             </div>
           </div>
         </section>
@@ -230,16 +175,36 @@ export default function HomePage() {
                 <article className="workflow-card">
                   <div>
                     <span className="mini-label">Inside Noesis</span>
-                    <h3 className="workflow-title">Research mode and study mode share the same canvas.</h3>
+                    <h3 className="workflow-title">{l.workflowTitle}</h3>
                   </div>
                   <div className="workflow-canvas">
                     <div className="canvas-row">
-                      <div className="canvas-box"><strong>Research mode</strong><span>Paper summary, literature review, research report, find sources.</span></div>
-                      <div className="canvas-box"><strong>Main canvas</strong><span>Focused workspace for uploads, prompts and generated reports.</span></div>
+                      <div className="canvas-box">
+                        <strong>Research mode</strong>
+                        <span>
+                          Paper summary, literature review, research report, find sources.
+                        </span>
+                      </div>
+                      <div className="canvas-box">
+                        <strong>Main canvas</strong>
+                        <span>
+                          Focused workspace for uploads, prompts and generated reports.
+                        </span>
+                      </div>
                     </div>
                     <div className="canvas-row">
-                      <div className="canvas-box"><strong>Study mode</strong><span>Flashcards, key concepts, tutor mode, simple summaries, my decks.</span></div>
-                      <div className="canvas-box"><strong>Review output</strong><span>Turn any explanation into an active recall set or deck in one click.</span></div>
+                      <div className="canvas-box">
+                        <strong>Study mode</strong>
+                        <span>
+                          Flashcards, key concepts, tutor mode, simple summaries, my decks.
+                        </span>
+                      </div>
+                      <div className="canvas-box">
+                        <strong>Review output</strong>
+                        <span>
+                          Turn any explanation into an active recall set or deck in one click.
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -259,11 +224,20 @@ export default function HomePage() {
               </div>
               <div className="pricing-grid">
                 {t.pricing.map((card) => (
-                  <article key={card.label} className={`compare-card${"featured" in card && card.featured ? " featured" : ""}`}>
+                  <article
+                    key={card.label}
+                    className={`compare-card${
+                      "featured" in card && card.featured ? " featured" : ""
+                    }`}
+                  >
                     <span className="compare-label">{card.label}</span>
                     <div className="price">{card.price}</div>
                     <p>{card.desc}</p>
-                    <ul>{card.items.map((item) => <li key={item}>{item}</li>)}</ul>
+                    <ul>
+                      {card.items.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
                   </article>
                 ))}
               </div>
@@ -274,7 +248,9 @@ export default function HomePage() {
         <section className="waitlist-section">
           <div className="wrap">
             <div className="waitlist-shell reveal">
-              <span className="eyebrow" style={{ margin: "0 auto" }}>{l.waitlistEyebrow}</span>
+              <span className="eyebrow" style={{ margin: "0 auto" }}>
+                {l.waitlistEyebrow}
+              </span>
               <h2 style={{ whiteSpace: "pre-line" }}>{l.waitlistTitle}</h2>
               <p>{l.waitlistSub}</p>
               <WaitlistForm />
@@ -288,7 +264,9 @@ export default function HomePage() {
           <div className="footer-inner">
             <div>
               <div className="footer-brand">
-                <div className="footer-brand-mark"><Image src="/logo.jpeg" alt="Noesis AI" width={36} height={36} /></div>
+                <div className="footer-brand-mark">
+                  <Image src="/logo.jpeg" alt="Noesis AI" width={36} height={36} />
+                </div>
                 <span>Noesis AI</span>
               </div>
               <p className="footer-tagline">{l.footerTagline}</p>
@@ -316,8 +294,12 @@ export default function HomePage() {
           <div className="footer-bottom">
             <span>(c) {new Date().getFullYear()} Noesis AI. {l.footerRights}</span>
             <div className="footer-social">
-              <a href="#" aria-label="X">X</a>
-              <a href="#" aria-label="LinkedIn">in</a>
+              <a href="#" aria-label="X">
+                X
+              </a>
+              <a href="#" aria-label="LinkedIn">
+                in
+              </a>
             </div>
           </div>
         </div>
