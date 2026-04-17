@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
+import { detectLang, langInstruction } from "./lib/detectLang";
 import type { CardVisual } from "./theme/types";
 import type { Flashcard } from "./types";
 
@@ -13,30 +14,35 @@ interface Props {
 function extractJsonArray(raw: string): unknown[] | null {
   const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
 
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) return parsed;
-  } catch {
-    // continue with extraction
+  function parseCandidate(candidate: string): unknown[] | null {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (Array.isArray(parsed)) return parsed;
+      if (typeof parsed === "string") {
+        const nested = JSON.parse(parsed);
+        if (Array.isArray(nested)) return nested;
+      }
+    } catch {
+      return null;
+    }
+    return null;
   }
+
+  const direct = parseCandidate(cleaned);
+  if (direct) return direct;
 
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
   if (start === -1 || end === -1 || end <= start) return null;
 
   const candidate = cleaned.slice(start, end + 1);
-  try {
-    const parsed = JSON.parse(candidate);
-    if (Array.isArray(parsed)) return parsed;
-  } catch {
-    return null;
-  }
-
-  return null;
+  return parseCandidate(candidate);
 }
 
-function buildPrompt(quantity: number, text: string): string {
-  return `Sos un asistente de estudio. Genera exactamente ${quantity} flashcards en espanol a partir del texto que te voy a dar.
+function buildPrompt(quantity: number, text: string, langHint: string): string {
+  return `You are a study assistant. Generate exactly ${quantity} flashcards from the text below.
+
+${langHint}
 
 INSTRUCCIONES ESTRICTAS:
 - Responde UNICAMENTE con un array JSON. Sin introduccion, sin explicacion, sin texto antes o despues.
@@ -45,6 +51,8 @@ INSTRUCCIONES ESTRICTAS:
 - Cada objeto debe tener exactamente dos campos: "question" y "answer".
 - Las preguntas deben evaluar comprension, no solo memoria literal.
 - Las respuestas deben ser concisas (1 a 3 oraciones).
+- Si aparece una formula matematica o cientifica, escribela en LaTeX valido.
+- Usa $...$ para formulas inline y $$...$$ para formulas en bloque.
 
 FORMATO EXACTO:
 [{"question":"...","answer":"..."},{"question":"...","answer":"..."}]
@@ -81,7 +89,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           max_tokens: 2000,
-          messages: [{ role: "user", content: buildPrompt(quantity, text) }],
+          messages: [{ role: "user", content: buildPrompt(quantity, text, langInstruction(detectLang(text))) }],
         }),
       });
 
@@ -97,7 +105,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
 
       const parsed = extractJsonArray(rawText);
       if (!parsed || parsed.length === 0) {
-        console.error("Respuesta cruda de la IA:", rawText);
+        console.warn("Respuesta cruda de la IA:", rawText);
         throw new Error("No se pudo leer el formato de las tarjetas. Intenta con un texto mas claro o mas corto.");
       }
 

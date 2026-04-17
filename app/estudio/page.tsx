@@ -4,22 +4,28 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import FlashcardGenerator from "../FlashcardGenerator";
 import FlashcardStudy from "../FlashcardStudy";
+import LangToggle from "../LangToggle";
 import MyDecks from "../MyDecks";
 import TutorMode from "../TutorMode";
+import { useLang } from "../i18n";
 import ThemeToggle from "../theme/ThemeToggle";
 import type { Deck, Flashcard } from "../types";
 import { useDecks } from "../useDecks";
 
 type Tool = "generate" | "study" | "tutor" | "decks";
 
-const TOOLS: { id: Tool; label: string; icon: string }[] = [
-  { id: "generate", label: "Generar flashcards", icon: "AI" },
-  { id: "study", label: "Repasar flashcards", icon: "Deck" },
-  { id: "tutor", label: "Modo tutor", icon: "Tutor" },
-  { id: "decks", label: "Mis mazos", icon: "Mazos" },
-];
-
 export default function EstudioPage() {
+  const { t } = useLang();
+  const s = t.study;
+  const nav = t.nav;
+
+  const TOOLS: { id: Tool; label: string; icon: string }[] = [
+    { id: "generate", label: s.generate, icon: "AI" },
+    { id: "study", label: s.review, icon: "Deck" },
+    { id: "tutor", label: s.tutor, icon: "Tutor" },
+    { id: "decks", label: s.decks, icon: "Mazos" },
+  ];
+
   const [tool, setTool] = useState<Tool>("generate");
   const [activeDeck, setActiveDeck] = useState<Deck | null>(null);
   const { decks, loading, error, addDeck, deleteDeck, renameDeck, saveCardVisuals } = useDecks();
@@ -34,7 +40,6 @@ export default function EstudioPage() {
   async function handleSaveDeck(name: string, cards: Flashcard[]) {
     const deck = await addDeck(name, cards);
     if (!deck) return false;
-
     setActiveDeck(deck);
     setTool("study");
     return true;
@@ -42,9 +47,7 @@ export default function EstudioPage() {
 
   async function handleDeleteDeck(id: string) {
     await deleteDeck(id);
-    if (activeDeck?.id === id) {
-      setActiveDeck(null);
-    }
+    if (activeDeck?.id === id) setActiveDeck(null);
   }
 
   return (
@@ -55,25 +58,23 @@ export default function EstudioPage() {
           <span className="standalone-brand-name">Noesis AI</span>
         </Link>
         <nav className="standalone-nav">
-          <Link href="/" className="standalone-nav-link">
-            Inicio
-          </Link>
-          <Link href="/investigacion" className="standalone-nav-link">
-            Investigacion
-          </Link>
-          <span className="standalone-nav-link active">Estudio</span>
+          <Link href="/" className="standalone-nav-link">{nav.home}</Link>
+          <Link href="/investigacion" className="standalone-nav-link">{nav.research}</Link>
+          <span className="standalone-nav-link active">{nav.study}</span>
         </nav>
+        <LangToggle />
       </header>
 
       <div className="standalone-layout">
         <aside className="standalone-sidebar">
           <div className="standalone-sidebar-section">
-            <span className="ws-nav-label">Herramientas de estudio</span>
+            <span className="ws-nav-label">{s.pageTitle}</span>
             {TOOLS.map((item) => (
               <button
                 key={item.id}
                 className={`ws-nav-item${tool === item.id ? " active" : ""}`}
                 onClick={() => setTool(item.id)}
+                type="button"
               >
                 <span className="ws-nav-icon">{item.icon}</span>
                 {item.label}
@@ -83,7 +84,7 @@ export default function EstudioPage() {
 
           {decks.length > 0 && (
             <div className="ws-deck-list">
-              <span className="ws-nav-label">Mazos recientes</span>
+              <span className="ws-nav-label">{s.recentDecks}</span>
               {decks.slice(0, 8).map((deck) => (
                 <button
                   key={deck.id}
@@ -93,6 +94,7 @@ export default function EstudioPage() {
                     setTool("study");
                   }}
                   title={deck.name}
+                  type="button"
                 >
                   <span className="ws-deck-icon">Deck</span>
                   <span className="ws-deck-name">{deck.name}</span>
@@ -105,7 +107,7 @@ export default function EstudioPage() {
 
         <main className="standalone-main">
           {error && (
-            <div className="ws-panel" style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 16 }}>
               <p className="gen-error">{error}</p>
             </div>
           )}

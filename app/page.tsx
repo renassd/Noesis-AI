@@ -3,68 +3,87 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AuthActions } from "../components/auth-actions";
-import WorkspaceApp from "./WorkspaceApp";
-
-type Tool = "generate" | "study" | "tutor" | "research" | "decks";
-
-const researchFeatures = [
-  "Resumir papers y textos largos con hallazgos, limites y conclusiones.",
-  "Armar revisiones de literatura con consensos, debates y brechas.",
-  "Explicar conceptos complejos con lenguaje mas claro.",
-  "Ayudar a estructurar escritura academica y reportes.",
-];
-
-const studyFeatures = [
-  "Generar flashcards desde apuntes, papers o clases.",
-  "Repasar mazos guardados con flujo de estudio rapido.",
-  "Usar modo tutor para aprender un tema paso a paso.",
-  "Gestionar y reutilizar mazos propios en un solo lugar.",
-];
+import LangToggle from "./LangToggle";
+import { useLang } from "./i18n";
 
 function useScrollReveal() {
   useEffect(() => {
     const els = document.querySelectorAll(".reveal");
-    const observer = new IntersectionObserver(
-      (entries) => {
+    const obs = new IntersectionObserver(
+      (entries) =>
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
+            obs.unobserve(entry.target);
           }
-        });
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -48px 0px" },
+        }),
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
     );
-
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
   }, []);
 }
 
 function useTopbarScroll() {
   useEffect(() => {
-    const topbar = document.querySelector(".topbar");
-    const onScroll = () => topbar?.classList.toggle("scrolled", window.scrollY > 12);
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const bar = document.querySelector(".topbar");
+    const fn = () => bar?.classList.toggle("scrolled", window.scrollY > 12);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 }
 
+function WaitlistForm() {
+  const { lang, t } = useLang();
+  const l = t.landing;
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function submit() {
+    if (!email.includes("@")) {
+      setErr(lang === "en" ? "Please enter a valid email." : "Ingresa un email valido.");
+      return;
+    }
+    setErr("");
+    setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    setLoading(false);
+    setDone(true);
+  }
+
+  if (done) return <div className="waitlist-success visible">{l.waitlistDone}</div>;
+
+  return (
+    <div>
+      <div className="waitlist-form">
+        <input
+          className="waitlist-input"
+          type="email"
+          placeholder={l.waitlistPlaceholder}
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          onKeyDown={(event) => event.key === "Enter" && void submit()}
+          disabled={loading}
+        />
+        <button className="waitlist-btn" onClick={() => void submit()} disabled={loading} type="button">
+          {loading ? l.waitlistJoining : l.waitlistBtn}
+        </button>
+      </div>
+      {err && <p style={{ fontSize: 13, color: "#d85a30", marginTop: 8, textAlign: "center" }}>{err}</p>}
+      <p className="waitlist-count">{l.waitlistCount.replace("{n}", "412")}</p>
+    </div>
+  );
+}
+
 export default function HomePage() {
-  const [activeTool, setActiveTool] = useState<Tool>("research");
+  const { t } = useLang();
+  const l = t.landing;
+  const nav = t.nav;
 
   useScrollReveal();
   useTopbarScroll();
-
-  function openWorkspaceTool(tool: Tool) {
-    setActiveTool(tool);
-    document.getElementById("workspace-shell")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }
 
   return (
     <>
@@ -72,171 +91,59 @@ export default function HomePage() {
         <div className="wrap">
           <a href="#home" className="brand">
             <span className="brand-mark" aria-hidden="true">
-              <Image src="/logo.jpeg" alt="Logo de Noesis AI" width={50} height={50} />
+              <Image src="/logo.jpeg" alt="Noesis AI" width={50} height={50} />
             </span>
             <span className="brand-text">
               <span>Noesis AI</span>
             </span>
           </a>
-
           <div className="nav-group">
             <nav className="nav">
-              <Link href="/investigacion" className="nav-page-link">
-                Investigacion
+              <a href="#research">{nav.research}</a>
+              <a href="#study">{nav.study}</a>
+              <a href="#workflow">{nav.howItWorks}</a>
+              <Link href="/estudio" className="cta-link">
+                {nav.openApp}
               </Link>
-              <Link href="/estudio" className="nav-page-link">
-                Estudio
-              </Link>
-              <a href="#workflow">Como funciona</a>
-              <a href="#workspace-live" className="cta-link">
-                Usar la app
-              </a>
             </nav>
-            <AuthActions />
+            <LangToggle />
           </div>
         </div>
       </header>
 
       <main id="home">
         <section className="hero">
-          <div className="wrap hero-shell">
-            <article className="hero-copy reveal">
-              <span className="eyebrow">Investigacion + estudio en un solo flujo</span>
-              <h1>Noesis AI conecta entender y recordar.</h1>
-              <p>
-                Investiga, resume, explica y convierte ese material en flashcards o sesiones guiadas
-                sin salir del mismo workspace.
-              </p>
-
-              <div className="action-row">
-                <Link className="button primary" href="/estudio">
-                  Empezar a estudiar -&gt;
-                </Link>
-                <Link className="button secondary" href="/investigacion">
-                  Abrir investigacion
-                </Link>
-              </div>
-
-              <div className="hero-proof">
-                <div className="proof-card">
-                  <strong>Investigacion primero</strong>
-                  <span>Del paper o la pregunta a un resumen accionable en minutos.</span>
-                </div>
-                <div className="proof-card">
-                  <strong>Retencion incluida</strong>
-                  <span>Convierte cualquier output en tarjetas o tutorias guiadas.</span>
-                </div>
-                <div className="proof-card">
-                  <strong>Workspace real</strong>
-                  <span>Tambien puedes usar la app embebida abajo o abrir las pantallas dedicadas.</span>
-                </div>
-              </div>
-            </article>
-
-            <article className="hero-product reveal reveal-delay-2">
-              <div className="product-bar">
-                <div className="dots" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <div>noesis.ai / workspace</div>
-              </div>
-
-              <div className="product-body">
-                <aside className="left-nav">
-                  <div>
-                    <span className="mini-label">Investigacion</span>
-                    <div className="tool-stack top-space">
-                      <button type="button" className="tool active" onClick={() => openWorkspaceTool("research")}>
-                        Reporte de investigacion
-                      </button>
-                      <button type="button" className="tool" onClick={() => openWorkspaceTool("research")}>
-                        Resumen de paper
-                      </button>
-                      <button type="button" className="tool" onClick={() => openWorkspaceTool("research")}>
-                        Revision de literatura
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="mini-label">Estudio</span>
-                    <div className="tool-stack top-space">
-                      <button type="button" className="tool" onClick={() => openWorkspaceTool("generate")}>
-                        Flashcards
-                      </button>
-                      <button type="button" className="tool" onClick={() => openWorkspaceTool("study")}>
-                        Repasar
-                      </button>
-                      <button type="button" className="tool" onClick={() => openWorkspaceTool("tutor")}>
-                        Modo tutor
-                      </button>
-                    </div>
-                  </div>
-                </aside>
-
-                <div className="workspace">
-                  <div className="workspace-top">
-                    <h3>Workspace conectado para aprender mejor</h3>
-                    <span className="pill">Activo</span>
-                  </div>
-                  <p className="workspace-copy">
-                    Usa la landing para explorar y abre las rutas dedicadas si quieres enfocarte
-                    solo en investigacion o solo en estudio.
-                  </p>
-
-                  <div className="workspace-panels">
-                    <div className="panel">
-                      <span className="mini-label">Investigacion</span>
-                      <div className="report-list top-space">
-                        {researchFeatures.slice(0, 3).map((item) => (
-                          <div key={item}>{item}</div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="panel">
-                      <span className="mini-label">Estudio</span>
-                      <div className="card-list top-space">
-                        {studyFeatures.slice(0, 3).map((item, index) => (
-                          <div key={item} className="micro-card">
-                            <strong>{`Paso 0${index + 1}`}</strong>
-                            {item}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section id="workspace-live">
           <div className="wrap">
-            <div className="section-header reveal">
-              <div>
-                <h2>Pruebalo ahora mismo.</h2>
-                <p>
-                  El workspace sigue embebido en la landing, pero ahora tambien tienes accesos
-                  directos a <Link href="/investigacion">Investigacion</Link> y{" "}
-                  <Link href="/estudio">Estudio</Link>.
-                </p>
+            <div className="landing-hero-grid reveal">
+              <div className="landing-hero-copy">
+                <span className="eyebrow">{l.eyebrow}</span>
+                <h1 className="landing-headline">{l.headline}</h1>
+                <p className="landing-sub">{l.sub}</p>
+                <div className="action-row">
+                  <Link className="button primary" href="/estudio">{l.ctaPrimary}</Link>
+                  <Link className="button secondary" href="/investigacion">{l.ctaSecondary}</Link>
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                <Link className="button secondary" href="/investigacion" style={{ minHeight: 42, fontSize: 14 }}>
-                  Abrir Investigacion -&gt;
-                </Link>
-                <Link className="button primary" href="/estudio" style={{ minHeight: 42, fontSize: 14 }}>
-                  Abrir Estudio -&gt;
-                </Link>
-              </div>
-            </div>
 
-            <div className="reveal">
-              <WorkspaceApp activeTool={activeTool} onToolChange={setActiveTool} />
+              <div className="landing-proof-cards">
+                <div className="landing-proof-card lpc-blue">
+                  <span className="lpc-icon">R</span>
+                  <strong>{l.proofResearch}</strong>
+                  <p>{l.proofResearchDesc}</p>
+                  <Link href="/investigacion" className="lpc-link">{nav.research} -&gt;</Link>
+                </div>
+                <div className="landing-proof-card lpc-green">
+                  <span className="lpc-icon">S</span>
+                  <strong>{l.proofRetention}</strong>
+                  <p>{l.proofRetentionDesc}</p>
+                  <Link href="/estudio" className="lpc-link">{nav.study} -&gt;</Link>
+                </div>
+                <div className="landing-proof-card lpc-slate">
+                  <span className="lpc-icon">+</span>
+                  <strong>{l.proofTool}</strong>
+                  <p>{l.proofToolDesc}</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -245,54 +152,48 @@ export default function HomePage() {
           <div className="wrap">
             <div className="section-header reveal">
               <div>
-                <h2>Dos experiencias enfocadas, un mismo producto.</h2>
-                <p>
-                  La landing presenta el flujo completo y las paginas independientes te dejan entrar
-                  directo al modo que necesitas.
-                </p>
+                <h2>{l.featuresTitle}</h2>
+                <p>{l.featuresSub}</p>
               </div>
             </div>
-
             <div className="feature-rail reveal">
               <div className="feature-grid">
                 <article className="feature-card">
                   <div className="feature-top">
                     <div>
-                      <span className="mini-label">Flujos academicos</span>
-                      <h3 className="space-top-sm">Investigacion</h3>
+                      <span className="mini-label">{l.researchLabel}</span>
+                      <h3 className="space-top-sm">{l.researchHeading}</h3>
                     </div>
-                    <span className="compare-label">4 herramientas</span>
+                    <span className="compare-label">{l.researchEngine}</span>
                   </div>
                   <div className="feature-list">
-                    {researchFeatures.map((item) => (
-                      <div key={item} className="feature-item">
-                        {item}
+                    {t.researchFeatures.map((feature) => (
+                      <div key={feature.title} className="feature-item">
+                        <strong>{feature.title}</strong>
+                        {feature.description}
                       </div>
                     ))}
                   </div>
-                  <Link className="button primary" href="/investigacion" style={{ marginTop: 8 }}>
-                    Ir a Investigacion -&gt;
-                  </Link>
+                  <Link className="button primary" href="/investigacion" style={{ marginTop: 8 }}>{l.goResearch}</Link>
                 </article>
 
-                <article className="feature-card">
+                <article className="feature-card" id="study">
                   <div className="feature-top">
                     <div>
-                      <span className="mini-label">Flujos de retencion</span>
-                      <h3 className="space-top-sm">Estudio</h3>
+                      <span className="mini-label">{l.studyLabel}</span>
+                      <h3 className="space-top-sm">{l.studyHeading}</h3>
                     </div>
-                    <span className="compare-label study">4 herramientas</span>
+                    <span className="compare-label study">{l.studyEngine}</span>
                   </div>
                   <div className="feature-list">
-                    {studyFeatures.map((item) => (
-                      <div key={item} className="feature-item">
-                        {item}
+                    {t.studyFeatures.map((feature) => (
+                      <div key={feature.title} className="feature-item">
+                        <strong>{feature.title}</strong>
+                        {feature.description}
                       </div>
                     ))}
                   </div>
-                  <Link className="button primary" href="/estudio" style={{ marginTop: 8 }}>
-                    Ir a Estudio -&gt;
-                  </Link>
+                  <Link className="button primary" href="/estudio" style={{ marginTop: 8 }}>{l.goStudy}</Link>
                 </article>
               </div>
             </div>
@@ -303,17 +204,124 @@ export default function HomePage() {
           <div className="wrap">
             <div className="section-header reveal">
               <div>
-                <h2>Navegacion resultante.</h2>
-                <p>
-                  <strong>/</strong> muestra la landing con el workspace embebido,{" "}
-                  <strong>/investigacion</strong> abre ResearchMode a pantalla completa y{" "}
-                  <strong>/estudio</strong> abre el workspace de estudio con sidebar.
-                </p>
+                <h2>{l.workflowTitle}</h2>
+                <p>{l.workflowSub}</p>
+              </div>
+            </div>
+            <div className="workflow-board reveal">
+              <div className="workflow-grid">
+                <article className="timeline-card">
+                  <span className="mini-label">Flow</span>
+                  <div className="timeline-list top-space">
+                    {[
+                      { title: l.step1title, body: l.step1 },
+                      { title: l.step2title, body: l.step2 },
+                      { title: l.step3title, body: l.step3 },
+                      { title: l.step4title, body: l.step4 },
+                    ].map((step) => (
+                      <div key={step.title} className="timeline-step">
+                        <strong>{step.title}</strong>
+                        {step.body}
+                      </div>
+                    ))}
+                  </div>
+                </article>
+
+                <article className="workflow-card">
+                  <div>
+                    <span className="mini-label">Inside Noesis</span>
+                    <h3 className="workflow-title">Research mode and study mode share the same canvas.</h3>
+                  </div>
+                  <div className="workflow-canvas">
+                    <div className="canvas-row">
+                      <div className="canvas-box"><strong>Research mode</strong><span>Paper summary, literature review, research report, find sources.</span></div>
+                      <div className="canvas-box"><strong>Main canvas</strong><span>Focused workspace for uploads, prompts and generated reports.</span></div>
+                    </div>
+                    <div className="canvas-row">
+                      <div className="canvas-box"><strong>Study mode</strong><span>Flashcards, key concepts, tutor mode, simple summaries, my decks.</span></div>
+                      <div className="canvas-box"><strong>Review output</strong><span>Turn any explanation into an active recall set or deck in one click.</span></div>
+                    </div>
+                  </div>
+                </article>
               </div>
             </div>
           </div>
         </section>
+
+        <section id="pricing">
+          <div className="wrap">
+            <div className="pricing-shell reveal">
+              <div className="section-header section-tight">
+                <div>
+                  <h2>{l.pricingTitle}</h2>
+                  <p>{l.pricingSub}</p>
+                </div>
+              </div>
+              <div className="pricing-grid">
+                {t.pricing.map((card) => (
+                  <article key={card.label} className={`compare-card${"featured" in card && card.featured ? " featured" : ""}`}>
+                    <span className="compare-label">{card.label}</span>
+                    <div className="price">{card.price}</div>
+                    <p>{card.desc}</p>
+                    <ul>{card.items.map((item) => <li key={item}>{item}</li>)}</ul>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="waitlist-section">
+          <div className="wrap">
+            <div className="waitlist-shell reveal">
+              <span className="eyebrow" style={{ margin: "0 auto" }}>{l.waitlistEyebrow}</span>
+              <h2 style={{ whiteSpace: "pre-line" }}>{l.waitlistTitle}</h2>
+              <p>{l.waitlistSub}</p>
+              <WaitlistForm />
+            </div>
+          </div>
+        </section>
       </main>
+
+      <footer>
+        <div className="wrap">
+          <div className="footer-inner">
+            <div>
+              <div className="footer-brand">
+                <div className="footer-brand-mark"><Image src="/logo.jpeg" alt="Noesis AI" width={36} height={36} /></div>
+                <span>Noesis AI</span>
+              </div>
+              <p className="footer-tagline">{l.footerTagline}</p>
+            </div>
+            <div className="footer-links-grid">
+              <div className="footer-col">
+                <h4>{l.footerProduct}</h4>
+                <Link href="/investigacion">{t.nav.research}</Link>
+                <Link href="/estudio">{t.nav.study}</Link>
+                <a href="#workflow">{t.nav.howItWorks}</a>
+              </div>
+              <div className="footer-col">
+                <h4>{l.footerCompany}</h4>
+                <a href="#">{l.footerAbout}</a>
+                <a href="#">{l.footerBlog}</a>
+                <a href="#">{l.footerContact}</a>
+              </div>
+              <div className="footer-col">
+                <h4>{l.footerLegal}</h4>
+                <a href="#">{l.footerPrivacy}</a>
+                <a href="#">{l.footerTerms}</a>
+              </div>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <span>(c) {new Date().getFullYear()} Noesis AI. {l.footerRights}</span>
+            <div className="footer-social">
+              <a href="#" aria-label="X">X</a>
+              <a href="#" aria-label="LinkedIn">in</a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </>
   );
 }

@@ -1,22 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import CardEditor from "./CardEditor";
-import type { Flashcard, Deck } from "./types";
-import type { CardVisual } from "./theme/types";
 import FlashCard from "./FlashCard";
+import type { Deck, Flashcard } from "./types";
+import type { CardVisual } from "./theme/types";
 
 interface Props {
   deck: Deck | null;
   decks: Deck[];
-  onSelectDeck: (d: Deck) => void;
+  onSelectDeck: (deck: Deck) => void;
   onSaveCardVisuals?: (
     deckId: string,
     cardVisuals: Record<string, Partial<CardVisual>>,
   ) => Promise<void>;
 }
 
-export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVisuals }: Props) {
+export default function FlashcardStudy({
+  deck,
+  decks,
+  onSelectDeck,
+  onSaveCardVisuals,
+}: Props) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [results, setResults] = useState<Record<string, "easy" | "hard" | "wrong">>({});
@@ -26,30 +31,29 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
   const [cardVisuals, setCardVisuals] = useState<Record<string, Partial<CardVisual>>>({});
 
   useEffect(() => {
-    if (deck) {
-      setQueue([...deck.cards].sort(() => Math.random() - 0.5));
-      setIndex(0);
-      setFlipped(false);
-      setResults({});
-      setDone(false);
-      setCardVisuals(
-        Object.fromEntries(
-          deck.cards
-            .filter((card) => !!card.visual)
-            .map((card) => [card.id, card.visual as Partial<CardVisual>]),
-        ),
-      );
-    }
+    if (!deck) return;
+
+    setQueue([...deck.cards].sort(() => Math.random() - 0.5));
+    setIndex(0);
+    setFlipped(false);
+    setResults({});
+    setDone(false);
+    setCardVisuals(
+      Object.fromEntries(
+        deck.cards
+          .filter((card) => !!card.visual)
+          .map((card) => [card.id, card.visual as Partial<CardVisual>]),
+      ),
+    );
   }, [deck]);
 
   if (!deck || decks.length === 0) {
     return (
       <div className="ws-panel ws-panel-centered">
         <div className="study-empty">
-          <div className="study-empty-icon">🃏</div>
-          <h2 className="study-empty-title">No tenés mazos todavía</h2>
+          <h2 className="study-empty-title">No tenes mazos todavia</h2>
           <p className="study-empty-sub">
-            Generá flashcards desde el panel de la izquierda y guardá tu primer mazo para
+            Genera flashcards desde el panel de la izquierda y guarda tu primer mazo para
             empezar a repasar.
           </p>
         </div>
@@ -61,16 +65,19 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
     return (
       <div className="ws-panel">
         <div className="ws-panel-header">
-          <h2 className="ws-panel-title">🃏 Repasar flashcards</h2>
-          <p className="ws-panel-sub">Elegí un mazo para empezar a estudiar.</p>
+          <h2 className="ws-panel-title">Repasar flashcards</h2>
+          <p className="ws-panel-sub">Elegi un mazo para empezar a estudiar.</p>
         </div>
         <div className="study-deck-picker">
-          {decks.map((d) => (
-            <button key={d.id} className="study-deck-option" onClick={() => onSelectDeck(d)}>
-              <span className="study-deck-emoji">📚</span>
+          {decks.map((currentDeck) => (
+            <button
+              key={currentDeck.id}
+              className="study-deck-option"
+              onClick={() => onSelectDeck(currentDeck)}
+            >
               <div>
-                <strong>{d.name}</strong>
-                <span>{d.cards.length} tarjetas</span>
+                <strong>{currentDeck.name}</strong>
+                <span>{currentDeck.cards.length} tarjetas</span>
               </div>
             </button>
           ))}
@@ -86,13 +93,16 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
 
   function mark(result: "easy" | "hard" | "wrong") {
     if (!card) return;
+
     setResults((prev) => ({ ...prev, [card.id]: result }));
     setFlipped(false);
+
     if (index + 1 >= total) {
       setDone(true);
-    } else {
-      setIndex((i) => i + 1);
+      return;
     }
+
+    setIndex((currentIndex) => currentIndex + 1);
   }
 
   async function updateCardVisual(cardId: string, visual: Partial<CardVisual>) {
@@ -100,7 +110,7 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
 
     const nextVisuals = { ...cardVisuals, [cardId]: visual };
     setCardVisuals(nextVisuals);
-    setQueue((prev) => prev.map((card) => (card.id === cardId ? { ...card, visual } : card)));
+    setQueue((prev) => prev.map((item) => (item.id === cardId ? { ...item, visual } : item)));
     setEditingCard((prev) => (prev?.id === cardId ? { ...prev, visual } : prev));
 
     if (onSaveCardVisuals) {
@@ -109,32 +119,36 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
   }
 
   function restart() {
-    setQueue([...deck!.cards].sort(() => Math.random() - 0.5));
+    if (!deck) return;
+
+    setQueue([...deck.cards].sort(() => Math.random() - 0.5));
     setIndex(0);
     setFlipped(false);
     setResults({});
     setDone(false);
   }
 
-  const easy = Object.values(results).filter((r) => r === "easy").length;
-  const hard = Object.values(results).filter((r) => r === "hard").length;
-  const wrong = Object.values(results).filter((r) => r === "wrong").length;
+  const easy = Object.values(results).filter((value) => value === "easy").length;
+  const hard = Object.values(results).filter((value) => value === "hard").length;
+  const wrong = Object.values(results).filter((value) => value === "wrong").length;
 
   if (done) {
     return (
       <div className="ws-panel ws-panel-centered">
         <div className="study-done">
           <div className="study-done-emoji">🎉</div>
-          <h2 className="study-done-title">¡Sesión completada!</h2>
-          <p className="study-done-sub">Repasaste <strong>{total}</strong> tarjetas del mazo <em>{deck.name}</em>.</p>
+          <h2 className="study-done-title">Sesion completada</h2>
+          <p className="study-done-sub">
+            Repasaste <strong>{total}</strong> tarjetas del mazo <em>{deck.name}</em>.
+          </p>
           <div className="study-results">
             <div className="study-result easy">
               <strong>{easy}</strong>
-              <span>Fácil</span>
+              <span>Facil</span>
             </div>
             <div className="study-result hard">
               <strong>{hard}</strong>
-              <span>Difícil</span>
+              <span>Dificil</span>
             </div>
             <div className="study-result wrong">
               <strong>{wrong}</strong>
@@ -142,7 +156,7 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
             </div>
           </div>
           <button className="study-restart-btn" onClick={restart}>
-            Volver a repasar →
+            Volver a repasar
           </button>
         </div>
       </div>
@@ -153,7 +167,7 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
     <div className="ws-panel">
       <div className="ws-panel-header">
         <div>
-          <h2 className="ws-panel-title">🃏 {deck.name}</h2>
+          <h2 className="ws-panel-title">{deck.name}</h2>
           <p className="ws-panel-sub">
             Tarjeta {index + 1} de {total} · {answered} respondidas
           </p>
@@ -162,30 +176,30 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
           <select
             className="study-deck-select"
             value={deck.id}
-            onChange={(e) => {
-              const d = decks.find((x) => x.id === e.target.value);
-              if (d) onSelectDeck(d);
+            onChange={(event) => {
+              const nextDeck = decks.find((item) => item.id === event.target.value);
+              if (nextDeck) onSelectDeck(nextDeck);
             }}
           >
-            {decks.map((d) => (
-              <option key={d.id} value={d.id}>{d.name}</option>
+            {decks.map((currentDeck) => (
+              <option key={currentDeck.id} value={currentDeck.id}>
+                {currentDeck.name}
+              </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="study-progress-bar">
         <div className="study-progress-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Card */}
       <div className="study-stage">
         {card && (
           <FlashCard
             card={{ ...card, visual: { ...card.visual, ...(cardVisuals[card.id] ?? {}) } }}
             flipped={flipped}
-            onClick={() => setFlipped((f) => !f)}
+            onClick={() => setFlipped((value) => !value)}
             onEdit={(currentCard) =>
               setEditingCard({
                 ...currentCard,
@@ -200,17 +214,18 @@ export default function FlashcardStudy({ deck, decks, onSelectDeck, onSaveCardVi
         {flipped && (
           <div className="study-actions">
             <button className="study-action wrong" onClick={() => mark("wrong")}>
-              😵 No la sabía
+              No la sabia
             </button>
             <button className="study-action hard" onClick={() => mark("hard")}>
-              🤔 Difícil
+              Dificil
             </button>
             <button className="study-action easy" onClick={() => mark("easy")}>
-              ✅ Fácil
+              Facil
             </button>
           </div>
         )}
       </div>
+
       {editingCard && (
         <CardEditor
           card={editingCard}

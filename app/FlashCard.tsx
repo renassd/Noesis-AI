@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, type CSSProperties, type KeyboardEvent } from "react";
+import { renderInlineRichText } from "./lib/renderRichText";
 import { useTheme } from "./theme/ThemeContext";
 import { CARD_TEMPLATES } from "./theme/card-templates";
 import type { CardSticker, CardVisual } from "./theme/types";
@@ -21,22 +22,17 @@ interface FlashCardProps {
   onEdit?: (card: FlashCardData) => void;
 }
 
-function renderCardText(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\*\*\*(.*?)\*\*\*/g, "<strong><em>$1</em></strong>")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/__(.*?)__/g, "<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>");
+function splitBg(value: string): { backgroundColor?: string; backgroundImage?: string } {
+  if (!value) return {};
+  return value.startsWith("linear-gradient") || value.startsWith("radial-gradient")
+    ? { backgroundImage: value }
+    : { backgroundColor: value };
 }
 
 function CornerAccent({ type, accentColor }: { type: CardVisual["cornerAccent"]; accentColor: string }) {
   if (type === "none") return null;
-  if (type === "dot") return <div className="fc-corner-accent fc-corner-dot" style={{ background: accentColor }} aria-hidden="true" />;
-  if (type === "line") return <div className="fc-corner-accent fc-corner-line" style={{ background: accentColor }} aria-hidden="true" />;
+  if (type === "dot") return <div className="fc-corner-accent fc-corner-dot" style={{ backgroundColor: accentColor }} aria-hidden="true" />;
+  if (type === "line") return <div className="fc-corner-accent fc-corner-line" style={{ backgroundColor: accentColor }} aria-hidden="true" />;
   return <div className="fc-corner-accent fc-corner-arc" style={{ borderColor: accentColor }} aria-hidden="true" />;
 }
 
@@ -86,23 +82,30 @@ export default function FlashCard({
 
   const template = CARD_TEMPLATES[visual.template];
 
+  const frontBgValue = visual.frontBg || template.frontBg;
+  const backBgValue = visual.backBg || template.backBg;
+  const frontIsGradient = frontBgValue.startsWith("linear-gradient") || frontBgValue.startsWith("radial-gradient");
+  const backIsGradient = backBgValue.startsWith("linear-gradient") || backBgValue.startsWith("radial-gradient");
+
   const frontStyle: CSSProperties = {
-    background: visual.frontBg || template.frontBg,
+    ...splitBg(frontBgValue),
     color: visual.textColor || template.textColor,
-    backgroundImage:
-      visual.showPattern && template.patternSvg
-        ? `${template.patternSvg}, ${visual.frontBg || template.frontBg}`
-        : undefined,
+    backgroundImage: visual.showPattern && template.patternSvg
+      ? frontIsGradient
+        ? `${template.patternSvg}, ${frontBgValue}`
+        : template.patternSvg
+      : (frontIsGradient ? frontBgValue : undefined),
     borderColor: template.borderColor,
   };
 
   const backStyle: CSSProperties = {
-    background: visual.backBg || template.backBg,
+    ...splitBg(backBgValue),
     color: visual.textColor || template.textColor,
-    backgroundImage:
-      visual.showPattern && template.patternSvg
-        ? `${template.patternSvg}, ${visual.backBg || template.backBg}`
-        : undefined,
+    backgroundImage: visual.showPattern && template.patternSvg
+      ? backIsGradient
+        ? `${template.patternSvg}, ${backBgValue}`
+        : template.patternSvg
+      : (backIsGradient ? backBgValue : undefined),
     borderColor: template.accentColor,
   };
 
@@ -142,7 +145,7 @@ export default function FlashCard({
               Pregunta
             </span>
           )}
-          <p className="fc-text" dangerouslySetInnerHTML={{ __html: renderCardText(card.question) }} />
+          <div className="fc-text" dangerouslySetInnerHTML={{ __html: renderInlineRichText(card.question) }} />
           {variant === "study" && <span className="fc-hint">Clic para ver la respuesta</span>}
         </div>
 
@@ -154,7 +157,7 @@ export default function FlashCard({
               Respuesta
             </span>
           )}
-          <p className="fc-text" dangerouslySetInnerHTML={{ __html: renderCardText(card.answer) }} />
+          <div className="fc-text" dangerouslySetInnerHTML={{ __html: renderInlineRichText(card.answer) }} />
         </div>
       </div>
     </div>

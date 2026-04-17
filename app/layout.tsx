@@ -4,14 +4,16 @@ import "./globals.css";
 import "./workspace.css";
 import "./standalone.css";
 import "./globals-patch.css";
+import "katex/dist/katex.min.css";
 import "./theme/theme.css";
 import "./card-visual.css";
+import { LangProvider } from "./i18n";
 import { ThemeProvider } from "./theme/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Noesis AI",
   description:
-    "Plataforma de estudio con IA para investigacion, resumenes, flashcards y flujos de aprendizaje basados en la memoria.",
+    "Noesis connects understanding and remembering - research flows and memory tools in one place.",
 };
 
 export default function RootLayout({
@@ -20,9 +22,11 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="en">
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <LangProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </LangProvider>
       </body>
     </html>
   );

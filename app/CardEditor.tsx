@@ -37,6 +37,13 @@ function diffVisual(visual: CardVisual): Partial<CardVisual> {
   return diff;
 }
 
+function bgStyle(value: string): { backgroundColor?: string; backgroundImage?: string } {
+  if (!value) return {};
+  return value.startsWith("linear-gradient") || value.startsWith("radial-gradient")
+    ? { backgroundImage: value }
+    : { backgroundColor: value };
+}
+
 export default function CardEditor({ card, onSave, onClose }: CardEditorProps) {
   const [visual, setVisual] = useState<CardVisual>(() => resolveVisual(card.visual));
   const [previewFlipped, setPreviewFlipped] = useState(false);
@@ -132,7 +139,7 @@ export default function CardEditor({ card, onSave, onClose }: CardEditorProps) {
                       title={template.label}
                       type="button"
                     >
-                      <span className="ce-template-swatch" style={{ background: template.frontBg }} />
+                      <span className="ce-template-swatch" style={bgStyle(template.frontBg)} />
                       <span className="ce-template-emoji">{template.emoji}</span>
                       <span className="ce-template-label">{template.label}</span>
                     </button>
@@ -158,7 +165,7 @@ export default function CardEditor({ card, onSave, onClose }: CardEditorProps) {
                     <div key={key} className="ce-color-field">
                       <span className="ce-color-label">{label}</span>
                       <div className="ce-color-row">
-                        <div className="ce-color-preview" style={{ background: value || fallback }} />
+                        <div className="ce-color-preview" style={{ backgroundColor: value || fallback }} />
                         <input
                           type="color"
                           className="ce-color-input"

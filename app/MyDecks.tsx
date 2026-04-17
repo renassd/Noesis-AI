@@ -40,7 +40,6 @@ export default function MyDecks({
     return (
       <div className="ws-panel ws-panel-centered">
         <div className="study-empty">
-          <div className="study-empty-icon">...</div>
           <h2 className="study-empty-title">Cargando mazos</h2>
           <p className="study-empty-sub">Estamos trayendo tus decks guardados.</p>
         </div>
@@ -52,7 +51,6 @@ export default function MyDecks({
     return (
       <div className="ws-panel ws-panel-centered">
         <div className="study-empty">
-          <div className="study-empty-icon">M</div>
           <h2 className="study-empty-title">No tenes mazos guardados</h2>
           <p className="study-empty-sub">
             Genera flashcards con IA y guarda tu primer mazo para que aparezca aca.
@@ -75,7 +73,6 @@ export default function MyDecks({
       <div className="decks-grid">
         {decks.map((deck) => (
           <div key={deck.id} className="deck-card">
-            <div className="deck-card-icon">M</div>
             <div className="deck-card-body">
               {editingId === deck.id ? (
                 <input

@@ -1,78 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { detectLang, langInstruction } from "./lib/detectLang";
+import { renderMarkdownWithMath } from "./lib/renderRichText";
 
 type Message = { role: "user" | "assistant"; content: string };
 type ToolId = "summary" | "review" | "explain" | "writing";
-
-function renderMarkdown(text: string): string {
-  const lines = text.split("\n");
-  const out: string[] = [];
-  let inList = false;
-
-  for (const line of lines) {
-    const isListItem = /^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line);
-
-    if (inList && !isListItem && line.trim() !== "") {
-      out.push("</ul>");
-      inList = false;
-    }
-
-    if (/^###\s+/.test(line)) {
-      out.push(`<h4>${inlineMarkdown(line.replace(/^###\s+/, ""))}</h4>`);
-      continue;
-    }
-    if (/^##\s+/.test(line)) {
-      out.push(`<h3>${inlineMarkdown(line.replace(/^##\s+/, ""))}</h3>`);
-      continue;
-    }
-    if (/^#\s+/.test(line)) {
-      out.push(`<h3>${inlineMarkdown(line.replace(/^#\s+/, ""))}</h3>`);
-      continue;
-    }
-    if (/^---+$/.test(line.trim())) {
-      out.push("<hr />");
-      continue;
-    }
-    if (isListItem) {
-      if (!inList) {
-        out.push("<ul>");
-        inList = true;
-      }
-      const itemText = line.replace(/^[-*]\s+/, "").replace(/^\d+\.\s+/, "");
-      out.push(`<li>${inlineMarkdown(itemText)}</li>`);
-      continue;
-    }
-    if (line.trim() === "") {
-      if (inList) {
-        out.push("</ul>");
-        inList = false;
-      }
-      out.push('<div class="rm-spacer"></div>');
-      continue;
-    }
-
-    out.push(`<p>${inlineMarkdown(line)}</p>`);
-  }
-
-  if (inList) {
-    out.push("</ul>");
-  }
-
-  return out.join("\n");
-}
-
-function inlineMarkdown(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\*\*\*(.*?)\*\*\*/g, "<strong><em>$1</em></strong>")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/__(.*?)__/g, "<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>");
-}
 
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
 
@@ -127,16 +60,20 @@ function detectIntent(input: string): InputIntent {
   return "normal";
 }
 
-const BASE_INSTRUCTIONS = `
-Reglas de formato que SIEMPRE debes seguir:
-- Responde en espanol.
-- Usa markdown: **negrita** para terminos clave, ## para secciones, - para listas.
-- No uses tablas. No uses bloques de codigo salvo para codigo real.
-- Se directo: empieza con la respuesta, no con "Por supuesto" ni "Claro que si".
-`.trim();
+function baseInstructions(langHint: string): string {
+  return `${langHint}
+Formatting rules you must always follow:
+- Use markdown: **bold** for key terms, ## for sections, - for lists.
+- Do not use tables. Do not use code blocks unless showing real code.
+- Be direct: start with the answer.
+- When writing mathematical or scientific formulas, use valid LaTeX. Use $...$ for inline formulas and $$...$$ for block formulas.`;
+}
 
-const SYSTEM_PROMPTS: Record<Exclude<ToolId, "review">, string> = {
-  summary: `Sos un asistente especializado en resumir textos academicos y tecnicos.
+function getSystemPrompt(tool: Exclude<ToolId, "review">, langHint: string): string {
+  const base = baseInstructions(langHint);
+  switch (tool) {
+    case "summary":
+      return `You are a specialist assistant for summarising academic and technical texts.
 
 Cuando recibas un texto o paper:
 1. Identifica el **objetivo o pregunta central**.
@@ -147,8 +84,9 @@ Cuando recibas un texto o paper:
 
 Si el input es muy corto o no parece un texto para resumir, pide mas contexto de forma amable.
 
-${BASE_INSTRUCTIONS}`,
-  explain: `Sos un tutor experto que explica conceptos complejos de forma clara y progresiva.
+${base}`;
+    case "explain":
+      return `You are an expert tutor who explains complex concepts clearly and progressively.
 
 Cuando te pidan explicar algo:
 1. Empieza con una **definicion simple** en 1-2 oraciones.
@@ -159,8 +97,9 @@ Cuando te pidan explicar algo:
 
 Adapta la profundidad al nivel que infieras del input.
 
-${BASE_INSTRUCTIONS}`,
-  writing: `Sos un asistente de escritura academica y tecnica.
+${base}`;
+    case "writing":
+      return `You are an academic and technical writing assistant.
 
 Tu trabajo es ayudar a organizar, estructurar y mejorar textos. Segun lo que te pasen:
 - Si te dan un **texto para mejorar**: senala los problemas concretos y propone una version revisada.
@@ -168,10 +107,11 @@ Tu trabajo es ayudar a organizar, estructurar y mejorar textos. Segun lo que te 
 - Si te piden **una seccion especifica**: escribila siguiendo convenciones academicas.
 - Si el input es ambiguo, pregunta que tipo de ayuda necesita.
 
-${BASE_INSTRUCTIONS}`,
-};
+${base}`;
+  }
+}
 
-function buildReviewPrompt(intent: InputIntent, input: string): string {
+function buildReviewPrompt(intent: InputIntent, input: string, langHint: string): string {
   switch (intent) {
     case "single_word":
       return `Sos un asistente academico versatil. El usuario escribio solo una palabra: "${input}".
@@ -181,7 +121,7 @@ Luego, ofrece dos opciones explicitas al usuario:
 - "Si quieres una **revision de literatura academica** sobre este tema (papers, autores, debates), dimelo y la hago."
 No hagas una revision de literatura ahora. Solo explica y ofrece opciones.
 
-${BASE_INSTRUCTIONS}`;
+${baseInstructions(langHint)}`;
     case "short_concept":
       return `Sos un asistente academico. El usuario escribio una frase corta: "${input}".
 No asumas que quiere una revision de literatura formal.
@@ -192,7 +132,7 @@ Responde con:
 3. Una mencion de si hay debates o corrientes relevantes.
 4. Al final, pregunta: "Quieres que profundice en alguna corriente teorica o aspecto especifico?"
 
-${BASE_INSTRUCTIONS}`;
+${baseInstructions(langHint)}`;
     case "research_request":
       return `Sos un asistente especializado en revisiones de literatura academica.
 El usuario claramente esta buscando una revision formal. Responde con:
@@ -212,7 +152,7 @@ Identifica que no se sabe todavia o que areas estan subinvestigadas.
 ## Proximos pasos sugeridos
 Sugiere 2-3 lineas de investigacion o lecturas recomendadas.
 
-${BASE_INSTRUCTIONS}`;
+${baseInstructions(langHint)}`;
     default:
       return `Sos un asistente especializado en revisiones de literatura academica.
 Analiza el input del usuario y responde con una revision estructurada que incluya:
@@ -234,7 +174,7 @@ Lecturas o lineas de trabajo recomendadas.
 
 Si el input no es suficientemente especifico para una revision, pide mas contexto indicando que informacion necesitas.
 
-${BASE_INSTRUCTIONS}`;
+${baseInstructions(langHint)}`;
   }
 }
 
@@ -260,7 +200,7 @@ const EMPTY_HINTS: Record<ToolId, string> = {
 };
 
 function MarkdownMessage({ content }: { content: string }) {
-  return <div className="rm-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />;
+  return <div className="rm-content" dangerouslySetInnerHTML={{ __html: renderMarkdownWithMath(content) }} />;
 }
 
 export default function ResearchMode() {
@@ -290,10 +230,12 @@ export default function ResearchMode() {
     const trimmed = input.trim();
     if (!trimmed || loading) return;
 
+    const langHint = langInstruction(detectLang(trimmed));
+
     const systemPrompt =
       activeTool === "review"
-        ? buildReviewPrompt(detectIntent(trimmed), trimmed)
-        : SYSTEM_PROMPTS[activeTool as Exclude<ToolId, "review">];
+        ? buildReviewPrompt(detectIntent(trimmed), trimmed, langHint)
+        : getSystemPrompt(activeTool as Exclude<ToolId, "review">, langHint);
 
     const userMsg: Message = { role: "user", content: trimmed };
     const updated = [...currentMsgs, userMsg];

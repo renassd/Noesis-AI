@@ -83,6 +83,14 @@
   -webkit-box-orient: vertical;
 }
 
+.fc-text > *:first-child {
+  margin-top: 0;
+}
+
+.fc-text > *:last-child {
+  margin-bottom: 0;
+}
+
 .fc-card--study .fc-text {
   display: block;
   overflow: auto;
@@ -95,6 +103,11 @@
 .fc-card--grid .fc-text {
   font-size: 12px;
   -webkit-line-clamp: 4;
+}
+
+.fc-card--grid .fc-text p,
+.fc-card--study .fc-text p {
+  margin: 0 0 0.5em;
 }
 
 .fc-text strong {
@@ -111,6 +124,56 @@
   background: rgba(0, 0, 0, 0.08);
   font-family: "JetBrains Mono", monospace;
   font-size: 0.85em;
+}
+
+.fc-text .math-inline {
+  display: inline-flex;
+  align-items: baseline;
+  padding: 0 0.18em;
+  margin: 0 0.08em;
+  border-radius: 0.45em;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  vertical-align: -0.08em;
+}
+
+.fc-text .math-block,
+.fc-text .katex-display {
+  margin: 0.7em auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+}
+
+.fc-text .math-block {
+  max-width: 100%;
+  padding: 0.55em 0.7em;
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.fc-text .katex {
+  font-size: 1em;
+  line-height: 1.25;
+}
+
+.fc-card--grid .fc-text .katex {
+  font-size: 0.92em;
+}
+
+.fc-card--grid .fc-text .math-inline {
+  padding: 0 0.12em;
+  margin: 0 0.04em;
+  border-radius: 0.35em;
+}
+
+.fc-card--grid .fc-text .math-block {
+  padding: 0.38em 0.5em;
+  margin: 0.5em 0;
+  border-radius: 10px;
+}
+
+.fc-card--study .fc-text .math-block {
+  max-width: min(100%, 28rem);
 }
 
 .fc-hint {

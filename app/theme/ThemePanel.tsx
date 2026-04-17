@@ -48,18 +48,25 @@ const CARD_SIZES: { id: CardSize; label: string }[] = [
   { id: "large", label: "Grande" },
 ];
 
+function bgStyle(value: string): { backgroundColor?: string; backgroundImage?: string } {
+  if (!value) return {};
+  return value.startsWith("linear-gradient") || value.startsWith("radial-gradient")
+    ? { backgroundImage: value }
+    : { backgroundColor: value };
+}
+
 function PreviewCard({ visual }: { visual: CardVisual }) {
   const [flipped, setFlipped] = useState(false);
   const template = CARD_TEMPLATES[visual.template ?? "clean"];
 
   const frontStyle: CSSProperties = {
-    background: visual.frontBg || template.frontBg,
+    ...bgStyle(visual.frontBg || template.frontBg),
     color: visual.textColor || template.textColor,
     borderColor: template.borderColor,
   };
 
   const backStyle: CSSProperties = {
-    background: visual.backBg || template.backBg,
+    ...bgStyle(visual.backBg || template.backBg),
     color: visual.textColor || template.textColor,
     borderColor: template.accentColor,
   };
@@ -71,7 +78,7 @@ function PreviewCard({ visual }: { visual: CardVisual }) {
           {visual.cornerAccent !== "none" && (
             <div
               className={`fc-corner-accent fc-corner-${visual.cornerAccent}`}
-              style={{ background: template.accentColor, borderColor: template.accentColor }}
+              style={{ backgroundColor: template.accentColor, borderColor: template.accentColor }}
             />
           )}
           {visual.stickers.map((sticker, index) => (
@@ -283,7 +290,7 @@ export default function ThemePanel({ open, onClose }: { open: boolean; onClose: 
                   title={template.label}
                   type="button"
                 >
-                  <span className="tp-template-swatch" style={{ background: template.frontBg, borderColor: template.borderColor }} />
+                  <span className="tp-template-swatch" style={{ ...bgStyle(template.frontBg), borderColor: template.borderColor }} />
                   <span className="tp-template-label">{template.label}</span>
                 </button>
               ))}

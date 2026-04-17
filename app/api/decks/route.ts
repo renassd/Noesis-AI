@@ -11,11 +11,31 @@ export async function GET(req: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data: decks, error } = await supabaseAdmin
+    let decks:
+      | Array<{
+          id: string;
+          name: string;
+          created_at: string;
+          flashcards: Array<{ id: string; question: string; answer: string; visual?: unknown }> | null;
+        }>
+      | null
+      | undefined;
+    let error: { message?: string } | null = null;
+
+    ({ data: decks, error } = await supabaseAdmin
       .from("decks")
       .select("id, name, created_at, flashcards(id, question, answer, visual)")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }));
+
+    if (error?.message?.includes("visual")) {
+      console.warn("visual column not found; retrying without it. Run fix-visual-column.sql to add it.");
+      ({ data: decks, error } = await supabaseAdmin
+        .from("decks")
+        .select("id, name, created_at, flashcards(id, question, answer)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }));
+    }
 
     if (error) {
       console.error("Error fetching decks:", error);
@@ -23,22 +43,17 @@ export async function GET(req: NextRequest) {
     }
 
     const normalizedDecks =
-      decks?.map(
-        (deck: {
-          id: string;
-          name: string;
-          created_at: string;
-          flashcards: Array<{ id: string; question: string; answer: string; visual?: unknown }> | null;
-        }) => ({
-          id: deck.id,
-          name: deck.name,
-          createdAt: deck.created_at,
-          cards: (deck.flashcards ?? []).map((card) => ({
-            id: card.id,
-            question: card.question,
-            answer: card.answer,
-            visual:
-              typeof card.visual === "string"
+      decks?.map((deck) => ({
+        id: deck.id,
+        name: deck.name,
+        createdAt: deck.created_at,
+        cards: (deck.flashcards ?? []).map((card) => ({
+          id: card.id,
+          question: card.question,
+          answer: card.answer,
+          visual:
+            card.visual != null
+              ? typeof card.visual === "string"
                 ? (() => {
                     try {
                       return JSON.parse(card.visual);
@@ -46,10 +61,10 @@ export async function GET(req: NextRequest) {
                       return undefined;
                     }
                   })()
-                : (card.visual ?? undefined),
-          })),
-        }),
-      ) ?? [];
+                : card.visual
+              : undefined,
+        })),
+      })) ?? [];
 
     return NextResponse.json(normalizedDecks);
   } catch (error) {
@@ -115,7 +130,6 @@ export async function POST(req: NextRequest) {
 
     if (cardsError) {
       await supabaseAdmin.from("decks").delete().eq("id", deck.id);
-
       return NextResponse.json({ error: cardsError.message }, { status: 500 });
     }
 
@@ -124,13 +138,12 @@ export async function POST(req: NextRequest) {
         id: deck.id,
         name: deck.name,
         createdAt: deck.created_at,
-        cards:
-          insertedCards?.map((card) => ({
-            id: card.id,
-            question: card.question,
-            answer: card.answer,
-            visual: card.visual ?? undefined,
-          })) ?? [],
+        cards: (insertedCards ?? []).map((card) => ({
+          id: card.id,
+          question: card.question,
+          answer: card.answer,
+          visual: card.visual ?? undefined,
+        })),
       },
       { status: 201 },
     );

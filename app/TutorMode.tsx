@@ -1,91 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { detectLang, langInstruction } from "./lib/detectLang";
+import { renderMarkdownWithMath } from "./lib/renderRichText";
 
 type Message = { role: "user" | "assistant"; content: string };
 
-function renderMarkdown(text: string): string {
-  const lines = text.split("\n");
-  const out: string[] = [];
-  let inList = false;
-
-  for (const line of lines) {
-    const isListItem = /^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line);
-
-    if (inList && !isListItem && line.trim() !== "") {
-      out.push("</ul>");
-      inList = false;
-    }
-
-    if (/^###\s+/.test(line)) {
-      out.push(`<h4>${inline(line.replace(/^###\s+/, ""))}</h4>`);
-      continue;
-    }
-    if (/^##\s+/.test(line)) {
-      out.push(`<h3>${inline(line.replace(/^##\s+/, ""))}</h3>`);
-      continue;
-    }
-    if (/^#\s+/.test(line)) {
-      out.push(`<h3>${inline(line.replace(/^#\s+/, ""))}</h3>`);
-      continue;
-    }
-    if (/^---+$/.test(line.trim())) {
-      out.push("<hr />");
-      continue;
-    }
-    if (isListItem) {
-      if (!inList) {
-        out.push("<ul>");
-        inList = true;
-      }
-      const itemText = line.replace(/^[-*]\s+/, "").replace(/^\d+\.\s+/, "");
-      out.push(`<li>${inline(itemText)}</li>`);
-      continue;
-    }
-    if (line.trim() === "") {
-      if (inList) {
-        out.push("</ul>");
-        inList = false;
-      }
-      out.push('<div class="rm-spacer"></div>');
-      continue;
-    }
-    out.push(`<p>${inline(line)}</p>`);
-  }
-
-  if (inList) {
-    out.push("</ul>");
-  }
-  return out.join("\n");
-}
-
-function inline(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\*\*\*(.*?)\*\*\*/g, "<strong><em>$1</em></strong>")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/__(.*?)__/g, "<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>");
-}
-
 function MarkdownMessage({ content }: { content: string }) {
-  return <div className="rm-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />;
+  return <div className="rm-content" dangerouslySetInnerHTML={{ __html: renderMarkdownWithMath(content) }} />;
 }
 
-function buildTutorSystem(topic: string): string {
-  return `Sos Noesis, un tutor academico experto. El estudiante quiere aprender sobre: "${topic}".
+function buildTutorSystem(topic: string, langHint: string): string {
+  return `You are Noesis, an expert academic tutor. The student wants to learn about: "${topic}".
 
-Tu metodo de ensenanza:
-1. **Primera respuesta**: Explica el concepto con una analogia clara. Usa ejemplos concretos. Termina con una pregunta de comprension directa.
-2. **Respuestas siguientes**: Si el estudiante respondio bien, avanza o profundiza. Si respondio mal o parcialmente, reexplica desde otro angulo.
-3. Se conciso: maximo 3-4 parrafos por respuesta.
-4. Usa **negrita** para terminos clave y listas con guiones para pasos o partes.
-5. Manten un tono cercano, alentador y directo.
+Your teaching method:
+1. **First response**: Explain the concept with a clear analogy and concrete examples. End with a direct comprehension question.
+2. **Follow-up responses**: If the student answered well, advance or deepen. If they answered poorly, re-explain from a different angle.
+3. Be concise: maximum 3-4 paragraphs per response.
+4. Use **bold** for key terms and dashes for steps or parts.
+5. Keep a warm, encouraging and direct tone.
+- When writing mathematical or scientific formulas, use valid LaTeX. Use $...$ for inline formulas and $$...$$ for block formulas.
 
-Responde siempre en espanol.`;
+${langHint}`;
 }
 
 export default function TutorMode() {
@@ -123,7 +59,7 @@ export default function TutorMode() {
     setLoading(true);
 
     try {
-      const text = await callAI([firstMsg], buildTutorSystem(topic));
+      const text = await callAI([firstMsg], buildTutorSystem(topic, langInstruction(detectLang(topic.trim()))));
       setMessages([firstMsg, { role: "assistant", content: text }]);
     } catch {
       setMessages([firstMsg, { role: "assistant", content: "Ocurrio un error. Intenta de nuevo." }]);
@@ -141,7 +77,7 @@ export default function TutorMode() {
     setLoading(true);
 
     try {
-      const text = await callAI(updated, buildTutorSystem(topic));
+      const text = await callAI(updated, buildTutorSystem(topic, langInstruction(detectLang(input.trim()))));
       setMessages([...updated, { role: "assistant", content: text }]);
     } catch {
       setMessages([...updated, { role: "assistant", content: "Ocurrio un error. Intenta de nuevo." }]);
