@@ -9,6 +9,7 @@ import "./theme/theme.css";
 import "./card-visual.css";
 import { LangProvider } from "./i18n";
 import { ThemeProvider } from "./theme/ThemeContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "Noesis AI",
@@ -23,9 +24,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <LangProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ThemeProvider>
         </LangProvider>
       </body>
     </html>
