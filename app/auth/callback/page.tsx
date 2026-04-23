@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -12,7 +12,7 @@ function resolveNextPath(value: string | null) {
   return value;
 }
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [message, setMessage] = useState("Conectando tu cuenta de Google...");
@@ -77,5 +77,30 @@ export default function AuthCallbackPage() {
         <p style={{ opacity: 0.8 }}>{message}</p>
       </div>
     </main>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "100vh",
+            display: "grid",
+            placeItems: "center",
+            padding: "24px",
+            textAlign: "center",
+          }}
+        >
+          <div>
+            <h1 style={{ fontSize: "1.5rem", marginBottom: "0.75rem" }}>Google Login</h1>
+            <p style={{ opacity: 0.8 }}>Conectando tu cuenta de Google...</p>
+          </div>
+        </main>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

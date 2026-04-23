@@ -12,6 +12,11 @@ const OCR_TIMEOUT_MS = 45_000;
 const EXTRACTION_TIMEOUT_MS = 60_000;
 
 type ExtractionMethod = "text" | "pdf" | "docx" | "image";
+type OcrRecognitionResult = {
+  data?: {
+    text?: string;
+  };
+};
 
 export type FileDetection = {
   detectedMime: string;
@@ -269,7 +274,11 @@ async function runOcrOnImage(buffer: Buffer): Promise<string> {
   const worker = await createOcrWorker();
 
   try {
-    const result = await withTimeout(worker.recognize(buffer), OCR_TIMEOUT_MS, "OCR");
+    const result = await withTimeout<OcrRecognitionResult>(
+      worker.recognize(buffer) as Promise<OcrRecognitionResult>,
+      OCR_TIMEOUT_MS,
+      "OCR",
+    );
     return normalizeText(result?.data?.text ?? "");
   } finally {
     await worker.terminate().catch(() => {});
