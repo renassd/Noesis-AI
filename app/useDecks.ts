@@ -1,23 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import type { CardVisual } from "./theme/types";
 import type { Deck } from "./types";
 
 const DECKS_STORAGE_KEY = "noesis_decks";
-
-function getUserId(): string {
-  const storageKey = "noesis_user_id";
-  const existingId = localStorage.getItem(storageKey);
-
-  if (existingId) {
-    return existingId;
-  }
-
-  const newId = crypto.randomUUID();
-  localStorage.setItem(storageKey, newId);
-  return newId;
-}
 
 function loadLocalDecks(): Deck[] {
   try {
@@ -43,8 +31,7 @@ export function useDecks() {
     setError("");
 
     try {
-      const userId = getUserId();
-      const res = await fetch(`/api/decks?userId=${encodeURIComponent(userId)}`);
+      const res = await fetchWithSupabaseAuth("/api/decks");
 
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -92,12 +79,10 @@ export function useDecks() {
         return localDeck;
       }
 
-      const userId = getUserId();
-      const res = await fetch("/api/decks", {
+      const res = await fetchWithSupabaseAuth("/api/decks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
           name,
           cards: cards.map((card) => ({
             question: card.question,
@@ -172,7 +157,7 @@ export function useDecks() {
     }
 
     try {
-      const res = await fetch(`/api/decks/${deckId}`, {
+      const res = await fetchWithSupabaseAuth(`/api/decks/${deckId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cardVisuals }),
@@ -200,7 +185,7 @@ export function useDecks() {
         return;
       }
 
-      const res = await fetch(`/api/decks/${id}`, { method: "DELETE" });
+      const res = await fetchWithSupabaseAuth(`/api/decks/${id}`, { method: "DELETE" });
 
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -233,7 +218,7 @@ export function useDecks() {
         return;
       }
 
-      const res = await fetch(`/api/decks/${id}`, {
+      const res = await fetchWithSupabaseAuth(`/api/decks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),

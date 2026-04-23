@@ -87,7 +87,7 @@ export function AuthActions() {
   }
 
   function signInWithGoogle() {
-    const resolvedEmail = formEmail.trim() || "google.user@noesis.ai";
+    const resolvedEmail = formEmail.trim() || "google.user@neuvra.ai";
     setEmail(resolvedEmail);
     setSignedIn(true);
     persistSession(true, resolvedEmail);
@@ -115,7 +115,7 @@ export function AuthActions() {
               </button>
 
               <div className="auth-modal-header">
-                <span className="eyebrow">Noesis AI</span>
+                <span className="eyebrow">Neuvra AI</span>
                 <h3>{mode === "signup" ? "Crear tu cuenta" : "Ingresar a tu cuenta"}</h3>
                 <p>
                   {mode === "signup"

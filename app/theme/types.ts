@@ -41,6 +41,9 @@ export type CardVisual = {
   stickers: CardSticker[];
   showPattern: boolean;
   cornerAccent: "none" | "dot" | "line" | "arc";
+  imageUrl?: string;
+  imageAlt?: string;
+  imagePrompt?: string;
 };
 
 export const DEFAULT_CARD_VISUAL: CardVisual = {

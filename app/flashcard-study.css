@@ -1,0 +1,163 @@
+/*
+  flashcard-study.css
+  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  Import AFTER card-visual.css in layout.tsx:
+    import "./flashcard-study.css";
+
+  Goal: pure click/tap flip â€” zero hover dependency.
+  All rules use .fc-card specificity anchor so they
+  reliably win over card-visual.css without !important spam.
+  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+*/
+
+/* â”€â”€ 1. Kill every hover transform on the inner wrapper â”€â”€ */
+
+/* Default (not flipped) â€” hover does nothing */
+.fc-card:hover .fc-inner,
+.fc-card:focus .fc-inner {
+  transform: none;
+}
+
+/* Flipped state â€” hover keeps the card flipped, doesn't add lift */
+.fc-card.fc-card--flipped:hover .fc-inner,
+.fc-card.fc-card--flipped:focus .fc-inner {
+  transform: rotateY(180deg);
+}
+
+/* Same for grid variant */
+.fc-card.fc-card--grid:hover .fc-inner {
+  transform: none;
+}
+
+.fc-card.fc-card--grid.fc-card--flipped:hover .fc-inner {
+  transform: rotateY(180deg);
+}
+
+/* â”€â”€ 2. Snappy, premium flip animation â”€â”€ */
+.fc-card .fc-inner {
+  transition: transform 0.36s cubic-bezier(0.4, 0.0, 0.2, 1);
+  will-change: transform; /* GPU compositing hint */
+}
+
+/* â”€â”€ 3. Click / tap feedback (micro-bounce on press) â”€â”€ */
+.fc-card:active .fc-inner {
+  /* Brief scale-down on press â€” feels physical */
+  transition: transform 0.10s ease !important;
+}
+
+.fc-card:not(.fc-card--flipped):active .fc-inner {
+  transform: scale(0.975);
+}
+
+.fc-card.fc-card--flipped:active .fc-inner {
+  transform: rotateY(180deg) scale(0.975);
+}
+
+/* â”€â”€ 4. Cursor + mobile tap â”€â”€ */
+.fc-card {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent; /* no blue flash on iOS */
+  touch-action: manipulation;              /* skip 300ms tap delay */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* â”€â”€ 5. Keyboard focus ring (not hover ring) â”€â”€ */
+.fc-card:focus-visible {
+  outline: 2px solid var(--blue-500, #4f8ef7);
+  outline-offset: 3px;
+  border-radius: var(--card-radius, 20px);
+}
+
+.fc-card:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* â”€â”€ 6. Hint strip â€” "click to see answer" / "click to go back" â”€â”€ */
+
+.fc-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: currentColor;
+  opacity: 0.42;
+  margin-top: auto;          /* pushed to bottom of face */
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+
+/* Lift opacity slightly when user hovers the whole card â€”
+   so the hint gets a bit more visible without the card moving */
+.fc-card:hover .fc-hint {
+  opacity: 0.62;
+}
+
+/* Back-face hint is slightly less prominent */
+.fc-face.fc-back .fc-hint {
+  opacity: 0.35;
+}
+
+.fc-card:hover .fc-face.fc-back .fc-hint {
+  opacity: 0.52;
+}
+
+/* â”€â”€ 7. Study mode: taller card, larger text â”€â”€ */
+
+.fc-card--study {
+  /* ensure face content stacks vertically with hint at bottom */
+}
+
+.fc-card--study .fc-face {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.fc-card--study .fc-text {
+  flex: 1;
+}
+
+/* â”€â”€ 8. Entrance animation for new cards â”€â”€ */
+
+@keyframes fc-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fc-card--study {
+  animation: fc-enter 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* â”€â”€ 9. Hint variants (front vs back) â”€â”€ */
+
+/* Front hint: animates in on first render to grab attention */
+@keyframes fc-hint-pulse {
+  0%   { opacity: 0;    transform: translateY(4px); }
+  40%  { opacity: 0.55; }
+  100% { opacity: 0.42; transform: translateY(0); }
+}
+
+.fc-hint--front {
+  animation: fc-hint-pulse 0.6s 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Back hint: static, no animation */
+.fc-hint--back {
+  opacity: 0.32;
+}
+
+.fc-card:hover .fc-hint--back {
+  opacity: 0.5;
+}

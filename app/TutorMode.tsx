@@ -1,8 +1,10 @@
 "use client";
 
+import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useEffect, useRef, useState } from "react";
 import { detectLang, langInstruction } from "./lib/detectLang";
 import { renderMarkdownWithMath } from "./lib/renderRichText";
+import { useLang } from "./i18n";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -11,7 +13,7 @@ function MarkdownMessage({ content }: { content: string }) {
 }
 
 function buildTutorSystem(topic: string, langHint: string): string {
-  return `You are Noesis, an expert academic tutor. The student wants to learn about: "${topic}".
+  return `You are Neuvra, an expert academic tutor. The student wants to learn about: "${topic}".
 
 Your teaching method:
 1. **First response**: Explain the concept with a clear analogy and concrete examples. End with a direct comprehension question.
@@ -25,6 +27,8 @@ ${langHint}`;
 }
 
 export default function TutorMode() {
+  const { t } = useLang();
+  const s = t.study;
   const [topic, setTopic] = useState("");
   const [started, setStarted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,7 +41,7 @@ export default function TutorMode() {
   }, [messages, loading]);
 
   async function callAI(msgs: Message[], system: string): Promise<string> {
-    const res = await fetch("/api/ai", {
+    const res = await fetchWithSupabaseAuth("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ max_tokens: 1000, system, messages: msgs }),
@@ -91,24 +95,22 @@ export default function TutorMode() {
       <div className="ws-panel ws-panel-centered">
         <div className="tutor-start">
           <div className="tutor-start-icon">Tutor</div>
-          <h2 className="tutor-start-title">Modo tutor</h2>
-          <p className="tutor-start-sub">
-            Escribe el tema que quieres aprender y Noesis te va a explicar paso a paso, verificando tu comprension en cada etapa.
-          </p>
+          <h2 className="tutor-start-title">{s.tutorTitle}</h2>
+          <p className="tutor-start-sub">{s.tutorDesc}</p>
           <div className="tutor-start-form">
             <input
               className="tutor-topic-input"
-              placeholder="Ej: fotosintesis, teorema de Bayes, sistema inmune..."
+              placeholder={s.tutorPlaceholder}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void startSession()}
             />
             <button className="tutor-start-btn" type="button" onClick={() => void startSession()} disabled={!topic.trim()}>
-              Empezar sesion -&gt;
+              {s.tutorStart}
             </button>
           </div>
           <div className="tutor-examples">
-            {["Mecanica cuantica basica", "Economia conductual", "El sistema inmune", "Machine Learning"].map((example) => (
+            {s.tutorExamples.map((example) => (
               <button key={example} className="tutor-example" type="button" onClick={() => setTopic(example)}>
                 {example}
               </button>
@@ -123,8 +125,8 @@ export default function TutorMode() {
     <div className="ws-panel ws-panel-chat">
       <div className="ws-panel-header">
         <div>
-          <h2 className="ws-panel-title">Modo tutor - {topic}</h2>
-          <p className="ws-panel-sub">Responde las preguntas del tutor para avanzar en el tema.</p>
+          <h2 className="ws-panel-title">{s.tutorHeader} - {topic}</h2>
+          <p className="ws-panel-sub">{s.tutorSubheader}</p>
         </div>
         <button
           className="tutor-reset-btn"
@@ -136,7 +138,7 @@ export default function TutorMode() {
             setInput("");
           }}
         >
-          Nuevo tema
+          {s.tutorNewTopic}
         </button>
       </div>
 
@@ -170,14 +172,14 @@ export default function TutorMode() {
       <div className="chat-input-row">
         <input
           className="chat-input"
-          placeholder="Escribe tu respuesta..."
+          placeholder={s.tutorPlaceholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && void send()}
           disabled={loading}
         />
         <button className="chat-send-btn" type="button" onClick={() => void send()} disabled={loading || !input.trim()}>
-          Enviar
+          {s.send}
         </button>
       </div>
     </div>

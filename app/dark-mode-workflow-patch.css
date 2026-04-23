@@ -1,0 +1,296 @@
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE — WORKFLOW SECTION PATCH
+   Archivo: app/dark-mode-workflow-patch.css
+   Importar en layout.tsx DESPUÉS de dark-mode.css
+
+   QUÉ CAMBIÓ Y POR QUÉ:
+   ─────────────────────────────────────────────────────────────
+   PROBLEMA: la versión anterior usaba --dm-card-bg (#141926) para
+   el outer board y --dm-surface-alt (#1a2033) para los steps/boxes
+   internos. La diferencia de luminosidad entre capas era < 4%
+   en HSL — visualmente indistinguibles. Se sentía como un solo
+   bloque plano sin profundidad.
+
+   SOLUCIÓN: sistema de 4 capas con diferencia de luminosidad
+   deliberada entre cada nivel:
+
+   Capa 0 — Fondo de página:     #0b0f19  (L 7%)
+   Capa 1 — workflow-board:      #0f1520  (L 10%) ← tinte azul frío
+   Capa 2 — timeline/workflow-card: #141c2e (L 14%) ← azul grisáceo
+   Capa 3 — steps/canvas interior: #1c2540  (L 18%) ← azul suave
+   Capa 4 — canvas-box:          #212c45  (L 21%) ← el más claro interior
+
+   Bordes:
+   - Outer (board): 1px sólido #1e2a42 — sutil, barely visible
+   - Cards: 1px sólido #243050 — 10% más brillante que el bg
+   - Steps/boxes: 1px sólido #2a3858 — distinguible pero no gritón
+
+   Texto:
+   - strong/títulos: #d6e0f5 (blanco azulado, no puro blanco)
+   - body/muted: #7a90b4 (más cálido que el anterior #8496b0)
+   - accents (links, labels): #7aaaff → #89b8ff (más suave que #5b8ef5)
+
+   Chips/labels "mini-label":
+   - bg: rgba(91, 142, 245, 0.10) — translúcido sobre el card oscuro
+   - texto: #7aaaff — legible sin quemar
+
+   Workflow-title:
+   - color: #c8d8f0 — blanco azulado medio, no #e8edf5 que destella
+
+   CTA links ("Click para ver más" / "Ir a Estudio"):
+   - Estilo glass: fondo semi-transparente azulado + borde suave
+   - No gradient saturado que choca con el fondo oscuro
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ─── TOKENS LOCALES ─────────────────────────────────────────── */
+html.dark {
+  /* Capas del workflow */
+  --wf-board-bg:        #0f1520;
+  --wf-board-border:    #1e2a42;
+
+  --wf-card-bg:         #141c2e;
+  --wf-card-border:     #243050;
+  --wf-card-shadow:     0 2px 16px rgba(0, 0, 0, 0.45);
+
+  --wf-inner-bg:        #1c2540;
+  --wf-inner-border:    #2a3858;
+
+  --wf-box-bg:          #212c45;
+  --wf-box-border:      #2e3d5e;
+
+  /* Texto workflow */
+  --wf-text-strong:     #d6e0f5;
+  --wf-text-muted:      #7a90b4;
+  --wf-text-accent:     #89b8ff;
+  --wf-text-title:      #c8d8f0;
+
+  /* Label chip */
+  --wf-label-bg:        rgba(91, 142, 245, 0.10);
+  --wf-label-color:     #89b8ff;
+
+  /* Dot del timeline-step */
+  --wf-dot-color:       #5b8ef5;
+  --wf-dot-glow:        rgba(91, 142, 245, 0.15);
+
+  /* CTA link dentro del flow */
+  --wf-cta-bg:          rgba(91, 142, 245, 0.12);
+  --wf-cta-border:      rgba(137, 184, 255, 0.22);
+  --wf-cta-text:        #a8c8ff;
+  --wf-cta-hover-bg:    rgba(91, 142, 245, 0.22);
+  --wf-cta-hover-border:rgba(137, 184, 255, 0.4);
+}
+
+
+/* ─── 1. OUTER BOARD CONTAINER ──────────────────────────────── */
+html.dark .workflow-board {
+  background: var(--wf-board-bg);
+  border-color: var(--wf-board-border);
+  box-shadow:
+    0 0 0 1px var(--wf-board-border),
+    0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Separador de sección */
+html.dark #workflow {
+  border-top-color: #1e2a42;
+}
+
+html.dark #workflow .section-header h2 {
+  color: var(--wf-text-strong);
+}
+
+html.dark #workflow .section-header p {
+  color: var(--wf-text-muted);
+}
+
+
+/* ─── 2. TIMELINE CARD (lado izquierdo — los 4 pasos) ────────── */
+html.dark .timeline-card {
+  background: var(--wf-card-bg);
+  border: 1px solid var(--wf-card-border);
+  box-shadow: var(--wf-card-shadow);
+}
+
+/* Mini-label arriba de la card ("Flow" / "Camino de estudio") */
+html.dark .timeline-card .mini-label {
+  background: var(--wf-label-bg);
+  color: var(--wf-label-color);
+}
+
+/* Cada step individual */
+html.dark .timeline-step {
+  background: var(--wf-inner-bg);
+  border: 1px solid var(--wf-inner-border);
+  color: var(--wf-text-muted);
+}
+
+/* Título del step ("1. Ask or upload material") */
+html.dark .timeline-step strong {
+  color: var(--wf-text-strong);
+  font-weight: 600;
+}
+
+/* Punto decorativo del step */
+html.dark .timeline-step::before {
+  background: var(--wf-dot-color);
+  box-shadow: 0 0 0 5px var(--wf-dot-glow);
+}
+
+
+/* ─── 3. WORKFLOW CARD (lado derecho — el canvas) ────────────── */
+html.dark .workflow-card {
+  background: var(--wf-card-bg);
+  border: 1px solid var(--wf-card-border);
+  box-shadow: var(--wf-card-shadow);
+}
+
+/* Mini-label arriba ("Inside the app" / "Dentro de la app") */
+html.dark .workflow-card .mini-label {
+  background: var(--wf-label-bg);
+  color: var(--wf-label-color);
+}
+
+/* Título de la workflow-card */
+html.dark .workflow-title {
+  color: var(--wf-text-title);
+}
+
+
+/* ─── 4. WORKFLOW CANVAS (área interior con grid 2x2) ────────── */
+html.dark .workflow-canvas {
+  background: var(--wf-inner-bg);
+  border: 1px solid var(--wf-inner-border);
+}
+
+/* Cada box dentro del canvas */
+html.dark .canvas-box {
+  background: var(--wf-box-bg);
+  border: 1px solid var(--wf-box-border);
+}
+
+/* Títulos de los canvas-box ("Research mode", "Study mode"...) */
+html.dark .canvas-box strong {
+  color: var(--wf-text-accent);
+  font-weight: 600;
+}
+
+/* Descripción dentro de los canvas-box */
+html.dark .canvas-box span {
+  color: var(--wf-text-muted);
+  line-height: 1.6;
+}
+
+
+/* ─── 5. CHIPS / LABELS dentro del flow ─────────────────────── */
+
+/* Pill de estado ("Live product concept" / "Activo") */
+html.dark .workflow-card .pill {
+  background: rgba(52, 196, 138, 0.12);
+  color: #5ddfaa;
+  border: 1px solid rgba(93, 223, 170, 0.18);
+}
+
+/* mini-label genérico dentro del board */
+html.dark .workflow-board .mini-label {
+  background: var(--wf-label-bg);
+  color: var(--wf-label-color);
+}
+
+
+/* ─── 6. CTA LINKS dentro del flow ──────────────────────────── */
+
+/* Botones "Ir a Estudio ->", "Ir a Investigacion ->" dentro del workflow */
+html.dark .workflow-card .accordion-cta,
+html.dark .workflow-card .img-accordion-cta,
+html.dark .workflow-card a.button {
+  background: var(--wf-cta-bg);
+  border: 1px solid var(--wf-cta-border);
+  color: var(--wf-cta-text);
+  box-shadow: none;
+}
+
+html.dark .workflow-card .accordion-cta:hover,
+html.dark .workflow-card .img-accordion-cta:hover,
+html.dark .workflow-card a.button:hover {
+  background: var(--wf-cta-hover-bg);
+  border-color: var(--wf-cta-hover-border);
+  color: #c2dcff;
+  transform: translateY(-1px);
+}
+
+/* CTA links dentro del timeline-card también */
+html.dark .timeline-card a.button {
+  background: var(--wf-cta-bg);
+  border: 1px solid var(--wf-cta-border);
+  color: var(--wf-cta-text);
+  box-shadow: none;
+}
+
+html.dark .timeline-card a.button:hover {
+  background: var(--wf-cta-hover-bg);
+  border-color: var(--wf-cta-hover-border);
+  color: #c2dcff;
+}
+
+
+/* ─── 7. SECTION HEADER dentro de #workflow ─────────────────── */
+html.dark #workflow .section-header h2 {
+  color: var(--wf-text-strong);
+}
+
+html.dark #workflow .section-header p {
+  color: var(--wf-text-muted);
+}
+
+
+/* ─── 8. HOVER STATES — feedback sin glow agresivo ──────────── */
+html.dark .timeline-step:hover {
+  background: #1f2a47;
+  border-color: #333f62;
+}
+
+html.dark .canvas-box:hover {
+  background: #253050;
+  border-color: #344468;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   9. WORKFLOW STEP CARDS (versión actual con WorkflowStepCards)
+────────────────────────────────────────────────────────────── */
+html.dark .wf-card-front,
+html.dark .wf-card-back {
+  background: linear-gradient(180deg, var(--wf-inner-bg), #18223a);
+  border: 1px solid var(--wf-inner-border);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.34);
+}
+
+html.dark .wf-card-title {
+  color: var(--wf-text-strong);
+}
+
+html.dark .wf-card-copy {
+  color: var(--wf-text-muted);
+}
+
+html.dark .wf-card-pill,
+html.dark .wf-card-back-label {
+  background: var(--wf-label-bg);
+  border-color: rgba(137, 184, 255, 0.2);
+  color: var(--wf-label-color);
+}
+
+html.dark .wf-card-number {
+  background: linear-gradient(135deg, #3567dd, #5b8ef5);
+  color: #f8fbff;
+  box-shadow: 0 8px 20px rgba(91, 142, 245, 0.22);
+}
+
+html.dark .wf-card-cta {
+  color: var(--wf-cta-text);
+  opacity: 1;
+}
+
+html.dark .wf-card:focus-visible {
+  outline-color: rgba(137, 184, 255, 0.6);
+}

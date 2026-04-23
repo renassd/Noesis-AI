@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FlashCard from "./FlashCard";
 import { CARD_TEMPLATES, STICKER_SETS } from "./theme/card-templates";
 import { DEFAULT_CARD_VISUAL } from "./theme/types";
@@ -33,6 +33,9 @@ function diffVisual(visual: CardVisual): Partial<CardVisual> {
   if (visual.showPattern !== DEFAULT_CARD_VISUAL.showPattern) diff.showPattern = visual.showPattern;
   if (visual.cornerAccent !== DEFAULT_CARD_VISUAL.cornerAccent) diff.cornerAccent = visual.cornerAccent;
   if (visual.stickers.length > 0) diff.stickers = visual.stickers;
+  if ((visual.imageUrl ?? "") !== (DEFAULT_CARD_VISUAL.imageUrl ?? "")) diff.imageUrl = visual.imageUrl;
+  if ((visual.imageAlt ?? "") !== (DEFAULT_CARD_VISUAL.imageAlt ?? "")) diff.imageAlt = visual.imageAlt;
+  if ((visual.imagePrompt ?? "") !== (DEFAULT_CARD_VISUAL.imagePrompt ?? "")) diff.imagePrompt = visual.imagePrompt;
 
   return diff;
 }
@@ -48,6 +51,7 @@ export default function CardEditor({ card, onSave, onClose }: CardEditorProps) {
   const [visual, setVisual] = useState<CardVisual>(() => resolveVisual(card.visual));
   const [previewFlipped, setPreviewFlipped] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("template");
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setVisual(resolveVisual(card.visual));
@@ -67,6 +71,21 @@ export default function CardEditor({ card, onSave, onClose }: CardEditorProps) {
     const empty: Partial<CardVisual> = {};
     setVisual(resolveVisual(empty));
     onSave(card.id, empty);
+  }
+
+  function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      patch({
+        imageUrl: reader.result as string,
+        imageAlt: visual.imageAlt || card.question,
+      });
+    };
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -298,6 +317,60 @@ export default function CardEditor({ card, onSave, onClose }: CardEditorProps) {
 
           {activeTab === "details" && (
             <div className="ce-tab-content">
+              <p className="ce-section-label">Imagen</p>
+              <div className="ce-image-tools">
+                {visual.imageUrl ? (
+                  <div className="ce-image-preview">
+                    <img src={visual.imageUrl} alt={visual.imageAlt || card.question} className="ce-image-thumb" />
+                  </div>
+                ) : (
+                  <div className="ce-image-empty">Sin imagen</div>
+                )}
+
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ display: "none" }}
+                />
+
+                <div className="ce-image-actions">
+                  <button className="ce-detail-btn" onClick={() => imageInputRef.current?.click()} type="button">
+                    Subir imagen
+                  </button>
+                  {visual.imageUrl && (
+                    <button
+                      className="ce-detail-btn"
+                      onClick={() => patch({ imageUrl: "", imageAlt: "", imagePrompt: "" })}
+                      type="button"
+                    >
+                      Quitar imagen
+                    </button>
+                  )}
+                </div>
+
+                <div className="ce-image-field">
+                  <span className="ce-color-label">URL de imagen</span>
+                  <input
+                    className="ce-text-input"
+                    value={visual.imageUrl ?? ""}
+                    onChange={(event) => patch({ imageUrl: event.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="ce-image-field">
+                  <span className="ce-color-label">Texto alternativo</span>
+                  <input
+                    className="ce-text-input"
+                    value={visual.imageAlt ?? ""}
+                    onChange={(event) => patch({ imageAlt: event.target.value })}
+                    placeholder="Describe la imagen"
+                  />
+                </div>
+              </div>
+
               <p className="ce-section-label">Acento de esquina</p>
               <div className="ce-detail-row">
                 {(["none", "dot", "line", "arc"] as CardVisual["cornerAccent"][]).map((cornerAccent) => (

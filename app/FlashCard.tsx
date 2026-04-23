@@ -69,31 +69,36 @@ export default function FlashCard({
   const visual: CardVisual = useMemo(() => {
     const global = prefs.cardVisual;
     const perCard = card.visual ?? {};
+    const resolvedTemplate =
+      perCard.template ??
+      ((prefs.colorScheme === "dark" && global.template === "clean") ? "midnight" : global.template);
+
     return {
-      template: perCard.template ?? global.template,
+      template: resolvedTemplate,
       frontBg: perCard.frontBg || global.frontBg,
       backBg: perCard.backBg || global.backBg,
       textColor: perCard.textColor || global.textColor,
       stickers: perCard.stickers ?? global.stickers,
       showPattern: perCard.showPattern ?? global.showPattern,
       cornerAccent: perCard.cornerAccent ?? global.cornerAccent,
+      imageUrl: perCard.imageUrl ?? global.imageUrl,
+      imageAlt: perCard.imageAlt ?? global.imageAlt,
+      imagePrompt: perCard.imagePrompt ?? global.imagePrompt,
     };
-  }, [prefs.cardVisual, card.visual]);
+  }, [prefs.cardVisual, prefs.colorScheme, card.visual]);
 
   const template = CARD_TEMPLATES[visual.template];
 
   const frontBgValue = visual.frontBg || template.frontBg;
-  const backBgValue = visual.backBg || template.backBg;
+  const backBgValue  = visual.backBg  || template.backBg;
   const frontIsGradient = frontBgValue.startsWith("linear-gradient") || frontBgValue.startsWith("radial-gradient");
-  const backIsGradient = backBgValue.startsWith("linear-gradient") || backBgValue.startsWith("radial-gradient");
+  const backIsGradient  = backBgValue.startsWith("linear-gradient")  || backBgValue.startsWith("radial-gradient");
 
   const frontStyle: CSSProperties = {
     ...splitBg(frontBgValue),
     color: visual.textColor || template.textColor,
     backgroundImage: visual.showPattern && template.patternSvg
-      ? frontIsGradient
-        ? `${template.patternSvg}, ${frontBgValue}`
-        : template.patternSvg
+      ? frontIsGradient ? `${template.patternSvg}, ${frontBgValue}` : template.patternSvg
       : (frontIsGradient ? frontBgValue : undefined),
     borderColor: template.borderColor,
   };
@@ -102,14 +107,19 @@ export default function FlashCard({
     ...splitBg(backBgValue),
     color: visual.textColor || template.textColor,
     backgroundImage: visual.showPattern && template.patternSvg
-      ? backIsGradient
-        ? `${template.patternSvg}, ${backBgValue}`
-        : template.patternSvg
+      ? backIsGradient ? `${template.patternSvg}, ${backBgValue}` : template.patternSvg
       : (backIsGradient ? backBgValue : undefined),
     borderColor: template.accentColor,
   };
 
-  const cardClass = ["fc-card", `fc-card--${variant}`, flipped ? "fc-card--flipped" : ""].filter(Boolean).join(" ");
+  const imageUrl = visual.imageUrl;
+  const imageAlt = visual.imageAlt || card.question;
+  const cardClass = [
+    "fc-card",
+    `fc-card--${variant}`,
+    flipped ? "fc-card--flipped" : "",
+    imageUrl ? "fc-card--has-image" : "",
+  ].filter(Boolean).join(" ");
 
   return (
     <div
@@ -117,8 +127,11 @@ export default function FlashCard({
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => e.key === "Enter" && onClick()}
+      onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); }
+      }}
       aria-label={flipped ? `Respuesta: ${card.answer}` : `Pregunta: ${card.question}`}
+      aria-pressed={flipped}
     >
       {onEdit && (
         <button
@@ -146,7 +159,15 @@ export default function FlashCard({
             </span>
           )}
           <div className="fc-text" dangerouslySetInnerHTML={{ __html: renderInlineRichText(card.question) }} />
-          {variant === "study" && <span className="fc-hint">Clic para ver la respuesta</span>}
+          {variant === "study" && (
+            <span className="fc-hint fc-hint--front" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2.5 8a5.5 5.5 0 1 0 1.1-3.3M2.5 4V8H6.5"
+                  stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Ver respuesta
+            </span>
+          )}
         </div>
 
         <div className="fc-face fc-back" style={backStyle}>
@@ -157,7 +178,21 @@ export default function FlashCard({
               Respuesta
             </span>
           )}
+          {imageUrl && (
+            <div className="fc-media">
+              <img src={imageUrl} alt={imageAlt} className="fc-media-image" />
+            </div>
+          )}
           <div className="fc-text" dangerouslySetInnerHTML={{ __html: renderInlineRichText(card.answer) }} />
+          {variant === "study" && (
+            <span className="fc-hint fc-hint--back" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M13.5 8a5.5 5.5 0 1 1-1.1-3.3M13.5 4V8H9.5"
+                  stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Volver
+            </span>
+          )}
         </div>
       </div>
     </div>

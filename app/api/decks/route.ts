@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "../../../lib/supabase";
+import { AuthError, requireAuthenticatedUser } from "../../../lib/server-auth";
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = req.nextUrl.searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json({ error: "userId requerido" }, { status: 400 });
-    }
+    const { user } = await requireAuthenticatedUser(req);
 
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -25,7 +22,7 @@ export async function GET(req: NextRequest) {
     ({ data: decks, error } = await supabaseAdmin
       .from("decks")
       .select("id, name, created_at, flashcards(id, question, answer, visual)")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false }));
 
     if (error?.message?.includes("visual")) {
@@ -33,7 +30,7 @@ export async function GET(req: NextRequest) {
       ({ data: decks, error } = await supabaseAdmin
         .from("decks")
         .select("id, name, created_at, flashcards(id, question, answer)")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false }));
     }
 
@@ -68,6 +65,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(normalizedDecks);
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Error en GET /api/decks:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Deck API unavailable" },
@@ -78,18 +78,26 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const { user } = await requireAuthenticatedUser(req);
     const supabaseAdmin = getSupabaseAdmin();
-    const { userId, name, cards } = (await req.json()) as {
-      userId?: string;
+    const { name, cards } = (await req.json()) as {
       name?: string;
       cards?: Array<{ question?: string; answer?: string; visual?: unknown }>;
     };
 
-    if (!userId || !name || !cards?.length) {
+    if (!name || !cards?.length) {
       return NextResponse.json(
-        { error: "userId, name y cards son requeridos" },
+        { error: "name y cards son requeridos" },
         { status: 400 },
       );
+    }
+
+    if (name.trim().length > 120) {
+      return NextResponse.json({ error: "El nombre del mazo es demasiado largo." }, { status: 400 });
+    }
+
+    if (cards.length > 100) {
+      return NextResponse.json({ error: "Demasiadas tarjetas en una sola solicitud." }, { status: 400 });
     }
 
     const validCards = cards.filter(
@@ -105,7 +113,7 @@ export async function POST(req: NextRequest) {
 
     const { data: deck, error: deckError } = await supabaseAdmin
       .from("decks")
-      .insert({ user_id: userId, name: name.trim() })
+      .insert({ user_id: user.id, name: name.trim() })
       .select("id, name, created_at")
       .single();
 
@@ -148,6 +156,9 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Error en POST /api/decks:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }

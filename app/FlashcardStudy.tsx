@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
+import { useLang } from "./i18n";
 import type { Deck, Flashcard } from "./types";
 import type { CardVisual } from "./theme/types";
 
@@ -22,6 +23,8 @@ export default function FlashcardStudy({
   onSelectDeck,
   onSaveCardVisuals,
 }: Props) {
+  const { t } = useLang();
+  const s = t.study;
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [results, setResults] = useState<Record<string, "easy" | "hard" | "wrong">>({});
@@ -51,11 +54,8 @@ export default function FlashcardStudy({
     return (
       <div className="ws-panel ws-panel-centered">
         <div className="study-empty">
-          <h2 className="study-empty-title">No tenes mazos todavia</h2>
-          <p className="study-empty-sub">
-            Genera flashcards desde el panel de la izquierda y guarda tu primer mazo para
-            empezar a repasar.
-          </p>
+          <h2 className="study-empty-title">{s.noDecksTitle}</h2>
+          <p className="study-empty-sub">{s.noDecksDesc}</p>
         </div>
       </div>
     );
@@ -65,8 +65,8 @@ export default function FlashcardStudy({
     return (
       <div className="ws-panel">
         <div className="ws-panel-header">
-          <h2 className="ws-panel-title">Repasar flashcards</h2>
-          <p className="ws-panel-sub">Elegi un mazo para empezar a estudiar.</p>
+          <h2 className="ws-panel-title">{s.pickDeckTitle}</h2>
+          <p className="ws-panel-sub">{s.pickDeckDesc}</p>
         </div>
         <div className="study-deck-picker">
           {decks.map((currentDeck) => (
@@ -77,7 +77,7 @@ export default function FlashcardStudy({
             >
               <div>
                 <strong>{currentDeck.name}</strong>
-                <span>{currentDeck.cards.length} tarjetas</span>
+                <span>{currentDeck.cards.length} {currentDeck.cards.length === 1 ? s.deckCard : s.deckCards}</span>
               </div>
             </button>
           ))}
@@ -137,26 +137,26 @@ export default function FlashcardStudy({
       <div className="ws-panel ws-panel-centered">
         <div className="study-done">
           <div className="study-done-emoji">🎉</div>
-          <h2 className="study-done-title">Sesion completada</h2>
+          <h2 className="study-done-title">{s.sessionDone}</h2>
           <p className="study-done-sub">
-            Repasaste <strong>{total}</strong> tarjetas del mazo <em>{deck.name}</em>.
+            {s.sessionDoneDesc.replace("{total}", String(total)).replace("{deck}", deck.name)}
           </p>
           <div className="study-results">
             <div className="study-result easy">
               <strong>{easy}</strong>
-              <span>Facil</span>
+              <span>{s.easy}</span>
             </div>
             <div className="study-result hard">
               <strong>{hard}</strong>
-              <span>Dificil</span>
+              <span>{s.hard}</span>
             </div>
             <div className="study-result wrong">
               <strong>{wrong}</strong>
-              <span>A repasar</span>
+              <span>{s.wrong}</span>
             </div>
           </div>
           <button className="study-restart-btn" onClick={restart}>
-            Volver a repasar
+            {s.reviewAgain}
           </button>
         </div>
       </div>
@@ -169,7 +169,7 @@ export default function FlashcardStudy({
         <div>
           <h2 className="ws-panel-title">{deck.name}</h2>
           <p className="ws-panel-sub">
-            Tarjeta {index + 1} de {total} · {answered} respondidas
+            {s.cardOf.replace("{current}", String(index + 1)).replace("{total}", String(total))} · {s.answered.replace("{n}", String(answered))}
           </p>
         </div>
         <div className="study-deck-picker-inline">
@@ -214,13 +214,13 @@ export default function FlashcardStudy({
         {flipped && (
           <div className="study-actions">
             <button className="study-action wrong" onClick={() => mark("wrong")}>
-              No la sabia
+              {s.wrong}
             </button>
             <button className="study-action hard" onClick={() => mark("hard")}>
-              Dificil
+              {s.hard}
             </button>
             <button className="study-action easy" onClick={() => mark("easy")}>
-              Facil
+              {s.easy}
             </button>
           </div>
         )}

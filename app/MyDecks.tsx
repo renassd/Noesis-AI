@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "./i18n";
 import type { Deck } from "./types";
 
 interface Props {
@@ -18,6 +19,8 @@ export default function MyDecks({
   onDelete,
   onRename,
 }: Props) {
+  const { t } = useLang();
+  const s = t.study;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
@@ -40,8 +43,8 @@ export default function MyDecks({
     return (
       <div className="ws-panel ws-panel-centered">
         <div className="study-empty">
-          <h2 className="study-empty-title">Cargando mazos</h2>
-          <p className="study-empty-sub">Estamos trayendo tus decks guardados.</p>
+          <h2 className="study-empty-title">{s.loadingDecks}</h2>
+          <p className="study-empty-sub">{s.loadingDecksDesc}</p>
         </div>
       </div>
     );
@@ -51,10 +54,8 @@ export default function MyDecks({
     return (
       <div className="ws-panel ws-panel-centered">
         <div className="study-empty">
-          <h2 className="study-empty-title">No tenes mazos guardados</h2>
-          <p className="study-empty-sub">
-            Genera flashcards con IA y guarda tu primer mazo para que aparezca aca.
-          </p>
+          <h2 className="study-empty-title">{s.noSavedDecks}</h2>
+          <p className="study-empty-sub">{s.noSavedDecksDesc}</p>
         </div>
       </div>
     );
@@ -63,10 +64,9 @@ export default function MyDecks({
   return (
     <div className="ws-panel">
       <div className="ws-panel-header">
-        <h2 className="ws-panel-title">Mis mazos</h2>
+        <h2 className="ws-panel-title">{s.myDecksTitle}</h2>
         <p className="ws-panel-sub">
-          {decks.length} mazo{decks.length !== 1 ? "s" : ""} guardado
-          {decks.length !== 1 ? "s" : ""}
+          {decks.length} {decks.length === 1 ? s.deckCard : s.deckCards}
         </p>
       </div>
 
@@ -89,7 +89,7 @@ export default function MyDecks({
                 <strong className="deck-card-name">{deck.name}</strong>
               )}
               <span className="deck-card-meta">
-                {deck.cards.length} tarjeta{deck.cards.length !== 1 ? "s" : ""} ·{" "}
+                {deck.cards.length} {deck.cards.length === 1 ? s.deckCard : s.deckCards} ·{" "}
                 {new Date(deck.createdAt).toLocaleDateString("es-AR")}
               </span>
             </div>
@@ -98,12 +98,12 @@ export default function MyDecks({
               {editingId === deck.id ? (
                 <>
                   <button className="deck-study-btn" onClick={() => confirmEdit(deck.id)}>
-                    Guardar
+                    {s.deckSaved}
                   </button>
                   <button
                     className="deck-delete-btn"
                     onClick={() => setEditingId(null)}
-                    title="Cancelar"
+                    title={s.deckCancel}
                   >
                     ×
                   </button>
@@ -111,23 +111,23 @@ export default function MyDecks({
               ) : (
                 <>
                   <button className="deck-study-btn" onClick={() => onSelect(deck)}>
-                    Repasar {"->"}
+                    {s.deckReview}
                   </button>
                   {onRename && (
                     <button
                       className="deck-rename-btn"
                       onClick={() => startEdit(deck)}
-                      title="Renombrar"
+                      title={s.deckEdit}
                     >
-                      Editar
+                      {s.deckEdit}
                     </button>
                   )}
                   <button
                     className="deck-delete-btn"
                     onClick={() => {
-                      if (confirm(`Eliminar el mazo "${deck.name}"?`)) onDelete(deck.id);
+                      if (confirm(`${s.deckDelete} "${deck.name}"?`)) onDelete(deck.id);
                     }}
-                    title="Eliminar"
+                    title={s.deckDelete}
                   >
                     ×
                   </button>

@@ -8,6 +8,7 @@ import TutorMode from "./TutorMode";
 import ResearchMode from "./ResearchMode";
 import MyDecks from "./MyDecks";
 import ThemeToggle from "./theme/ThemeToggle";
+import { useLang } from "./i18n";
 import type { Flashcard, Deck } from "./types";
 import { useDecks } from "./useDecks";
 
@@ -18,18 +19,73 @@ type WorkspaceAppProps = {
   onToolChange?: (tool: Tool) => void;
 };
 
-const TOOLS: { id: Tool; label: string; icon: string; section: string }[] = [
-  { id: "research", label: "Reporte de investigacion", icon: "Lab", section: "Investigacion" },
-  { id: "generate", label: "Generar flashcards", icon: "AI", section: "Estudio" },
-  { id: "study", label: "Repasar flashcards", icon: "Deck", section: "Estudio" },
-  { id: "tutor", label: "Modo tutor", icon: "Tutor", section: "Estudio" },
-  { id: "decks", label: "Mis mazos", icon: "Mazos", section: "Estudio" },
-];
-
 export default function WorkspaceApp({
   activeTool,
   onToolChange,
 }: WorkspaceAppProps) {
+  const { t } = useLang();
+  const s = t.study;
+  const researchSection = t.nav.research;
+  const studySection = t.nav.study;
+
+  const TOOLS: { id: Tool; label: string; icon: React.ReactNode; section: string }[] = [
+    {
+      id: "research",
+      label: researchSection,
+      section: researchSection,
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    {
+      id: "generate",
+      label: s.generate,
+      section: studySection,
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M8 2l1.5 4H14l-3.5 2.5 1.5 4L8 10l-4 2.5 1.5-4L2 6h4.5L8 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      id: "study",
+      label: s.review,
+      section: studySection,
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M5 7.5h6M5 10.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    {
+      id: "tutor",
+      label: s.tutor,
+      section: studySection,
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M3 14c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    {
+      id: "decks",
+      label: s.decks,
+      section: studySection,
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M5 5V4a1 1 0 011-1h4a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M6 9.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+  ];
+
   const [internalTool, setInternalTool] = useState<Tool>("research");
   const [activeDeck, setActiveDeck] = useState<Deck | null>(null);
   const { decks, loading, error, addDeck, deleteDeck, renameDeck, saveCardVisuals } = useDecks();
@@ -88,7 +144,7 @@ export default function WorkspaceApp({
         <aside className="ws-sidebar" id="workspace-sidebar">
           <Link href="#home" className="ws-logo">
             <span className="ws-logo-mark">N</span>
-            <span className="ws-logo-name">Noesis AI</span>
+            <span className="ws-logo-name">Neuvra AI</span>
           </Link>
 
           <nav className="ws-nav">
@@ -111,7 +167,7 @@ export default function WorkspaceApp({
 
           {decks.length > 0 && (
             <div className="ws-deck-list">
-              <span className="ws-nav-label">Mazos recientes</span>
+              <span className="ws-nav-label">{s.recentDecks}</span>
               {decks.slice(0, 6).map((deck) => (
                 <button
                   key={deck.id}
@@ -122,7 +178,12 @@ export default function WorkspaceApp({
                   }}
                   title={deck.name}
                 >
-                  <span className="ws-deck-icon">Deck</span>
+                  <span className="ws-deck-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+                      <path d="M5 5V4a1 1 0 011-1h4a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                    </svg>
+                  </span>
                   <span className="ws-deck-name">{deck.name}</span>
                   <span className="ws-deck-count">{deck.cards.length}</span>
                 </button>

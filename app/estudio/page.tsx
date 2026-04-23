@@ -1,10 +1,19 @@
 "use client";
 
+import "../standalone.css";
+import "../workspace.css";
+import "../card-visual.css";
+import "../flashcard-generator.css";
+import "../flashcard-study.css";
+import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
+import ColorModeToggle from "../ColorModeToggle";
 import FlashcardGenerator from "../FlashcardGenerator";
 import FlashcardStudy from "../FlashcardStudy";
 import LangToggle from "../LangToggle";
+import ManualFlashcardBuilder from "../ManualFlashcardBuilder";
 import MyDecks from "../MyDecks";
 import TutorMode from "../TutorMode";
 import { useLang } from "../i18n";
@@ -12,18 +21,48 @@ import ThemeToggle from "../theme/ThemeToggle";
 import type { Deck, Flashcard } from "../types";
 import { useDecks } from "../useDecks";
 
-type Tool = "generate" | "study" | "tutor" | "decks";
+type Tool = "generate" | "manual" | "study" | "tutor" | "decks";
 
 export default function EstudioPage() {
   const { t } = useLang();
   const s = t.study;
   const nav = t.nav;
 
-  const TOOLS: { id: Tool; label: string; icon: string }[] = [
-    { id: "generate", label: s.generate, icon: "AI" },
-    { id: "study", label: s.review, icon: "Deck" },
-    { id: "tutor", label: s.tutor, icon: "Tutor" },
-    { id: "decks", label: s.decks, icon: "Mazos" },
+  const TOOLS: { id: Tool; label: string; icon: React.ReactNode }[] = [
+    { id: "generate", label: s.generate, icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 2l1.5 4H14l-3.5 2.5 1.5 4L8 10l-4 2.5 1.5-4L2 6h4.5L8 2z"
+          stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      </svg>
+    )},
+    { id: "manual", label: s.manualNav, icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3 12.5V14h1.5L12.8 5.7l-1.5-1.5L3 12.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+        <path d="M9.8 4.7l1.5 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M2.5 14h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+    )},
+    { id: "study", label: s.review, icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+        <path d="M5 7.5h6M5 10.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+    )},
+    { id: "tutor", label: s.tutor, icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.4"/>
+        <path d="M3 14c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5"
+          stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+    )},
+    { id: "decks", label: s.decks, icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+        <path d="M5 5V4a1 1 0 011-1h4a1 1 0 011 1v1"
+          stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M6 9.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+    )},
   ];
 
   const [tool, setTool] = useState<Tool>("generate");
@@ -54,8 +93,10 @@ export default function EstudioPage() {
     <div className="standalone-shell">
       <header className="standalone-topbar">
         <Link href="/" className="standalone-brand">
-          <span className="ws-logo-mark">N</span>
-          <span className="standalone-brand-name">Noesis AI</span>
+          <span className="standalone-brand-mark" aria-hidden="true">
+            <Image src="/logo.jpeg" alt="Neuvra AI" width={42} height={42} />
+          </span>
+          <span className="standalone-brand-name">Neuvra AI</span>
         </Link>
         <nav className="standalone-nav">
           <Link href="/" className="standalone-nav-link">{nav.home}</Link>
@@ -63,6 +104,7 @@ export default function EstudioPage() {
           <span className="standalone-nav-link active">{nav.study}</span>
         </nav>
         <LangToggle />
+        <ColorModeToggle />
       </header>
 
       <div className="standalone-layout">
@@ -96,13 +138,22 @@ export default function EstudioPage() {
                   title={deck.name}
                   type="button"
                 >
-                  <span className="ws-deck-icon">Deck</span>
+                  <span className="ws-deck-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+                      <path d="M5 5V4a1 1 0 011-1h4a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                    </svg>
+                  </span>
                   <span className="ws-deck-name">{deck.name}</span>
                   <span className="ws-deck-count">{deck.cards.length}</span>
                 </button>
               ))}
             </div>
           )}
+
+          <div className="standalone-sidebar-footer">
+            <ThemeToggle inline />
+          </div>
         </aside>
 
         <main className="standalone-main">
@@ -113,6 +164,7 @@ export default function EstudioPage() {
           )}
 
           {tool === "generate" && <FlashcardGenerator onSaveDeck={handleSaveDeck} />}
+          {tool === "manual" && <ManualFlashcardBuilder onSaveDeck={handleSaveDeck} />}
           {tool === "study" && (
             <FlashcardStudy
               deck={activeDeck}
@@ -136,8 +188,6 @@ export default function EstudioPage() {
           )}
         </main>
       </div>
-
-      <ThemeToggle />
     </div>
   );
 }

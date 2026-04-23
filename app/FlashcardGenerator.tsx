@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
 import { detectLang, langInstruction } from "./lib/detectLang";
@@ -9,6 +10,13 @@ import type { Flashcard } from "./types";
 
 interface Props {
   onSaveDeck: (name: string, cards: Flashcard[]) => Promise<boolean>;
+}
+
+type GeneratedCard = Flashcard;
+
+interface RawCard {
+  question: string;
+  answer: string;
 }
 
 function extractJsonArray(raw: string): unknown[] | null {
@@ -35,8 +43,7 @@ function extractJsonArray(raw: string): unknown[] | null {
   const end = cleaned.lastIndexOf("]");
   if (start === -1 || end === -1 || end <= start) return null;
 
-  const candidate = cleaned.slice(start, end + 1);
-  return parseCandidate(candidate);
+  return parseCandidate(cleaned.slice(start, end + 1));
 }
 
 function buildPrompt(quantity: number, text: string, langHint: string): string {
@@ -44,20 +51,19 @@ function buildPrompt(quantity: number, text: string, langHint: string): string {
 
 ${langHint}
 
-INSTRUCCIONES ESTRICTAS:
-- Responde UNICAMENTE con un array JSON. Sin introduccion, sin explicacion, sin texto antes o despues.
-- No uses bloques de codigo markdown.
-- El array debe tener exactamente ${quantity} objetos.
-- Cada objeto debe tener exactamente dos campos: "question" y "answer".
-- Las preguntas deben evaluar comprension, no solo memoria literal.
-- Las respuestas deben ser concisas (1 a 3 oraciones).
-- Si aparece una formula matematica o cientifica, escribela en LaTeX valido.
-- Usa $...$ para formulas inline y $$...$$ para formulas en bloque.
+STRICT INSTRUCTIONS:
+- Respond ONLY with a JSON array. No introduction, no explanation, no text before or after.
+- Do not use markdown code blocks.
+- The array must have exactly ${quantity} objects.
+- Each object must have exactly these fields: "question" and "answer".
+- Questions should test comprehension, not literal memory.
+- Answers should be concise (1-3 sentences).
+- For math or science formulas, use valid LaTeX: $...$ for inline, $$...$$ for block.
 
-FORMATO EXACTO:
-[{"question":"...","answer":"..."},{"question":"...","answer":"..."}]
+EXACT FORMAT:
+[{"question":"...","answer":"..."}]
 
-TEXTO:
+TEXT:
 ${text.slice(0, 4000)}`;
 }
 
@@ -65,7 +71,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState(8);
   const [loading, setLoading] = useState(false);
-  const [cards, setCards] = useState<Flashcard[]>([]);
+  const [cards, setCards] = useState<GeneratedCard[]>([]);
   const [deckName, setDeckName] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -84,33 +90,28 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
     setSaved(false);
 
     try {
-      const res = await fetch("/api/ai", {
+      const res = await fetchWithSupabaseAuth("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          max_tokens: 2000,
+          max_tokens: 2200,
           messages: [{ role: "user", content: buildPrompt(quantity, text, langInstruction(detectLang(text))) }],
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Error al generar las tarjetas.");
-      }
+      if (!res.ok) throw new Error(data.error || "Error al generar las tarjetas.");
 
       const rawText = data.text || "";
-      if (!rawText.trim()) {
-        throw new Error("La IA no devolvio contenido. Intenta de nuevo.");
-      }
+      if (!rawText.trim()) throw new Error("La IA no devolvio contenido. Intenta de nuevo.");
 
       const parsed = extractJsonArray(rawText);
       if (!parsed || parsed.length === 0) {
-        console.warn("Respuesta cruda de la IA:", rawText);
-        throw new Error("No se pudo leer el formato de las tarjetas. Intenta con un texto mas claro o mas corto.");
+        throw new Error("No se pudo leer el formato de las tarjetas. Intenta con un texto mas claro.");
       }
 
       const validCards = parsed.filter(
-        (item): item is { question: string; answer: string } =>
+        (item): item is RawCard =>
           typeof item === "object" &&
           item !== null &&
           typeof (item as Record<string, unknown>).question === "string" &&
@@ -121,15 +122,16 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
         throw new Error("Las tarjetas generadas no tienen el formato esperado.");
       }
 
-      const withIds = validCards.map((card, index) => ({
-        ...card,
+      const generatedCards: GeneratedCard[] = validCards.map((card, index) => ({
         id: `${Date.now()}-${index}`,
+        question: card.question,
+        answer: card.answer,
       }));
 
-      setCards(withIds);
+      setCards(generatedCards);
 
       if (!deckName) {
-        setDeckName(`Mazo ${new Date().toLocaleDateString("es-AR")}`);
+        setDeckName(`Deck ${new Date().toLocaleDateString()}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al generar las tarjetas.");
@@ -139,8 +141,15 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
   }
 
   async function saveDeck() {
-    const name = deckName.trim() || `Mazo ${new Date().toLocaleDateString("es-AR")}`;
-    const success = await onSaveDeck(name, cards);
+    const name = deckName.trim() || `Deck ${new Date().toLocaleDateString()}`;
+    const cleanCards: Flashcard[] = cards.map(({ id, question, answer, visual }) => ({
+      id,
+      question,
+      answer,
+      visual,
+    }));
+
+    const success = await onSaveDeck(name, cleanCards);
     setSaved(success);
   }
 
@@ -157,7 +166,6 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
     <div className="ws-panel">
       <div className="ws-panel-header">
         <h2 className="ws-panel-title">Generar flashcards con IA</h2>
-        <p className="ws-panel-sub">Pega cualquier texto y la IA genera tarjetas de estudio listas para repasar.</p>
       </div>
 
       <div className="gen-layout">
@@ -168,7 +176,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
               className="gen-textarea"
               placeholder="Pega aca tu texto, apuntes o resumen. Minimo 30 caracteres."
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(event) => setText(event.target.value)}
               rows={14}
             />
             <span className="gen-char-count">{text.length} caracteres</span>
@@ -200,9 +208,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
                 <span className="gen-spinner" />
                 Generando tarjetas...
               </span>
-            ) : (
-              "Generar flashcards ->"
-            )}
+            ) : "Generar flashcards ->"}
           </button>
         </div>
 
@@ -211,32 +217,35 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
             <div className="gen-output-header">
               <div>
                 <span className="gen-output-badge">{cards.length} tarjetas generadas</span>
-                <p className="gen-output-hint">Haz clic en una tarjeta para ver la respuesta</p>
+                <p className="gen-output-hint">Hace clic en una tarjeta para ver la respuesta</p>
               </div>
-              {cards.length > 0 && (
-                <div className="gen-save-row">
-                  <input
-                    className="gen-name-input"
-                    placeholder="Nombre del mazo"
-                    value={deckName}
-                    onChange={(e) => setDeckName(e.target.value)}
-                  />
-                  <button
-                    className={`gen-save-btn${saved ? " saved" : ""}`}
-                    type="button"
-                    onClick={() => void saveDeck()}
-                    disabled={saved || loading}
-                  >
-                    {saved ? "Guardado" : "Guardar mazo"}
-                  </button>
-                </div>
-              )}
+
+              <div className="gen-output-actions">
+                {cards.length > 0 && (
+                  <div className="gen-save-row">
+                    <input
+                      className="gen-name-input"
+                      placeholder="Nombre del mazo"
+                      value={deckName}
+                      onChange={(event) => setDeckName(event.target.value)}
+                    />
+                    <button
+                      className={`gen-save-btn${saved ? " saved" : ""}`}
+                      type="button"
+                      onClick={() => void saveDeck()}
+                      disabled={saved || loading}
+                    >
+                      {saved ? "Guardado" : "Guardar mazo"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {loading && (
               <div className="gen-skeleton-grid">
-                {Array.from({ length: quantity }).map((_, i) => (
-                  <div key={i} className="gen-skeleton" style={{ animationDelay: `${i * 0.07}s` }} />
+                {Array.from({ length: quantity }).map((_, index) => (
+                  <div key={index} className="gen-skeleton" style={{ animationDelay: `${index * 0.07}s` }} />
                 ))}
               </div>
             )}
@@ -259,6 +268,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
           </div>
         )}
       </div>
+
       {editingCard && (
         <CardEditor
           card={editingCard}

@@ -12,6 +12,7 @@ export default function LangToggle() {
         onClick={() => setLang("en")}
         aria-pressed={lang === "en"}
         type="button"
+        suppressHydrationWarning
       >
         EN
       </button>
@@ -20,6 +21,7 @@ export default function LangToggle() {
         onClick={() => setLang("es")}
         aria-pressed={lang === "es"}
         type="button"
+        suppressHydrationWarning
       >
         ES
       </button>

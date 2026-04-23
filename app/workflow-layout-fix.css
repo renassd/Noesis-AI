@@ -1,0 +1,234 @@
+/*
+  workflow-layout-fix.css
+  -------------------------------------------------------------
+  Targeted layout fixes for the workflow section.
+  Resolves:
+    1. "One flow, from question to review" block escaping its container
+    2. canvas-box content overflowing card borders
+    3. "Click to see more" / "Back to summary" / "Clic para ver mas"
+       / "Volver al resumen" hints floating outside fc-face cards
+
+  HOW TO APPLY - one line in app/layout.tsx, after existing CSS:
+    import "./workflow-layout-fix.css";
+
+  All rules are scoped to specific selectors - no global side-effects.
+  Pure ASCII. Zero non-ASCII characters.
+  -------------------------------------------------------------
+*/
+
+/* -- 1. Workflow section outer containment ------------------- */
+
+/*
+  Root cause: .workflow-board can overflow the page .wrap
+  if .workflow-grid columns are not properly constrained.
+  Fix: explicit box-sizing, no overflow, force columns into bounds.
+*/
+#workflow {
+  overflow-x: hidden; /* last-resort catch */
+}
+
+.workflow-board {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/*
+  `minmax(0, 1fr)` is the key fix.
+  Default `1fr` = `minmax(auto, 1fr)`, which allows the column
+  to grow beyond its 1fr share if its content is wider.
+  `minmax(0, 1fr)` caps the minimum at 0, so the column never
+  exceeds its allocated fraction regardless of content width.
+*/
+
+
+/* -- 2. Timeline card and workflow card containment ---------- */
+
+.timeline-card,
+.workflow-card {
+  min-width: 0;         /* critical: prevents grid blowout */
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;     /* clips anything that still escapes */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workflow-title {
+  margin: 0;
+  word-break: break-word;    /* long titles wrap instead of overflow */
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+
+/* -- 3. Canvas rows and boxes -------------------------------- */
+
+/*
+  canvas-box text ("Paper summary, literature review, research
+  report, find sources.") was escaping because canvas-row used
+  display:flex without min-width:0 on children.
+*/
+.workflow-canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.canvas-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.canvas-box {
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.canvas-box strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.canvas-box span {
+  font-size: 11.5px;
+  line-height: 1.55;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;  /* max 3 lines, then ellipsis */
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+
+/* -- 4. rmp-shell containment (ResearchMockPanel) ----------- */
+
+/*
+  rmp-shell grows freely inside workflow-card.
+  Without max-width, it can push the card wider than its column.
+*/
+.rmp-shell {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.rmp-input-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rmp-result-title {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+
+/* -- 5. FlashCard face containment --------------------------- */
+
+/*
+  Root cause of "Click to see more" / "Back to summary" /
+  "Clic para ver mas" / "Volver al resumen" appearing outside cards:
+
+  .fc-face uses `position: absolute` with backface-visibility,
+  and .fc-hint at the bottom has `margin-top: auto` but the face
+  has no explicit height or `display: flex` - the hint falls
+  outside the rendered card height.
+
+  Fix: ensure .fc-face is a flex column and clips overflow.
+  The hint is anchored to the bottom of the face via flex.
+*/
+
+.fc-face {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: hidden;         /* clip anything still escaping */
+  box-sizing: border-box;
+}
+
+.fc-text {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.fc-hint {
+  flex-shrink: 0;           /* hint never gets squashed */
+  margin-top: auto;         /* pushed to bottom of flex column */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 6px;         /* small breathing room above hint */
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;      /* "Click to see more" stays on one line */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+
+/* -- 6. Responsive ------------------------------------------- */
+
+@media (max-width: 860px) {
+  .workflow-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .canvas-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .canvas-box {
+    padding: 8px 10px;
+  }
+
+  .canvas-box strong {
+    font-size: 11px;
+  }
+
+  .canvas-box span {
+    font-size: 11px;
+  }
+}

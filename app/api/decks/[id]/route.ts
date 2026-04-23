@@ -1,13 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "../../../../lib/supabase";
+import { AuthError, requireAuthenticatedUser } from "../../../../lib/server-auth";
+
+async function requireOwnedDeck(id: string, req: NextRequest) {
+  const { user } = await requireAuthenticatedUser(req);
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: deck, error } = await supabaseAdmin
+    .from("decks")
+    .select("id, user_id, name, created_at")
+    .eq("id", id)
+    .single();
+
+  if (error || !deck) {
+    throw new AuthError("Deck not found.", 404);
+  }
+
+  if (deck.user_id !== user.id) {
+    throw new AuthError("You do not have access to this deck.", 403);
+  }
+
+  return { deck, supabaseAdmin, user };
+}
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
-    const supabaseAdmin = getSupabaseAdmin();
+    const { supabaseAdmin } = await requireOwnedDeck(id, req);
     const { error } = await supabaseAdmin.from("decks").delete().eq("id", id);
 
     if (error) {
@@ -16,6 +37,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Error en DELETE /api/decks/[id]:", error);
     return NextResponse.json({ error: "Deck API unavailable" }, { status: 503 });
   }
@@ -27,16 +51,19 @@ export async function PATCH(
 ) {
   try {
     const { id } = await context.params;
+    const { supabaseAdmin } = await requireOwnedDeck(id, req);
     const body = (await req.json()) as {
       name?: string;
       cardVisuals?: Record<string, unknown>;
     };
 
-    const supabaseAdmin = getSupabaseAdmin();
-
     if (body.name !== undefined) {
       if (!body.name.trim()) {
         return NextResponse.json({ error: "name requerido" }, { status: 400 });
+      }
+
+      if (body.name.trim().length > 120) {
+        return NextResponse.json({ error: "El nombre del mazo es demasiado largo." }, { status: 400 });
       }
 
       const { data, error } = await supabaseAdmin
@@ -64,6 +91,10 @@ export async function PATCH(
         return NextResponse.json({ success: true });
       }
 
+      if (updates.length > 200) {
+        return NextResponse.json({ error: "Demasiadas actualizaciones en una sola solicitud." }, { status: 400 });
+      }
+
       const results = await Promise.all(
         updates.map(async ([flashcardId, visual]) => {
           const { error } = await supabaseAdmin
@@ -89,6 +120,9 @@ export async function PATCH(
 
     return NextResponse.json({ error: "Body invalido" }, { status: 400 });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Error en PATCH /api/decks/[id]:", error);
     return NextResponse.json({ error: "Deck API unavailable" }, { status: 503 });
   }

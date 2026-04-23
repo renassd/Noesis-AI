@@ -8,6 +8,7 @@ interface GamifiedLoginCardProps {
   email: string;
   password: string;
   loading: boolean;
+  error?: string;
   onModeChange: (mode: AuthMode) => void;
   onNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
@@ -19,7 +20,7 @@ interface GamifiedLoginCardProps {
 const COPY = {
   signin: {
     title: "Ingresar a tu cuenta",
-    description: "Entra a Noesis para seguir con tus flujos de investigacion, estudio y mazos guardados.",
+    description: "Entra a Neuvra para seguir con tus flujos de investigacion, estudio y mazos guardados.",
     cta: "Ingresar",
     progress: "Retoma tu avance",
   },
@@ -37,6 +38,7 @@ export default function GamifiedLoginCard({
   email,
   password,
   loading,
+  error,
   onModeChange,
   onNameChange,
   onEmailChange,
@@ -53,7 +55,7 @@ export default function GamifiedLoginCard({
   return (
     <>
       <div className="auth-modal-header">
-        <span className="eyebrow">Noesis AI</span>
+        <span className="eyebrow">Neuvra AI</span>
         <h3>{copy.title}</h3>
         <p>{copy.description}</p>
       </div>
@@ -119,13 +121,13 @@ export default function GamifiedLoginCard({
         </label>
 
         <label className="auth-field">
-          <span>Contrasena</span>
+          <span>Contraseña</span>
           <input
             type="password"
             value={password}
             onChange={(event) => onPasswordChange(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && void onSubmit()}
-            placeholder="Tu contrasena"
+            placeholder="Tu contraseña"
           />
         </label>
 
@@ -145,6 +147,12 @@ export default function GamifiedLoginCard({
         <button type="button" className="auth-google" onClick={onGoogle}>
           Continuar con Google
         </button>
+
+        {error ? (
+          <p style={{ fontSize: 13, color: "#c2410c", margin: 0 }}>
+            {error}
+          </p>
+        ) : null}
       </div>
     </>
   );

@@ -123,6 +123,9 @@ export function applyThemeToCss(prefs: ThemePreferences): void {
 
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => root.style.setProperty(key, value));
+  root.classList.remove("light", "dark");
+  root.classList.add(prefs.colorScheme === "dark" ? "dark" : "light");
+  root.setAttribute("data-color-mode", prefs.colorScheme === "dark" ? "dark" : "light");
   document.body.setAttribute("data-theme", prefs.colorScheme);
   applyCardVisualToCss(prefs.cardVisual ?? DEFAULT_CARD_VISUAL);
 }

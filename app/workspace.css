@@ -224,7 +224,14 @@
 }
 
 .ws-panel-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.ws-panel-title { font-family: var(--font-display); font-size: 1.6rem; color: var(--ink); }
+.ws-panel-title {
+  font-family: var(--font-body);
+  font-size: 1.95rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  color: var(--ink);
+}
 .ws-panel-sub { color: var(--muted); font-size: 14px; margin-top: 4px; line-height: 1.6; }
 
 /* ═══════════════════════════════════════════
@@ -460,8 +467,11 @@
 .study-empty, .study-done { text-align: center; max-width: 420px; }
 .study-done-emoji { font-size: 52px; margin-bottom: 16px; }
 .study-empty-title, .study-done-title {
-  font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-family: var(--font-body);
+  font-size: 1.95rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
   color: var(--ink);
   margin-bottom: 10px;
 }
@@ -779,8 +789,11 @@
 .tutor-start { text-align: center; max-width: 520px; }
 .tutor-start-icon { font-size: 52px; margin-bottom: 16px; }
 .tutor-start-title {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
+  font-family: var(--font-body);
+  font-size: 1.95rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
   color: var(--ink);
   margin-bottom: 10px;
 }
