@@ -1,5 +1,7 @@
 "use client";
 
+import { useLang } from "@/app/i18n";
+
 type AuthMode = "signin" | "signup";
 
 interface GamifiedLoginCardProps {
@@ -17,21 +19,6 @@ interface GamifiedLoginCardProps {
   onGoogle: () => void;
 }
 
-const COPY = {
-  signin: {
-    title: "Ingresar a tu cuenta",
-    description: "Entra a Neuvra para seguir con tus flujos de investigacion, estudio y mazos guardados.",
-    cta: "Ingresar",
-    progress: "Retoma tu avance",
-  },
-  signup: {
-    title: "Crear tu cuenta",
-    description: "Crea una cuenta para guardar progreso, mazos y sesiones de estudio en un solo lugar.",
-    cta: "Crear cuenta",
-    progress: "Activa tu espacio",
-  },
-} as const;
-
 export default function GamifiedLoginCard({
   mode,
   name,
@@ -46,7 +33,27 @@ export default function GamifiedLoginCard({
   onSubmit,
   onGoogle,
 }: GamifiedLoginCardProps) {
-  const copy = COPY[mode];
+  const { t } = useLang();
+  const authText = t.auth;
+
+  const copy = mode === "signup"
+    ? {
+        title: authText.signupTitle,
+        description: authText.signupDescription,
+        cta: authText.signupCta,
+        progress: authText.progressSignup,
+        progressTitle: authText.progressSignupTitle,
+        progressBody: authText.progressSignupBody,
+      }
+    : {
+        title: authText.signinTitle,
+        description: authText.signinDescription,
+        cta: authText.signinCta,
+        progress: authText.progressSignin,
+        progressTitle: authText.progressSigninTitle,
+        progressBody: authText.progressSigninBody,
+      };
+
   const completion = Math.min(
     100,
     (name.trim() ? 34 : 0) + (email.includes("@") ? 33 : 0) + (password.trim() ? 33 : 0),
@@ -55,7 +62,7 @@ export default function GamifiedLoginCard({
   return (
     <>
       <div className="auth-modal-header">
-        <span className="eyebrow">Neuvra AI</span>
+        <span className="eyebrow">{authText.brand}</span>
         <h3>{copy.title}</h3>
         <p>{copy.description}</p>
       </div>
@@ -63,18 +70,14 @@ export default function GamifiedLoginCard({
       <div className="glc-hero">
         <div className="glc-hero-main">
           <span className="glc-kicker">{copy.progress}</span>
-          <strong>{mode === "signup" ? "Research + Study" : "Welcome back"}</strong>
-          <p>
-            {mode === "signup"
-              ? "Crea tu acceso y entra directo a investigacion, flashcards y repaso."
-              : "Sigue donde lo dejaste sin perder tus preferencias ni tus decks."}
-          </p>
+          <strong>{copy.progressTitle}</strong>
+          <p>{copy.progressBody}</p>
         </div>
         <div className="glc-meter" aria-hidden="true">
           <div className="glc-meter-ring">
             <span>{completion}%</span>
           </div>
-          <small>setup</small>
+          <small>{authText.setup}</small>
         </div>
       </div>
 
@@ -84,50 +87,50 @@ export default function GamifiedLoginCard({
           className={`auth-switch-btn${mode === "signin" ? " active" : ""}`}
           onClick={() => onModeChange("signin")}
         >
-          Iniciar sesion
+          {authText.signinTab}
         </button>
         <button
           type="button"
           className={`auth-switch-btn${mode === "signup" ? " active" : ""}`}
           onClick={() => onModeChange("signup")}
         >
-          Crear cuenta
+          {authText.signupTab}
         </button>
       </div>
 
       <div className="auth-form">
         {mode === "signup" && (
           <label className="auth-field">
-            <span>Nombre</span>
+            <span>{authText.name}</span>
             <input
               type="text"
               value={name}
               onChange={(event) => onNameChange(event.target.value)}
-              placeholder="Tu nombre"
+              placeholder={authText.namePlaceholder}
             />
           </label>
         )}
 
         <label className="auth-field">
-          <span>Email</span>
+          <span>{authText.email}</span>
           <input
             type="email"
             value={email}
             onChange={(event) => onEmailChange(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && void onSubmit()}
-            placeholder="tu@email.com"
+            placeholder={authText.emailPlaceholder}
             autoFocus
           />
         </label>
 
         <label className="auth-field">
-          <span>Contraseña</span>
+          <span>{authText.password}</span>
           <input
             type="password"
             value={password}
             onChange={(event) => onPasswordChange(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && void onSubmit()}
-            placeholder="Tu contraseña"
+            placeholder={authText.passwordPlaceholder}
           />
         </label>
 
@@ -137,15 +140,15 @@ export default function GamifiedLoginCard({
           onClick={onSubmit}
           disabled={loading || !email.includes("@")}
         >
-          {loading ? "Entrando..." : copy.cta}
+          {loading ? authText.loading : copy.cta}
         </button>
 
         <div className="auth-divider">
-          <span>o bien</span>
+          <span>{authText.or}</span>
         </div>
 
         <button type="button" className="auth-google" onClick={onGoogle}>
-          Continuar con Google
+          {authText.continueWithGoogle}
         </button>
 
         {error ? (

@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useLang } from "@/app/i18n";
 import GamifiedLoginCard from "@/components/ui/gamified-login-card";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -69,14 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const next = {
+      setAuth({
         signedIn: true,
         email: data.user.email,
         name: readName(data.user.email, data.user.user_metadata),
         userId: data.user.id,
-      };
-
-      setAuth(next);
+      });
     };
 
     void syncSession();
@@ -92,14 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const next = {
+      setAuth({
         signedIn: true,
         email: user.email,
         name: readName(user.email, user.user_metadata),
         userId: user.id,
-      };
-
-      setAuth(next);
+      });
       setModalOpen(false);
     });
 
@@ -112,8 +109,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async () => {
     const supabase = getSupabaseBrowser();
     if (!supabase) {
-      throw new Error("Falta NEXT_PUBLIC_SUPABASE_ANON_KEY para Google Login.");
+      throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY for Google Login.");
     }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -161,6 +159,8 @@ function AuthModal({
   onClose: () => void;
   onGoogleSignIn: () => Promise<void>;
 }) {
+  const { t } = useLang();
+  const authText = t.auth;
   const [mode, setMode] = useState<AuthMode>("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -184,17 +184,17 @@ function AuthModal({
   async function handleSubmit() {
     const supabase = getSupabaseBrowser();
     if (!supabase) {
-      setError("Falta la configuración de Supabase para iniciar sesión.");
+      setError(authText.missingConfig);
       return;
     }
 
     if (!email.includes("@")) {
-      setError("Ingresa un email válido.");
+      setError(authText.invalidEmail);
       return;
     }
 
     if (!password.trim()) {
-      setError("Ingresa tu contraseña.");
+      setError(authText.missingPassword);
       return;
     }
 
@@ -203,7 +203,7 @@ function AuthModal({
 
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -214,25 +214,25 @@ function AuthModal({
           },
         });
 
-        if (error) {
-          throw error;
+        if (signUpError) {
+          throw signUpError;
         }
 
         if (!data.session) {
-          setError("Revisa tu email para confirmar la cuenta antes de entrar.");
+          setError(authText.confirmEmail);
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         });
 
-        if (error) {
-          throw error;
+        if (signInError) {
+          throw signInError;
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo iniciar sesión.");
+      setError(err instanceof Error ? err.message : authText.submitError);
     } finally {
       setLoading(false);
     }
@@ -246,7 +246,7 @@ function AuthModal({
       await onGoogleSignIn();
     } catch (err) {
       setLoading(false);
-      setError(err instanceof Error ? err.message : "No se pudo iniciar sesion con Google.");
+      setError(err instanceof Error ? err.message : authText.googleError);
     }
   }
 
@@ -261,12 +261,17 @@ function AuthModal({
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={mode === "signup" ? "Crear cuenta" : "Iniciar sesion"}
+        aria-label={mode === "signup" ? authText.signupTab : authText.signinTab}
         style={{ animation: "ce-slide-up 0.26s cubic-bezier(0.22, 1, 0.36, 1)" }}
       >
         <div className="auth-modal-scroll">
           <div className="auth-modal-topbar">
-            <button type="button" className="auth-modal-close" onClick={onClose} aria-label="Cerrar">
+            <button
+              type="button"
+              className="auth-modal-close"
+              onClick={onClose}
+              aria-label={authText.close}
+            >
               x
             </button>
           </div>
