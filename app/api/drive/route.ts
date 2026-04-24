@@ -272,6 +272,8 @@ export async function GET(req: NextRequest) {
     const meta = await metaRes.json() as { id: string; name: string; mimeType: string };
 
     let text = "";
+    let usedOcr = false;
+    let extractionWarning: string | undefined;
 
     if (meta.mimeType === "application/vnd.google-apps.document") {
       // Export Google Doc as plain text
@@ -299,6 +301,8 @@ export async function GET(req: NextRequest) {
           new File([buffer], meta.name, { type: meta.mimeType }),
         );
         text = extracted.text;
+        usedOcr = extracted.usedOcr;
+        extractionWarning = extracted.warning;
       } catch (pkgErr) {
         if (pkgErr instanceof FileExtractionError) {
           return NextResponse.json({ error: pkgErr.exposeMessage }, { status: pkgErr.status });
@@ -338,6 +342,8 @@ export async function GET(req: NextRequest) {
       name:  meta.name,
       type:  meta.mimeType,
       chars: truncated.length,
+      usedOcr,
+      warning: extractionWarning ?? null,
     });
   }
 

@@ -3,13 +3,29 @@
 import Image from "next/image";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useAiUsage } from "@/context/AiUsageContext";
+import { buildDocumentSystemContext } from "./lib/pdfChunking";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useLang } from "./i18n";
 import { detectLang, langInstruction } from "./lib/detectLang";
 import { renderMarkdownWithMath } from "./lib/renderRichText";
-import { ImportBar } from "./ImportBar";
+import { ImportBar, type ImportedTextFile } from "./ImportBar";
 
-type Message = { role: "user" | "assistant"; content: string; imageDataUrl?: string };
+type AttachedDocument = {
+  id: string;
+  fileName: string;
+  content: string;
+  mimeType?: string;
+  source: "upload" | "drive" | "local";
+  usedOcr?: boolean;
+  warning?: string | null;
+};
+
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  imageDataUrl?: string;
+  attachment?: Omit<AttachedDocument, "content">;
+};
 type ToolId = "summary" | "review" | "explain" | "writing";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
 
@@ -19,6 +35,7 @@ interface ResearchSession {
   activeTool: ToolId;
   messages: Record<ToolId, Message[]>;
   input: string;
+  attachment: AttachedDocument | null;
   savedAt: number;
 }
 
@@ -237,12 +254,17 @@ function createSession(lang: "es" | "en", id = DRAFT_SESSION_ID): ResearchSessio
     activeTool: "summary",
     messages: createEmptyMessages(),
     input: "",
+    attachment: null,
     savedAt: Date.now(),
   };
 }
 
 function hasSessionContent(session: ResearchSession): boolean {
-  return Object.values(session.messages).some((items) => items.length > 0) || session.input.trim().length > 0;
+  return (
+    Object.values(session.messages).some((items) => items.length > 0) ||
+    session.input.trim().length > 0 ||
+    Boolean(session.attachment)
+  );
 }
 
 function localizedImageAnalysisTitle(lang: "es" | "en"): string {
@@ -292,6 +314,7 @@ function loadHistory(): ResearchSession[] {
         activeTool: valid.includes(item.activeTool) ? item.activeTool : "summary",
         messages: item.messages ?? createEmptyMessages(),
         input: item.input ?? "",
+        attachment: item.attachment ?? null,
         savedAt: typeof item.savedAt === "number" ? item.savedAt : Date.now(),
       }));
   } catch {
@@ -359,6 +382,23 @@ function getSessionPreview(session: ResearchSession, lang: "es" | "en"): string 
   return lang === "en" ? "Continue this conversation" : "Continuar esta conversación";
 }
 
+function createAttachmentId(): string {
+  return `attachment_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getAttachmentLabel(
+  attachment: Pick<AttachedDocument, "fileName" | "mimeType" | "source"> | null,
+  lang: "es" | "en",
+): string {
+  if (!attachment) return "";
+  if (attachment.source === "drive") return lang === "en" ? "Drive file" : "Archivo de Drive";
+  if ((attachment.mimeType ?? "").startsWith("application/pdf")) return "PDF";
+  if ((attachment.mimeType ?? "").includes("word") || attachment.fileName.toLowerCase().endsWith(".docx")) {
+    return lang === "en" ? "Document" : "Documento";
+  }
+  return lang === "en" ? "File" : "Archivo";
+}
+
 export default function ResearchMode() {
   const { lang } = useLang();
   const { applyUsage } = useAiUsage();
@@ -374,7 +414,10 @@ export default function ResearchMode() {
   const activeTool = activeSession.activeTool;
   const currentMsgs = activeSession.messages[activeTool] ?? [];
   const input = activeSession.input;
+  const attachment = activeSession.attachment;
   const hiddenImageMarkers = new Set(["[Pasted image attached]", "[Imagen pegada]"]);
+  const isSyntheticAttachmentLabel = (content: string) =>
+    content.startsWith("Use the attached file:") || content.startsWith("Usa el archivo adjunto:");
   const savedSessions = sessionState.sessions.filter(hasSessionContent);
 
   useEffect(() => {
@@ -426,21 +469,68 @@ export default function ResearchMode() {
     reader.readAsDataURL(file);
   }
 
+  const handleImportedText = useCallback((file: ImportedTextFile) => {
+    setSessionState((prev) => ({
+      ...prev,
+      sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+        ...session,
+        attachment: {
+          id: createAttachmentId(),
+          fileName: file.fileName,
+          content: file.content,
+          mimeType: file.mimeType,
+          source: file.source,
+          usedOcr: file.usedOcr,
+          warning: file.warning,
+        },
+        savedAt: Date.now(),
+      })),
+    }));
+  }, []);
+
+  function clearAttachment() {
+    setSessionState((prev) => ({
+      ...prev,
+      sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+        ...session,
+        attachment: null,
+        savedAt: Date.now(),
+      })),
+    }));
+  }
+
   async function send() {
     const trimmed = input.trim();
-    if ((!trimmed && !pastedImage) || loading) return;
+    if ((!trimmed && !pastedImage && !attachment) || loading) return;
 
-    const messageContent = trimmed || (lang === "en" ? "[Pasted image attached]" : "[Imagen pegada]");
+    const messageContent = trimmed ||
+      (attachment
+        ? (lang === "en" ? `Use the attached file: ${attachment.fileName}` : `Usa el archivo adjunto: ${attachment.fileName}`)
+        : (lang === "en" ? "[Pasted image attached]" : "[Imagen pegada]"));
     const langHint = langInstruction(detectLang(messageContent));
-    const systemPrompt =
+    const documentContext = attachment
+      ? buildDocumentSystemContext(attachment.fileName, attachment.content, trimmed || activeTool, lang)
+      : "";
+    const systemPrompt = `${documentContext}${
       activeTool === "review"
         ? buildReviewPrompt(detectIntent(messageContent), messageContent, langHint)
-        : getSystemPrompt(activeTool as Exclude<ToolId, "review">, langHint);
+        : getSystemPrompt(activeTool as Exclude<ToolId, "review">, langHint)
+    }`;
 
     const userMsg: Message = {
       role: "user",
       content: messageContent,
       imageDataUrl: pastedImage ?? undefined,
+      attachment: attachment
+        ? {
+            id: attachment.id,
+            fileName: attachment.fileName,
+            mimeType: attachment.mimeType,
+            source: attachment.source,
+            usedOcr: attachment.usedOcr,
+            warning: attachment.warning,
+          }
+        : undefined,
     };
     const updated = [...currentMsgs, userMsg];
 
@@ -608,6 +698,20 @@ export default function ResearchMode() {
                         <MarkdownMessage content={message.content} />
                       ) : (
                         <>
+                          {message.attachment && (
+                            <div className="ri-doc-chip">
+                              <div className="ri-doc-chip-icon" aria-hidden="true">
+                                {message.attachment.mimeType?.startsWith("application/pdf") ? "PDF" : "DOC"}
+                              </div>
+                              <div className="ri-doc-chip-copy">
+                                <strong>{message.attachment.fileName}</strong>
+                                <span>
+                                  {getAttachmentLabel(message.attachment, lang)}
+                                  {message.attachment.usedOcr ? " · OCR" : ""}
+                                </span>
+                              </div>
+                            </div>
+                          )}
                           {message.imageDataUrl && (
                             <div className="ri-bubble-media">
                               <img
@@ -618,6 +722,7 @@ export default function ResearchMode() {
                             </div>
                           )}
                           {!hiddenImageMarkers.has(message.content.trim()) &&
+                            !isSyntheticAttachmentLabel(message.content.trim()) &&
                             message.content.split("\n").map((line, lineIndex) => <p key={lineIndex}>{line || "\u00a0"}</p>)}
                         </>
                       )}
@@ -668,6 +773,30 @@ export default function ResearchMode() {
               </div>
             )}
 
+            {attachment && (
+              <div className="ri-file-preview">
+                <div className="ri-file-preview-icon" aria-hidden="true">
+                  {attachment.mimeType?.startsWith("application/pdf") ? "PDF" : "DOC"}
+                </div>
+                <div className="ri-file-preview-copy">
+                  <strong>{attachment.fileName}</strong>
+                  <span>
+                    {getAttachmentLabel(attachment, lang)}
+                    {attachment.usedOcr ? " · OCR" : ""}
+                    {attachment.warning ? ` · ${attachment.warning}` : ""}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="ri-file-preview-remove"
+                  onClick={clearAttachment}
+                  aria-label={lang === "en" ? "Remove file" : "Quitar archivo"}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
             <textarea
               className="ri-textarea"
               placeholder={getPlaceholders(lang)[activeTool]}
@@ -684,13 +813,7 @@ export default function ResearchMode() {
               <div className="ri-toolbar-left">
                 <ImportBar
                   lang={lang}
-                  onTextFile={(fileContent, name) => {
-                    updateInput(
-                      input.trim()
-                        ? `${input}\n\n[${name}]\n${fileContent.slice(0, 4000)}`
-                        : fileContent.slice(0, 4000),
-                    );
-                  }}
+                  onTextFile={handleImportedText}
                   onImageFile={(dataUrl) => setPastedImage(dataUrl)}
                 />
               </div>
@@ -699,7 +822,7 @@ export default function ResearchMode() {
                 type="button"
                 className="ri-send"
                 onClick={() => void send()}
-                disabled={loading || (!input.trim() && !pastedImage)}
+                disabled={loading || (!input.trim() && !pastedImage && !attachment)}
                 aria-label={lang === "en" ? "Send" : "Enviar"}
               >
                 {loading ? (

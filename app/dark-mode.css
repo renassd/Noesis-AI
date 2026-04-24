@@ -2220,6 +2220,30 @@ html.dark .ri-img-preview {
   border-color: var(--dm-line);
 }
 
+html.dark .ri-file-preview {
+  background: rgba(18, 24, 38, 0.92);
+  border-color: var(--dm-line);
+}
+
+html.dark .ri-file-preview-copy strong {
+  color: var(--dm-ink);
+}
+
+html.dark .ri-file-preview-copy span {
+  color: var(--dm-muted);
+}
+
+html.dark .ri-file-preview-remove {
+  background: rgba(20, 25, 38, 0.88);
+  border-color: var(--dm-line);
+  color: var(--dm-muted);
+}
+
+html.dark .ri-doc-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 html.dark .ri-img-thumb {
   background: var(--dm-surface-alt);
 }

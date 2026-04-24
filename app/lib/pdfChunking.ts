@@ -70,15 +70,17 @@ export function getRelevantChunks(text: string, query: string): string {
   return result || text.slice(0, MAX_CONTEXT_CHARS);
 }
 
-export function buildPdfSystemContext(
-  pdfName: string,
-  pdfText: string,
+export function buildDocumentSystemContext(
+  documentName: string,
+  documentText: string,
   query: string,
   lang: "es" | "en",
 ): string {
-  const relevant = getRelevantChunks(pdfText, query);
+  const relevant = getRelevantChunks(documentText, query);
 
   return lang === "en"
-    ? `[DOCUMENT CONTEXT — "${pdfName}"]\nUse the following relevant excerpts from the uploaded PDF to answer the user:\n\n${relevant}\n\n[END OF DOCUMENT CONTEXT]\n\n`
-    : `[CONTEXTO DEL DOCUMENTO — "${pdfName}"]\nUsá los siguientes fragmentos relevantes del PDF subido para responder al usuario:\n\n${relevant}\n\n[FIN DEL CONTEXTO]\n\n`;
+    ? `[DOCUMENT CONTEXT - "${documentName}"]\nUse the following relevant excerpts from the uploaded document to answer the user:\n\n${relevant}\n\n[END OF DOCUMENT CONTEXT]\n\n`
+    : `[CONTEXTO DEL DOCUMENTO - "${documentName}"]\nUsa los siguientes fragmentos relevantes del documento subido para responder al usuario:\n\n${relevant}\n\n[FIN DEL CONTEXTO]\n\n`;
 }
+
+export const buildPdfSystemContext = buildDocumentSystemContext;

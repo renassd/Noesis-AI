@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
-import { ImportBar } from "./ImportBar";
+import { ImportBar, type ImportedTextFile } from "./ImportBar";
 import type { CardVisual } from "./theme/types";
 import { useLang } from "./i18n";
 import type { Flashcard } from "./types";
@@ -71,11 +71,11 @@ export default function ManualFlashcardBuilder({ onSaveDeck }: Props) {
     setCards((prev) => (prev.length === 1 ? [createDraftCard()] : prev.filter((card) => card.id !== id)));
   }
 
-  function handleImportedText(content: string, fileName: string) {
-    setReferenceText(content);
-    setReferenceSource(fileName);
+  function handleImportedText(file: ImportedTextFile) {
+    setReferenceText(file.content);
+    setReferenceSource(file.fileName);
     if (!deckName.trim()) {
-      const cleanName = fileName.replace(/\.[^.]+$/, "");
+      const cleanName = file.fileName.replace(/\.[^.]+$/, "");
       setDeckName(cleanName);
     }
   }

@@ -5,8 +5,17 @@ import { useEffect, useRef, useState } from "react";
 
 // -- Types -------------------------------------------------------------------
 
+export interface ImportedTextFile {
+  content: string;
+  fileName: string;
+  mimeType?: string;
+  source: "upload" | "drive" | "local";
+  usedOcr?: boolean;
+  warning?: string | null;
+}
+
 interface ImportBarProps {
-  onTextFile?: (content: string, fileName: string) => void;
+  onTextFile?: (file: ImportedTextFile) => void;
   onImageFile?: (dataUrl: string, fileName: string) => void;
   lang?: "en" | "es";
 }
@@ -145,7 +154,12 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
     if (isPlainText) {
       try {
         const text = await file.text();
-        onTextFile?.(text, file.name);
+        onTextFile?.({
+          content: text,
+          fileName: file.name,
+          mimeType: file.type || "text/plain",
+          source: "local",
+        });
         setUploadStatus("success");
         setUploadMessage(t.loadedPrefix + " " + file.name);
         setTimeout(() => { setUploadStatus("idle"); setUploadMessage(null); }, 3000);
@@ -176,6 +190,7 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
         : { error: lang === "en" ? "The server returned an invalid response." : "El servidor devolvio una respuesta invalida." }) as {
         text?: string;
         name?: string;
+        type?: string;
         error?: string;
         previewUrl?: string | null;
         usedOcr?: boolean;
@@ -188,7 +203,14 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
       if (isImage && data.previewUrl) {
         onImageFile?.(data.previewUrl, data.name ?? file.name);
       }
-      onTextFile?.(data.text, data.name ?? file.name);
+      onTextFile?.({
+        content: data.text,
+        fileName: data.name ?? file.name,
+        mimeType: data.type ?? file.type,
+        source: "upload",
+        usedOcr: data.usedOcr,
+        warning: data.warning,
+      });
       setUploadStatus("success");
       setUploadMessage(data.usedOcr ? t.ocrUsed : t.loadedPrefix + " " + (data.name ?? file.name));
       setTimeout(() => { setUploadStatus("idle"); setUploadMessage(null); }, 3000);
@@ -276,10 +298,24 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
     setDriveStatus("fetching");
     try {
       const res  = await fetchWithSupabaseAuth("/api/drive?action=file&id=" + encodeURIComponent(file.id));
-      const data = await res.json() as { text?: string; name?: string; error?: string };
+      const data = await res.json() as {
+        text?: string;
+        name?: string;
+        type?: string;
+        error?: string;
+        usedOcr?: boolean;
+        warning?: string | null;
+      };
       if (!res.ok || !data.text) throw new Error(data.error ?? t.driveError);
 
-      onTextFile?.(data.text, data.name ?? file.name);
+      onTextFile?.({
+        content: data.text,
+        fileName: data.name ?? file.name,
+        mimeType: data.type ?? file.mimeType,
+        source: "drive",
+        usedOcr: data.usedOcr,
+        warning: data.warning,
+      });
       setShowPicker(false);
       setDriveStatus("idle");
       setUploadStatus("success");
