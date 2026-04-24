@@ -141,7 +141,7 @@ export default function GamifiedLoginCard({
         </button>
 
         <div className="auth-divider">
-          <span>o</span>
+          <span>o bien</span>
         </div>
 
         <button type="button" className="auth-google" onClick={onGoogle}>

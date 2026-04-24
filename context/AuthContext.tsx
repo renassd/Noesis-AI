@@ -264,24 +264,28 @@ function AuthModal({
         aria-label={mode === "signup" ? "Crear cuenta" : "Iniciar sesion"}
         style={{ animation: "ce-slide-up 0.26s cubic-bezier(0.22, 1, 0.36, 1)" }}
       >
-        <button type="button" className="auth-modal-close" onClick={onClose} aria-label="Cerrar">
-          x
-        </button>
+        <div className="auth-modal-scroll">
+          <div className="auth-modal-topbar">
+            <button type="button" className="auth-modal-close" onClick={onClose} aria-label="Cerrar">
+              x
+            </button>
+          </div>
 
-        <GamifiedLoginCard
-          mode={mode}
-          name={name}
-          email={email}
-          password={password}
-          loading={loading}
-          onModeChange={setMode}
-          onNameChange={setName}
-          onEmailChange={setEmail}
-          onPasswordChange={setPassword}
-          onSubmit={() => void handleSubmit()}
-          onGoogle={() => void handleGoogle()}
-          error={error}
-        />
+          <GamifiedLoginCard
+            mode={mode}
+            name={name}
+            email={email}
+            password={password}
+            loading={loading}
+            onModeChange={setMode}
+            onNameChange={setName}
+            onEmailChange={setEmail}
+            onPasswordChange={setPassword}
+            onSubmit={() => void handleSubmit()}
+            onGoogle={() => void handleGoogle()}
+            error={error}
+          />
+        </div>
       </div>
     </div>
   );

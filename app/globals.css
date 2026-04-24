@@ -212,25 +212,53 @@ input[type="number"] {
   border: 1px solid rgba(214,224,240,0.9);
   border-radius: 28px;
   box-shadow: var(--shadow-lg);
-  padding: 28px;
   max-height: min(760px, calc(100dvh - 36px));
-  overflow-y: auto;
+  overflow: hidden;
   margin: auto 0;
 }
 
+.auth-modal-scroll {
+  max-height: min(760px, calc(100dvh - 36px));
+  overflow-y: auto;
+  padding: 18px 28px 28px;
+  scrollbar-gutter: stable;
+}
+
+.auth-modal-topbar {
+  position: sticky;
+  top: -18px;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 -28px 6px;
+  padding: 12px 18px 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96) 72%, rgba(255,255,255,0));
+}
+
 .auth-modal-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 1px solid var(--line);
   background: #fff;
   color: var(--muted);
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(13,27,54,0.08);
+  transition: transform 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+  pointer-events: auto;
+}
+
+.auth-modal-close:hover {
+  transform: translateY(-1px);
+  border-color: var(--blue-500);
+  color: var(--blue-900);
+  box-shadow: 0 14px 28px rgba(13,27,54,0.12);
 }
 
 .auth-modal-header h3 {
@@ -421,7 +449,7 @@ input[type="number"] {
 .auth-divider {
   position: relative;
   text-align: center;
-  margin: 2px 0;
+  margin: 4px 0 2px;
 }
 
 .auth-divider::before {
@@ -434,17 +462,21 @@ input[type="number"] {
 .auth-divider span {
   position: relative;
   display: inline-block;
-  padding: 0 12px;
+  padding: 0 14px;
   background: rgba(255,255,255,0.96);
   color: var(--muted);
   font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
 }
 
-.auth-modal::-webkit-scrollbar {
+.auth-modal-scroll::-webkit-scrollbar {
   width: 10px;
 }
 
-.auth-modal::-webkit-scrollbar-thumb {
+.auth-modal-scroll::-webkit-scrollbar-thumb {
   background: rgba(91, 142, 245, 0.28);
   border: 2px solid rgba(255, 255, 255, 0.96);
   border-radius: 999px;

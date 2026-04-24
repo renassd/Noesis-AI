@@ -1671,6 +1671,10 @@ html.dark .auth-modal {
   box-shadow: var(--dm-card-shadow);
 }
 
+html.dark .auth-modal-topbar {
+  background: linear-gradient(180deg, rgba(18, 24, 39, 0.96) 72%, rgba(18, 24, 39, 0));
+}
+
 html.dark .auth-modal-header h3,
 html.dark .auth-modal-header p {
   color: var(--dm-ink);

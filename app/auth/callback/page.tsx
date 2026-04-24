@@ -19,46 +19,81 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     let cancelled = false;
+    let timeoutId: number | undefined;
+    let unsubscribe: (() => void) | undefined;
 
     async function finishGoogleSignIn() {
       const supabase = getSupabaseBrowser();
       const code = searchParams.get("code");
       const errorDescription = searchParams.get("error_description");
       const next = resolveNextPath(searchParams.get("next"));
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const hashError = hashParams.get("error_description") ?? hashParams.get("error");
 
       if (!supabase) {
         setMessage("Falta NEXT_PUBLIC_SUPABASE_ANON_KEY para cerrar el login de Google.");
         return;
       }
 
-      if (errorDescription) {
-        setMessage(errorDescription);
+      if (errorDescription || hashError) {
+        setMessage(errorDescription ?? hashError ?? "No se pudo completar el login con Google.");
         return;
       }
 
-      if (!code) {
-        setMessage("No llego el codigo de autorizacion de Google. Reinicia el login una vez mas.");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) {
+          return;
+        }
+
+        if (error) {
+          setMessage(error.message);
+          return;
+        }
+
+        router.replace(next);
+        router.refresh();
         return;
       }
 
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const { data: currentSession } = await supabase.auth.getSession();
       if (cancelled) {
         return;
       }
 
-      if (error) {
-        setMessage(error.message);
+      if (currentSession.session) {
+        router.replace(next);
+        router.refresh();
         return;
       }
 
-      router.replace(next);
-      router.refresh();
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (cancelled || !session) {
+          return;
+        }
+
+        router.replace(next);
+        router.refresh();
+      });
+      unsubscribe = () => authListener.subscription.unsubscribe();
+
+      timeoutId = window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setMessage("No se pudo cerrar el login de Google. Reinicia el intento una vez mas.");
+      }, 2000);
     }
 
     void finishGoogleSignIn();
 
     return () => {
       cancelled = true;
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+      unsubscribe?.();
     };
   }, [router, searchParams]);
 
