@@ -7,10 +7,17 @@ import { useLang } from "./i18n";
 import { detectLang, langInstruction } from "./lib/detectLang";
 import { renderMarkdownWithMath } from "./lib/renderRichText";
 import { ImportBar } from "./ImportBar";
+import { buildPdfSystemContext } from "./lib/pdfChunking";
 
 type Message = { role: "user" | "assistant"; content: string; imageDataUrl?: string };
 type ToolId = "summary" | "review" | "explain" | "writing";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
+
+interface PdfContext {
+  name: string;
+  text: string;
+  chars: number;
+}
 
 interface ResearchSession {
   id: string;
@@ -19,12 +26,15 @@ interface ResearchSession {
   messages: Record<ToolId, Message[]>;
   input: string;
   savedAt: number;
+  pdfContext: PdfContext | null;
 }
 
 interface SessionState {
   sessions: ResearchSession[];
   activeSessionId: string;
 }
+
+type PdfUploadStatus = "idle" | "uploading" | "error";
 
 const RESEARCH_KEYWORDS = [
   "paper", "papers", "revision", "literatura", "autores", "autor", "corriente",
@@ -36,6 +46,7 @@ const RESEARCH_KEYWORDS = [
 const STORAGE_KEY = "noesis_research_history";
 const ACTIVE_SESSION_KEY = "noesis_research_active_session";
 const DRAFT_SESSION_ID = "research_draft";
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
 
 function detectIntent(input: string): InputIntent {
   const trimmed = input.trim();
@@ -237,6 +248,7 @@ function createSession(lang: "es" | "en", id = DRAFT_SESSION_ID): ResearchSessio
     messages: createEmptyMessages(),
     input: "",
     savedAt: Date.now(),
+    pdfContext: null,
   };
 }
 
@@ -292,6 +304,7 @@ function loadHistory(): ResearchSession[] {
         messages: item.messages ?? createEmptyMessages(),
         input: item.input ?? "",
         savedAt: typeof item.savedAt === "number" ? item.savedAt : Date.now(),
+        pdfContext: item.pdfContext ?? null,
       }));
   } catch {
     return [];
@@ -358,12 +371,33 @@ function getSessionPreview(session: ResearchSession, lang: "es" | "en"): string 
   return lang === "en" ? "Continue this conversation" : "Continuar esta conversación";
 }
 
+function fmtChars(chars: number, lang: "es" | "en"): string {
+  if (chars < 1000) return `${chars} ${lang === "en" ? "chars" : "car."}`;
+  return `${(chars / 1000).toFixed(1)}k ${lang === "en" ? "chars" : "car."}`;
+}
+
+// Saves extracted text to DB in the background (best-effort, won't block UI)
+async function savePdfToDb(fileName: string, extractedText: string): Promise<void> {
+  try {
+    await fetchWithSupabaseAuth("/api/research-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file_name: fileName, extracted_text: extractedText }),
+    });
+  } catch {
+    // Silently ignore — DB save is optional
+  }
+}
+
 export default function ResearchMode() {
   const { lang } = useLang();
   const [sessionState, setSessionState] = useState<SessionState>(() => getInitialState(lang));
   const [loading, setLoading] = useState(false);
   const [pastedImage, setPastedImage] = useState<string | null>(null);
+  const [pdfUploadStatus, setPdfUploadStatus] = useState<PdfUploadStatus>("idle");
+  const [pdfUploadError, setPdfUploadError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const activeSession =
     sessionState.sessions.find((session) => session.id === sessionState.activeSessionId) ??
@@ -374,6 +408,7 @@ export default function ResearchMode() {
   const input = activeSession.input;
   const hiddenImageMarkers = new Set(["[Pasted image attached]", "[Imagen pegada]"]);
   const savedSessions = sessionState.sessions.filter(hasSessionContent);
+  const activePdf = activeSession.pdfContext;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -383,6 +418,12 @@ export default function ResearchMode() {
     saveHistory(sessionState.sessions);
     saveActiveSessionId(sessionState.activeSessionId);
   }, [sessionState]);
+
+  // Reset transient PDF upload state when switching sessions
+  useEffect(() => {
+    setPdfUploadStatus("idle");
+    setPdfUploadError(null);
+  }, [sessionState.activeSessionId]);
 
   const startNewSession = useCallback(() => {
     setSessionState((prev) => {
@@ -424,16 +465,105 @@ export default function ResearchMode() {
     reader.readAsDataURL(file);
   }
 
+  // ── PDF upload ──────────────────────────────────────────────────────────────
+
+  async function handlePdfFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    const isPdf = file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+    if (!isPdf) {
+      setPdfUploadError(lang === "en" ? "Only PDF files are supported." : "Solo se admiten archivos PDF.");
+      setPdfUploadStatus("error");
+      setTimeout(() => { setPdfUploadStatus("idle"); setPdfUploadError(null); }, 4000);
+      return;
+    }
+
+    if (file.size > MAX_PDF_BYTES) {
+      setPdfUploadError(lang === "en" ? "File too large (max 10 MB)." : "Archivo demasiado grande (máx 10 MB).");
+      setPdfUploadStatus("error");
+      setTimeout(() => { setPdfUploadStatus("idle"); setPdfUploadError(null); }, 4000);
+      return;
+    }
+
+    setPdfUploadStatus("uploading");
+    setPdfUploadError(null);
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetchWithSupabaseAuth("/api/upload", { method: "POST", body: form });
+      const data = await res.json() as {
+        text?: string;
+        name?: string;
+        error?: string;
+        usedOcr?: boolean;
+        chars?: number;
+      };
+
+      if (!res.ok || !data.text) {
+        const msg = data.error ?? (lang === "en" ? "Could not extract text from PDF." : "No se pudo extraer texto del PDF.");
+        throw new Error(msg);
+      }
+
+      const pdfCtx: PdfContext = {
+        name: data.name ?? file.name,
+        text: data.text,
+        chars: data.chars ?? data.text.length,
+      };
+
+      setSessionState((prev) => ({
+        ...prev,
+        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+          ...session,
+          pdfContext: pdfCtx,
+          savedAt: Date.now(),
+        })),
+      }));
+
+      setPdfUploadStatus("idle");
+
+      // Save to DB in background (non-blocking)
+      void savePdfToDb(pdfCtx.name, pdfCtx.text);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : (lang === "en" ? "Upload failed." : "Error al subir.");
+      setPdfUploadError(msg);
+      setPdfUploadStatus("error");
+      setTimeout(() => { setPdfUploadStatus("idle"); setPdfUploadError(null); }, 5000);
+    }
+  }
+
+  function removePdfContext() {
+    setSessionState((prev) => ({
+      ...prev,
+      sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+        ...session,
+        pdfContext: null,
+        savedAt: Date.now(),
+      })),
+    }));
+    setPdfUploadStatus("idle");
+    setPdfUploadError(null);
+  }
+
+  // ── Send message ────────────────────────────────────────────────────────────
+
   async function send() {
     const trimmed = input.trim();
     if ((!trimmed && !pastedImage) || loading) return;
 
     const messageContent = trimmed || (lang === "en" ? "[Pasted image attached]" : "[Imagen pegada]");
     const langHint = langInstruction(detectLang(messageContent));
-    const systemPrompt =
+    const basePrompt =
       activeTool === "review"
         ? buildReviewPrompt(detectIntent(messageContent), messageContent, langHint)
         : getSystemPrompt(activeTool as Exclude<ToolId, "review">, langHint);
+
+    // Inject PDF context into system prompt if available
+    const systemPrompt = activePdf
+      ? buildPdfSystemContext(activePdf.name, activePdf.text, messageContent, lang) + basePrompt
+      : basePrompt;
 
     const userMsg: Message = {
       role: "user",
@@ -466,7 +596,7 @@ export default function ResearchMode() {
       const res = await fetchWithSupabaseAuth("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ max_tokens: 1200, system: systemPrompt, messages: updated }),
+        body: JSON.stringify({ max_tokens: 1400, system: systemPrompt, messages: updated }),
       });
       const data = await res.json();
       const text = res.ok ? (data.text || "").trim() : data.error || "Ocurrió un error. Intentá de nuevo.";
@@ -495,6 +625,15 @@ export default function ResearchMode() {
     }
   }
 
+  // Quick-action: summarize the entire PDF document
+  async function summarizePdf() {
+    if (!activePdf || loading) return;
+    const prompt = lang === "en"
+      ? "Please provide a complete summary of this document."
+      : "Por favor, hacé un resumen completo de este documento.";
+    updateInput(prompt);
+  }
+
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -513,6 +652,8 @@ export default function ResearchMode() {
     }));
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────────
+
   return (
     <div className="ri-layout">
       <div className="ri-shell">
@@ -529,30 +670,30 @@ export default function ResearchMode() {
 
         <div className="ri-workspace">
           <aside className="ri-sidebar">
-        <div className="ri-sidebar-top">
-          <div className="ri-sidebar-heading">
-            <div className="ri-sidebar-kicker-row">
-              <p className="ri-sidebar-kicker">{lang === "en" ? "History" : "Historial"}</p>
-              <span className="ri-sidebar-saved">
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M2 6.5l2.5 2.5L10 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {lang === "en" ? "Auto-saved" : "Guardado"}
-              </span>
+            <div className="ri-sidebar-top">
+              <div className="ri-sidebar-heading">
+                <div className="ri-sidebar-kicker-row">
+                  <p className="ri-sidebar-kicker">{lang === "en" ? "History" : "Historial"}</p>
+                  <span className="ri-sidebar-saved">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2 6.5l2.5 2.5L10 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {lang === "en" ? "Auto-saved" : "Guardado"}
+                  </span>
+                </div>
+                <div className="ri-sidebar-title-row">
+                  <h3 className="ri-sidebar-title">{lang === "en" ? "Research chats" : "Chats de investigación"}</h3>
+                </div>
+              </div>
+              <div className="ri-sidebar-actions">
+                <button type="button" className="ri-sidebar-new" onClick={startNewSession}>
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                  {lang === "en" ? "New session" : "Nueva sesión"}
+                </button>
+              </div>
             </div>
-            <div className="ri-sidebar-title-row">
-              <h3 className="ri-sidebar-title">{lang === "en" ? "Research chats" : "Chats de investigación"}</h3>
-            </div>
-          </div>
-          <div className="ri-sidebar-actions">
-            <button type="button" className="ri-sidebar-new" onClick={startNewSession}>
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-              {lang === "en" ? "New session" : "Nueva sesión"}
-            </button>
-          </div>
-        </div>
 
             <div className="ri-history-list">
               {savedSessions.length === 0 ? (
@@ -568,6 +709,15 @@ export default function ResearchMode() {
                     onClick={() => selectSession(session.id)}
                   >
                     <span className="ri-history-item-title">{resolveSessionTitle(session, lang)}</span>
+                    {session.pdfContext && (
+                      <span className="ri-history-item-pdf" aria-label="Has PDF context">
+                        <svg width="8" height="8" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                          <rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                          <path d="M3.5 5h5M3.5 7.5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                        </svg>
+                        PDF
+                      </span>
+                    )}
                     <span className="ri-history-item-preview">{getSessionPreview(session, lang)}</span>
                   </button>
                 ))
@@ -576,141 +726,282 @@ export default function ResearchMode() {
           </aside>
 
           <div className="ri-chat-shell">
-          <div className="ri-chat-topbar">
-            <span className="ri-chat-status-dot" aria-hidden="true" />
-            <span>{resolveSessionTitle(activeSession, lang)}</span>
-          </div>
-
-          {currentMsgs.length === 0 && !loading && (
-            <div className="ri-empty">
-              <p className="ri-empty-hint">{getEmptyHints(lang)[activeTool]}</p>
-            </div>
-          )}
-
-          {currentMsgs.length > 0 && (
-            <div className="ri-messages">
-              {currentMsgs.map((message, index) => (
-                <div key={index} className={`ri-msg ri-msg-${message.role}`}>
-                  {message.role === "assistant" && (
-                    <div className="ri-avatar" aria-hidden="true">
-                      <Image src="/logo.jpeg" alt="" width={34} height={34} className="ri-avatar-image" />
-                    </div>
-                  )}
-                  <div className="ri-msg-stack">
-                    <div className="ri-msg-meta">
-                      {message.role === "assistant" ? "Neuvra" : lang === "en" ? "You" : "Vos"}
-                    </div>
-                    <div className="ri-bubble">
-                      {message.role === "assistant" ? (
-                        <MarkdownMessage content={message.content} />
-                      ) : (
-                        <>
-                          {message.imageDataUrl && (
-                            <div className="ri-bubble-media">
-                              <img
-                                src={message.imageDataUrl}
-                                alt={lang === "en" ? "Pasted image" : "Imagen pegada"}
-                                className="ri-bubble-image"
-                              />
-                            </div>
-                          )}
-                          {!hiddenImageMarkers.has(message.content.trim()) &&
-                            message.content.split("\n").map((line, lineIndex) => <p key={lineIndex}>{line || "\u00a0"}</p>)}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="ri-msg ri-msg-assistant">
-                  <div className="ri-avatar" aria-hidden="true">
-                    <Image src="/logo.jpeg" alt="" width={34} height={34} className="ri-avatar-image" />
-                  </div>
-                  <div className="ri-msg-stack">
-                    <div className="ri-msg-meta">Neuvra</div>
-                    <div className="ri-bubble ri-typing"><span /><span /><span /></div>
-                  </div>
-                </div>
+            <div className="ri-chat-topbar">
+              <span className="ri-chat-status-dot" aria-hidden="true" />
+              <span>{resolveSessionTitle(activeSession, lang)}</span>
+              {activePdf && (
+                <span className="ri-topbar-pdf-badge">
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+                    <path d="M3.5 4.5h5M3.5 7h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                  {activePdf.name.length > 22 ? activePdf.name.slice(0, 20) + "…" : activePdf.name}
+                </span>
               )}
-              <div ref={bottomRef} />
-            </div>
-          )}
-
-          <div className="ri-panel">
-            <div className="ri-chips">
-              {getTools(lang).map((tool) => (
-                <button
-                  key={tool.id}
-                  type="button"
-                  className={`ri-chip${activeTool === tool.id ? " active" : ""}`}
-                  onClick={() => switchTool(tool.id)}
-                >
-                  {tool.label}
-                </button>
-              ))}
             </div>
 
-            {pastedImage && (
-              <div className="ri-img-preview">
-                <img src={pastedImage} alt="Pasted" className="ri-img-thumb" />
-                <button
-                  type="button"
-                  className="ri-img-remove"
-                  onClick={() => setPastedImage(null)}
-                  aria-label={lang === "en" ? "Remove image" : "Quitar imagen"}
-                >
-                  ×
-                </button>
+            {currentMsgs.length === 0 && !loading && (
+              <div className="ri-empty">
+                {activePdf ? (
+                  <div className="ri-empty-pdf-hint">
+                    <p className="ri-empty-pdf-title">
+                      {lang === "en" ? `PDF loaded: "${activePdf.name}"` : `PDF cargado: "${activePdf.name}"`}
+                    </p>
+                    <p className="ri-empty-pdf-sub">
+                      {lang === "en"
+                        ? "Ask a question, request a summary, or generate flashcards from this document."
+                        : "Hacé una pregunta, pedí un resumen o generá flashcards a partir de este documento."}
+                    </p>
+                    <div className="ri-empty-pdf-actions">
+                      <button
+                        type="button"
+                        className="ri-quick-action"
+                        onClick={() => void summarizePdf()}
+                      >
+                        {lang === "en" ? "Summarize document" : "Resumir documento"}
+                      </button>
+                      <button
+                        type="button"
+                        className="ri-quick-action"
+                        onClick={() => updateInput(lang === "en" ? "What are the main conclusions of this document?" : "¿Cuáles son las conclusiones principales de este documento?")}
+                      >
+                        {lang === "en" ? "Main conclusions" : "Conclusiones principales"}
+                      </button>
+                      <button
+                        type="button"
+                        className="ri-quick-action"
+                        onClick={() => updateInput(lang === "en"
+                          ? 'Generate exactly 8 flashcards from this document. Return valid JSON array: [{"question":"...","answer":"..."}]'
+                          : 'Genera exactamente 8 flashcards a partir de este documento. Devolvé solo un array JSON válido: [{"question":"...","answer":"..."}]'
+                        )}
+                      >
+                        {lang === "en" ? "Generate flashcards" : "Generar flashcards"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="ri-empty-hint">{getEmptyHints(lang)[activeTool]}</p>
+                )}
               </div>
             )}
 
-            <textarea
-              className="ri-textarea"
-              placeholder={getPlaceholders(lang)[activeTool]}
-              value={input}
-              onChange={(event) => updateInput(event.target.value)}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              disabled={loading}
-              rows={4}
-              aria-label={lang === "en" ? "Research input" : "Input de investigación"}
-            />
+            {currentMsgs.length > 0 && (
+              <div className="ri-messages">
+                {currentMsgs.map((message, index) => (
+                  <div key={index} className={`ri-msg ri-msg-${message.role}`}>
+                    {message.role === "assistant" && (
+                      <div className="ri-avatar" aria-hidden="true">
+                        <Image src="/logo.jpeg" alt="" width={34} height={34} className="ri-avatar-image" />
+                      </div>
+                    )}
+                    <div className="ri-msg-stack">
+                      <div className="ri-msg-meta">
+                        {message.role === "assistant"
+                          ? activePdf
+                            ? `Neuvra · ${lang === "en" ? "Based on your PDF" : "Basado en tu PDF"}`
+                            : "Neuvra"
+                          : lang === "en" ? "You" : "Vos"}
+                      </div>
+                      <div className="ri-bubble">
+                        {message.role === "assistant" ? (
+                          <MarkdownMessage content={message.content} />
+                        ) : (
+                          <>
+                            {message.imageDataUrl && (
+                              <div className="ri-bubble-media">
+                                <img
+                                  src={message.imageDataUrl}
+                                  alt={lang === "en" ? "Pasted image" : "Imagen pegada"}
+                                  className="ri-bubble-image"
+                                />
+                              </div>
+                            )}
+                            {!hiddenImageMarkers.has(message.content.trim()) &&
+                              message.content.split("\n").map((line, lineIndex) => <p key={lineIndex}>{line || "\u00a0"}</p>)}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {loading && (
+                  <div className="ri-msg ri-msg-assistant">
+                    <div className="ri-avatar" aria-hidden="true">
+                      <Image src="/logo.jpeg" alt="" width={34} height={34} className="ri-avatar-image" />
+                    </div>
+                    <div className="ri-msg-stack">
+                      <div className="ri-msg-meta">Neuvra</div>
+                      <div className="ri-bubble ri-typing"><span /><span /><span /></div>
+                    </div>
+                  </div>
+                )}
+                <div ref={bottomRef} />
+              </div>
+            )}
 
-            <div className="ri-toolbar">
-              <div className="ri-toolbar-left">
-                <ImportBar
-                  lang={lang}
-                  onTextFile={(fileContent, name) => {
-                    updateInput(
-                      input.trim()
-                        ? `${input}\n\n[${name}]\n${fileContent.slice(0, 4000)}`
-                        : fileContent.slice(0, 4000),
-                    );
-                  }}
-                  onImageFile={(dataUrl) => setPastedImage(dataUrl)}
-                />
+            <div className="ri-panel">
+              <div className="ri-chips">
+                {getTools(lang).map((tool) => (
+                  <button
+                    key={tool.id}
+                    type="button"
+                    className={`ri-chip${activeTool === tool.id ? " active" : ""}`}
+                    onClick={() => switchTool(tool.id)}
+                  >
+                    {tool.label}
+                  </button>
+                ))}
               </div>
 
-              <button
-                type="button"
-                className="ri-send"
-                onClick={() => void send()}
-                disabled={loading || (!input.trim() && !pastedImage)}
-                aria-label={lang === "en" ? "Send" : "Enviar"}
-              >
-                {loading ? (
-                  <span className="ri-send-spinner" aria-hidden="true" />
-                ) : (
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path d="M8 3L13 8L8 13M3 8H13" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              {/* PDF context banner */}
+              {activePdf && (
+                <div className="ri-pdf-banner">
+                  <svg className="ri-pdf-banner-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="1.5" y="1.5" width="13" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.4"/>
+                    <path d="M4 6h8M4 9h5.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
                   </svg>
-                )}
-                <span>{loading ? (lang === "en" ? "Sending..." : "Enviando...") : lang === "en" ? "Send" : "Enviar"}</span>
-              </button>
+                  <div className="ri-pdf-banner-info">
+                    <span className="ri-pdf-banner-name">{activePdf.name}</span>
+                    <span className="ri-pdf-banner-meta">
+                      {fmtChars(activePdf.chars, lang)}
+                      {" · "}
+                      {lang === "en" ? "active document" : "documento activo"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="ri-pdf-banner-remove"
+                    onClick={removePdfContext}
+                    aria-label={lang === "en" ? "Remove PDF" : "Quitar PDF"}
+                    title={lang === "en" ? "Remove PDF" : "Quitar PDF"}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {/* PDF error */}
+              {pdfUploadStatus === "error" && pdfUploadError && (
+                <div className="ri-pdf-error" role="alert">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3"/>
+                    <path d="M7 4.5v3M7 9.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                  </svg>
+                  {pdfUploadError}
+                </div>
+              )}
+
+              {pastedImage && (
+                <div className="ri-img-preview">
+                  <img src={pastedImage} alt="Pasted" className="ri-img-thumb" />
+                  <button
+                    type="button"
+                    className="ri-img-remove"
+                    onClick={() => setPastedImage(null)}
+                    aria-label={lang === "en" ? "Remove image" : "Quitar imagen"}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              <textarea
+                className="ri-textarea"
+                placeholder={
+                  activePdf
+                    ? (lang === "en"
+                      ? `Ask something about "${activePdf.name}"…`
+                      : `Preguntá algo sobre "${activePdf.name}"…`)
+                    : getPlaceholders(lang)[activeTool]
+                }
+                value={input}
+                onChange={(event) => updateInput(event.target.value)}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
+                disabled={loading}
+                rows={4}
+                aria-label={lang === "en" ? "Research input" : "Input de investigación"}
+              />
+
+              <div className="ri-toolbar">
+                <div className="ri-toolbar-left">
+                  <ImportBar
+                    lang={lang}
+                    onTextFile={(fileContent, name) => {
+                      updateInput(
+                        input.trim()
+                          ? `${input}\n\n[${name}]\n${fileContent.slice(0, 4000)}`
+                          : fileContent.slice(0, 4000),
+                      );
+                    }}
+                    onImageFile={(dataUrl) => setPastedImage(dataUrl)}
+                  />
+
+                  {/* Hidden PDF file input */}
+                  <input
+                    ref={pdfInputRef}
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    style={{ display: "none" }}
+                    onChange={(e) => void handlePdfFileChange(e)}
+                    aria-label={lang === "en" ? "Upload PDF as context" : "Subir PDF como contexto"}
+                  />
+
+                  {/* PDF context button */}
+                  <button
+                    type="button"
+                    className={`ri-pdf-btn${activePdf ? " ri-pdf-btn--active" : ""}${pdfUploadStatus === "uploading" ? " ri-pdf-btn--loading" : ""}`}
+                    onClick={() => {
+                      if (activePdf) {
+                        removePdfContext();
+                      } else {
+                        pdfInputRef.current?.click();
+                      }
+                    }}
+                    disabled={pdfUploadStatus === "uploading"}
+                    title={
+                      activePdf
+                        ? (lang === "en" ? "Remove PDF context" : "Quitar PDF")
+                        : (lang === "en" ? "Upload PDF as context" : "Subir PDF como contexto")
+                    }
+                  >
+                    {pdfUploadStatus === "uploading" ? (
+                      <span className="ri-send-spinner" aria-hidden="true" />
+                    ) : (
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <rect x="1.5" y="1.5" width="13" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.4"/>
+                        <path d="M4.5 7h7M4.5 9.5h4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                      </svg>
+                    )}
+                    <span>
+                      {pdfUploadStatus === "uploading"
+                        ? (lang === "en" ? "Processing…" : "Procesando…")
+                        : activePdf
+                          ? (lang === "en" ? "PDF active" : "PDF activo")
+                          : "PDF"}
+                    </span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  className="ri-send"
+                  onClick={() => void send()}
+                  disabled={loading || (!input.trim() && !pastedImage)}
+                  aria-label={lang === "en" ? "Send" : "Enviar"}
+                >
+                  {loading ? (
+                    <span className="ri-send-spinner" aria-hidden="true" />
+                  ) : (
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="M8 3L13 8L8 13M3 8H13" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  <span>{loading ? (lang === "en" ? "Sending..." : "Enviando...") : lang === "en" ? "Send" : "Enviar"}</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         </div>
 
         <p className="ri-hint">

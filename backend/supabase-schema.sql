@@ -40,3 +40,23 @@ CREATE POLICY "users can manage own flashcards"
   ON flashcards FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- ─── Tabla de PDFs subidos en modo investigación ───────────────────────────
+-- Ejecutá esto en: Supabase → SQL Editor → Run
+
+CREATE TABLE IF NOT EXISTS research_pdfs (
+  id             UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id        TEXT NOT NULL,
+  file_name      TEXT NOT NULL,
+  extracted_text TEXT NOT NULL,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_research_pdfs_user_id ON research_pdfs(user_id);
+
+ALTER TABLE research_pdfs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can manage own research_pdfs"
+  ON research_pdfs FOR ALL
+  USING (true)
+  WITH CHECK (true);
