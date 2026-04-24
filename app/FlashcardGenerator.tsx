@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { useAiUsage } from "@/context/AiUsageContext";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
 import { detectLang, langInstruction } from "./lib/detectLang";
@@ -68,6 +69,7 @@ ${text.slice(0, 4000)}`;
 }
 
 export default function FlashcardGenerator({ onSaveDeck }: Props) {
+  const { applyUsage } = useAiUsage();
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState(8);
   const [loading, setLoading] = useState(false);
@@ -100,6 +102,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
       });
 
       const data = await res.json();
+      applyUsage(data.usage);
       if (!res.ok) throw new Error(data.error || "Error al generar las tarjetas.");
 
       const rawText = data.text || "";

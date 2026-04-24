@@ -10,6 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import ColorModeToggle from "../ColorModeToggle";
+import AiUsageCard from "@/components/AiUsageCard";
 import FlashcardGenerator from "../FlashcardGenerator";
 import FlashcardStudy from "../FlashcardStudy";
 import LangToggle from "../LangToggle";
@@ -123,6 +124,8 @@ export default function EstudioPage() {
               </button>
             ))}
           </div>
+
+          <AiUsageCard variant="compact" />
 
           {decks.length > 0 && (
             <div className="ws-deck-list">

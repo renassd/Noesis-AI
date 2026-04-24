@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  AiUsageError,
+  finalizeAiRequestFailure,
+  finalizeAiRequestSuccess,
+  reserveAiRequest,
+  type AiRequestReservation,
+} from "@/lib/ai-usage";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { AuthError, requireAuthenticatedUser } from "@/lib/server-auth";
-
-const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -15,6 +20,10 @@ type AnthropicResponse = {
     type: string;
     text?: string;
   }>;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+  };
   error?: {
     message?: string;
   };
@@ -170,6 +179,7 @@ export async function POST(req: NextRequest) {
         max_tokens?: number;
       }
     | undefined;
+  let reservation: AiRequestReservation | null = null;
 
   try {
     const { user } = await requireAuthenticatedUser(req);
@@ -219,8 +229,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "La imagen adjunta es demasiado grande." }, { status: 413 });
     }
 
+    const latestUserMessage = [...body.messages]
+      .reverse()
+      .find((message) => message.role === "user");
+    const latestInputChars = latestUserMessage?.content?.trim().length ?? 0;
+
+    reservation = await reserveAiRequest({
+      userId: user.id,
+      requestedMaxTokens: body.max_tokens,
+      inputChars: latestInputChars,
+    });
+
     if (!apiKey) {
-      return NextResponse.json({ text: buildMockResponse(body), mock: true });
+      const usage = await finalizeAiRequestSuccess({
+        userId: user.id,
+        eventId: reservation.eventId,
+        creditsUsed: 1,
+        model: reservation.model,
+      });
+
+      return NextResponse.json({
+        text: buildMockResponse(body),
+        mock: true,
+        usage,
+      });
     }
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -231,8 +263,8 @@ export async function POST(req: NextRequest) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: DEFAULT_MODEL,
-        max_tokens: body.max_tokens ?? 1000,
+        model: reservation.model,
+        max_tokens: reservation.maxTokens,
         system: body.system,
         messages: body.messages.map(toAnthropicMessage),
       }),
@@ -242,9 +274,14 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       console.error("Anthropic API error", {
-        model: DEFAULT_MODEL,
+        model: reservation.model,
         status: response.status,
         error: data.error?.message ?? "Unknown error",
+      });
+
+      await finalizeAiRequestFailure({
+        eventId: reservation.eventId,
+        reason: data.error?.message ?? `Anthropic ${response.status}`,
       });
 
       return NextResponse.json(
@@ -254,21 +291,45 @@ export async function POST(req: NextRequest) {
           warning:
             data.error?.message ??
             "Anthropic no respondio correctamente. Se devolvio una respuesta local de respaldo.",
+          usage: reservation.usage,
         },
         { status: 200 },
       );
     }
 
     const text = data.content?.map((block) => block.text || "").join("") || "";
+    const usage = await finalizeAiRequestSuccess({
+      userId: user.id,
+      eventId: reservation.eventId,
+      creditsUsed: 1,
+      model: reservation.model,
+    });
 
-    return NextResponse.json({ text });
+    return NextResponse.json({ text, usage });
   } catch (error) {
+    if (reservation) {
+      await finalizeAiRequestFailure({
+        eventId: reservation.eventId,
+        reason: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    if (error instanceof AiUsageError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          usage: error.usage,
+        },
+        { status: error.status },
+      );
+    }
+
     if (error instanceof AuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
     console.error("AI route failed", {
-      model: DEFAULT_MODEL,
+      model: reservation?.model ?? "unknown",
       error: error instanceof Error ? error.message : "Unknown error",
     });
 
@@ -277,6 +338,7 @@ export async function POST(req: NextRequest) {
         text: buildMockResponse(body ?? {}),
         mock: true,
         warning: "No se pudo contactar Anthropic. Se devolvio una respuesta local de respaldo.",
+        usage: reservation?.usage,
       },
       { status: 200 },
     );

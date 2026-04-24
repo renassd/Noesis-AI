@@ -1,6 +1,7 @@
 "use client";
 
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { useAiUsage } from "@/context/AiUsageContext";
 import { useEffect, useRef, useState } from "react";
 import { detectLang, langInstruction } from "./lib/detectLang";
 import { renderMarkdownWithMath } from "./lib/renderRichText";
@@ -28,6 +29,7 @@ ${langHint}`;
 
 export default function TutorMode() {
   const { t } = useLang();
+  const { applyUsage } = useAiUsage();
   const s = t.study;
   const [topic, setTopic] = useState("");
   const [started, setStarted] = useState(false);
@@ -47,6 +49,7 @@ export default function TutorMode() {
       body: JSON.stringify({ max_tokens: 1000, system, messages: msgs }),
     });
     const data = await res.json();
+    applyUsage(data.usage);
     if (!res.ok) throw new Error(data.error || "Error de API");
     return (data.text || "").trim();
   }

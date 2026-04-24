@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { useAiUsage } from "@/context/AiUsageContext";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useLang } from "./i18n";
 import { detectLang, langInstruction } from "./lib/detectLang";
@@ -360,6 +361,7 @@ function getSessionPreview(session: ResearchSession, lang: "es" | "en"): string 
 
 export default function ResearchMode() {
   const { lang } = useLang();
+  const { applyUsage } = useAiUsage();
   const [sessionState, setSessionState] = useState<SessionState>(() => getInitialState(lang));
   const [loading, setLoading] = useState(false);
   const [pastedImage, setPastedImage] = useState<string | null>(null);
@@ -469,6 +471,7 @@ export default function ResearchMode() {
         body: JSON.stringify({ max_tokens: 1200, system: systemPrompt, messages: updated }),
       });
       const data = await res.json();
+      applyUsage(data.usage);
       const text = res.ok ? (data.text || "").trim() : data.error || "Ocurrió un error. Intentá de nuevo.";
       setSessionState((prev) => ({
         ...prev,

@@ -7,6 +7,7 @@ import FlashcardStudy from "./FlashcardStudy";
 import TutorMode from "./TutorMode";
 import ResearchMode from "./ResearchMode";
 import MyDecks from "./MyDecks";
+import AiUsageCard from "@/components/AiUsageCard";
 import ThemeToggle from "./theme/ThemeToggle";
 import { useLang } from "./i18n";
 import type { Flashcard, Deck } from "./types";
@@ -164,6 +165,8 @@ export default function WorkspaceApp({
               </div>
             ))}
           </nav>
+
+          <AiUsageCard variant="compact" />
 
           {decks.length > 0 && (
             <div className="ws-deck-list">

@@ -10,6 +10,7 @@ import "./dark-mode-workflow-patch.css";
 import { LangProvider } from "./i18n";
 import { ThemeProvider } from "./theme/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { AiUsageProvider } from "@/context/AiUsageContext";
 
 export const metadata: Metadata = {
   title: "Neuvra AI",
@@ -37,7 +38,7 @@ export default function RootLayout({
         <LangProvider>
           <ThemeProvider>
             <AuthProvider>
-              {children}
+              <AiUsageProvider>{children}</AiUsageProvider>
             </AuthProvider>
           </ThemeProvider>
         </LangProvider>

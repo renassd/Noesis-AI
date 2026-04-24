@@ -1789,6 +1789,60 @@ html.dark .auth-modal-scroll::-webkit-scrollbar-track {
   border-radius: 999px;
 }
 
+html.dark .ai-usage-card {
+  background: linear-gradient(180deg, rgba(20, 28, 45, 0.96), rgba(16, 22, 38, 0.94));
+  border-color: var(--dm-card-border);
+  box-shadow: var(--dm-card-shadow);
+}
+
+html.dark .ai-usage-kicker,
+html.dark .ai-usage-empty,
+html.dark .ai-usage-meter-copy span,
+html.dark .ai-usage-stats span {
+  color: var(--dm-muted);
+}
+
+html.dark .ai-usage-plan-row strong,
+html.dark .ai-usage-meter-copy strong,
+html.dark .ai-usage-stats strong {
+  color: var(--dm-ink);
+}
+
+html.dark .ai-usage-plan-badge--free {
+  background: rgba(42, 67, 126, 0.34);
+  color: rgba(147, 180, 255, 0.94);
+}
+
+html.dark .ai-usage-plan-badge--pro {
+  background: rgba(28, 102, 82, 0.28);
+  color: rgba(139, 231, 201, 0.92);
+}
+
+html.dark .ai-usage-refresh {
+  background: var(--dm-surface-alt);
+  border-color: var(--dm-line);
+  color: var(--dm-muted);
+}
+
+html.dark .ai-usage-meter-bar {
+  background: rgba(37, 46, 66, 0.95);
+}
+
+html.dark .ai-usage-meter-fill {
+  background: linear-gradient(135deg, var(--dm-blue-700), var(--dm-blue-500));
+}
+
+html.dark .ai-usage-stats div {
+  background: rgba(23, 31, 50, 0.88);
+  border-color: rgba(52, 65, 97, 0.7);
+}
+
+html.dark .ai-usage-upgrade {
+  background: rgba(42, 67, 126, 0.22);
+  border-color: rgba(83, 120, 209, 0.26);
+  color: rgba(167, 193, 255, 0.94);
+}
+
 /* ─── 24. RESEARCH PREFS BAR ─── */
 html.dark .rp-bar .rp-trigger {
   background: var(--dm-surface-alt);
