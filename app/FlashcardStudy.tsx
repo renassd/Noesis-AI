@@ -172,7 +172,7 @@ export default function FlashcardStudy({
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-                Add more cards
+                {s.addMoreCards}
               </button>
             )}
           </div>
@@ -196,12 +196,12 @@ export default function FlashcardStudy({
               className={`study-add-more-btn${isTinyDeck ? " study-add-more-btn--highlight" : ""}`}
               type="button"
               onClick={() => setAddingMore(true)}
-              title="Add more flashcards to this deck"
+              title={s.addCardsTitle}
             >
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
               </svg>
-              Add cards
+              {s.addCards}
             </button>
           )}
           <div className="study-deck-picker-inline">

@@ -3,8 +3,116 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useAiUsage } from "@/context/AiUsageContext";
+import { useLang } from "./i18n";
 import { detectLang, langInstruction } from "./lib/detectLang";
 import type { Deck, Flashcard } from "./types";
+
+// ─────────────────────────────────────────────
+// Local i18n dict (keeps the main dict clean)
+// ─────────────────────────────────────────────
+
+const AMC = {
+  en: {
+    // Choose mode
+    chooseLabel: "How do you want to add them?",
+    manualTitle: "Write manually",
+    manualSub: "Add your own questions and answers",
+    aiTitle: "Generate with AI",
+    aiSub: "Paste notes, a topic, or any text",
+    pdfTitle: "Generate from file",
+    pdfSub: "Upload a PDF, DOCX, or image",
+    // Manual input
+    question: "Question",
+    answer: "Answer",
+    questionPlaceholder: "Question…",
+    answerPlaceholder: "Answer…",
+    removeRow: "Remove row",
+    addRow: "+ Add row",
+    reviewN: (n: number) => `Review ${n} ${n === 1 ? "card" : "cards"} →`,
+    // AI input
+    aiPlaceholder: (name: string) => `Paste notes, a topic, or any text related to "${name}"…`,
+    aiMinError: "Add at least 30 characters of text or a topic description.",
+    aiParseError: "The AI response couldn't be read as flashcards. Try fewer cards or shorter text.",
+    aiError: "AI generation failed.",
+    generationFailed: "Generation failed.",
+    cardsLabel: "Cards",
+    difficultyLabel: "Difficulty",
+    basic: "Basic",
+    intermediate: "Intermediate",
+    advanced: "Advanced",
+    generating: "Generating…",
+    generateBtn: "Generate cards →",
+    // PDF input
+    dropLabel: "Drop a PDF, DOCX or image here",
+    dropSub: "or click to browse",
+    reading: (name: string) => `Reading ${name}…`,
+    extractError: "Extraction failed.",
+    readError: "Could not read file.",
+    // Review
+    dupeWarning: (n: number) => `⚠ ${n} ${n === 1 ? "card" : "cards"} already exist in this deck and will be skipped.`,
+    duplicate: "duplicate",
+    back: "← Back",
+    saving: "Saving…",
+    addToDecK: (n: number) => `Add ${n} ${n === 1 ? "card" : "cards"} to deck`,
+    // Modal
+    titleMap: { choose: "Add flashcards", manual: "Write manually", ai: "Generate with AI", pdf: "Generate from file", review: "Review cards" },
+    backLabel: "Back",
+    closeLabel: "Close",
+    deckMeta: (name: string, n: number) => `📚 ${name} · ${n} ${n === 1 ? "card" : "cards"}`,
+    successText: (n: number, name: string) => `${n} ${n === 1 ? "card" : "cards"} added to`,
+  },
+  es: {
+    // Choose mode
+    chooseLabel: "¿Cómo querés agregarlas?",
+    manualTitle: "Escribir manualmente",
+    manualSub: "Agregá tus propias preguntas y respuestas",
+    aiTitle: "Generar con IA",
+    aiSub: "Pegá apuntes, un tema o cualquier texto",
+    pdfTitle: "Generar desde archivo",
+    pdfSub: "Subí un PDF, DOCX o imagen",
+    // Manual input
+    question: "Pregunta",
+    answer: "Respuesta",
+    questionPlaceholder: "Pregunta…",
+    answerPlaceholder: "Respuesta…",
+    removeRow: "Eliminar fila",
+    addRow: "+ Agregar fila",
+    reviewN: (n: number) => `Revisar ${n} ${n === 1 ? "tarjeta" : "tarjetas"} →`,
+    // AI input
+    aiPlaceholder: (name: string) => `Pegá apuntes, un tema o cualquier texto relacionado con "${name}"…`,
+    aiMinError: "Agregá al menos 30 caracteres de texto o descripción del tema.",
+    aiParseError: "No se pudo leer la respuesta de la IA como flashcards. Probá con menos tarjetas o texto más corto.",
+    aiError: "Error al generar con IA.",
+    generationFailed: "Error de generación.",
+    cardsLabel: "Tarjetas",
+    difficultyLabel: "Dificultad",
+    basic: "Básico",
+    intermediate: "Intermedio",
+    advanced: "Avanzado",
+    generating: "Generando…",
+    generateBtn: "Generar tarjetas →",
+    // PDF input
+    dropLabel: "Soltá un PDF, DOCX o imagen acá",
+    dropSub: "o hacé clic para buscar",
+    reading: (name: string) => `Leyendo ${name}…`,
+    extractError: "Error al extraer el texto.",
+    readError: "No se pudo leer el archivo.",
+    // Review
+    dupeWarning: (n: number) => `⚠ ${n} ${n === 1 ? "tarjeta ya existe" : "tarjetas ya existen"} en este mazo y serán omitidas.`,
+    duplicate: "duplicada",
+    back: "← Volver",
+    saving: "Guardando…",
+    addToDecK: (n: number) => `Agregar ${n} ${n === 1 ? "tarjeta" : "tarjetas"} al mazo`,
+    // Modal
+    titleMap: { choose: "Agregar tarjetas", manual: "Escribir manualmente", ai: "Generar con IA", pdf: "Generar desde archivo", review: "Revisar tarjetas" },
+    backLabel: "Volver",
+    closeLabel: "Cerrar",
+    deckMeta: (name: string, n: number) => `📚 ${name} · ${n} ${n === 1 ? "tarjeta" : "tarjetas"}`,
+    successText: (n: number, name: string) => `${n} ${n === 1 ? "tarjeta agregada a" : "tarjetas agregadas a"}`,
+  },
+};
+
+type T = typeof AMC.en;
 
 // ─────────────────────────────────────────────
 // Types
@@ -65,11 +173,9 @@ function extractJsonArray(raw: string): Array<{ question: string; answer: string
     }
   }
 
-  // Try the whole cleaned string first (handles responses that are pure JSON)
   const direct = parseCandidate(cleaned);
   if (direct) return direct;
 
-  // Fall back to extracting between first [ and last ]
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
   if (start === -1 || end === -1 || end <= start) return null;
@@ -84,7 +190,6 @@ function buildAiPrompt(
   difficulty: Difficulty,
   langHint: string,
 ): string {
-  // Keep the existing-cards sample small to preserve output token budget
   const sample = existing
     .slice(0, 3)
     .map((c) => `"${c.question}"`)
@@ -97,7 +202,6 @@ function buildAiPrompt(
         ? "Focus on synthesis, edge cases, and critical analysis."
         : "Focus on mechanisms, applications, and comparisons.";
 
-  // Cap input text at 2500 chars so the total prompt stays within free-plan limits
   const textChunk = text.slice(0, 2500);
 
   return `Generate exactly ${quantity} flashcards for the deck "${deckName}". ${diffNote}
@@ -114,36 +218,36 @@ ${textChunk}`;
 // Sub-views
 // ─────────────────────────────────────────────
 
-function ChooseMode({ onChoose }: { onChoose: (s: "manual" | "ai" | "pdf") => void }) {
+function ChooseMode({ t, onChoose }: { t: T; onChoose: (s: "manual" | "ai" | "pdf") => void }) {
   return (
     <div className="amc-choose">
-      <p className="amc-choose-label">How do you want to add them?</p>
+      <p className="amc-choose-label">{t.chooseLabel}</p>
       <button className="amc-mode-btn" type="button" onClick={() => onChoose("manual")}>
         <span className="amc-mode-icon">✏️</span>
         <span>
-          <strong>Write manually</strong>
-          <span className="amc-mode-sub">Add your own questions and answers</span>
+          <strong>{t.manualTitle}</strong>
+          <span className="amc-mode-sub">{t.manualSub}</span>
         </span>
       </button>
       <button className="amc-mode-btn" type="button" onClick={() => onChoose("ai")}>
         <span className="amc-mode-icon">✨</span>
         <span>
-          <strong>Generate with AI</strong>
-          <span className="amc-mode-sub">Paste notes, a topic, or any text</span>
+          <strong>{t.aiTitle}</strong>
+          <span className="amc-mode-sub">{t.aiSub}</span>
         </span>
       </button>
       <button className="amc-mode-btn" type="button" onClick={() => onChoose("pdf")}>
         <span className="amc-mode-icon">📄</span>
         <span>
-          <strong>Generate from file</strong>
-          <span className="amc-mode-sub">Upload a PDF, DOCX, or image</span>
+          <strong>{t.pdfTitle}</strong>
+          <span className="amc-mode-sub">{t.pdfSub}</span>
         </span>
       </button>
     </div>
   );
 }
 
-function ManualInput({ onNext }: { onNext: (cards: DraftCard[]) => void }) {
+function ManualInput({ t, onNext }: { t: T; onNext: (cards: DraftCard[]) => void }) {
   const [rows, setRows] = useState([{ q: "", a: "" }]);
 
   function update(i: number, field: "q" | "a", value: string) {
@@ -170,8 +274,8 @@ function ManualInput({ onNext }: { onNext: (cards: DraftCard[]) => void }) {
   return (
     <div className="amc-manual">
       <div className="amc-manual-header">
-        <span className="amc-col-label">Question</span>
-        <span className="amc-col-label">Answer</span>
+        <span className="amc-col-label">{t.question}</span>
+        <span className="amc-col-label">{t.answer}</span>
         <span style={{ width: 28 }} />
       </div>
       <div className="amc-rows">
@@ -179,14 +283,14 @@ function ManualInput({ onNext }: { onNext: (cards: DraftCard[]) => void }) {
           <div key={i} className="amc-row">
             <textarea
               className="amc-cell"
-              placeholder="Question…"
+              placeholder={t.questionPlaceholder}
               value={row.q}
               onChange={(e) => update(i, "q", e.target.value)}
               rows={2}
             />
             <textarea
               className="amc-cell"
-              placeholder="Answer…"
+              placeholder={t.answerPlaceholder}
               value={row.a}
               onChange={(e) => update(i, "a", e.target.value)}
               rows={2}
@@ -196,7 +300,7 @@ function ManualInput({ onNext }: { onNext: (cards: DraftCard[]) => void }) {
               type="button"
               onClick={() => removeRow(i)}
               disabled={rows.length === 1}
-              aria-label="Remove row"
+              aria-label={t.removeRow}
             >
               ×
             </button>
@@ -204,7 +308,7 @@ function ManualInput({ onNext }: { onNext: (cards: DraftCard[]) => void }) {
         ))}
       </div>
       <button className="amc-add-row-btn" type="button" onClick={addRow}>
-        + Add row
+        {t.addRow}
       </button>
       <div className="amc-footer">
         <button
@@ -213,7 +317,7 @@ function ManualInput({ onNext }: { onNext: (cards: DraftCard[]) => void }) {
           onClick={handleNext}
           disabled={validCount === 0}
         >
-          Review {validCount > 0 ? validCount : ""} {validCount === 1 ? "card" : "cards"} →
+          {t.reviewN(validCount)}
         </button>
       </div>
     </div>
@@ -221,13 +325,15 @@ function ManualInput({ onNext }: { onNext: (cards: DraftCard[]) => void }) {
 }
 
 function AiInput({
+  t,
   deck,
   onNext,
   fromText,
 }: {
+  t: T;
   deck: Deck;
   onNext: (cards: DraftCard[]) => void;
-  fromText?: string; // pre-filled from PDF extraction
+  fromText?: string;
 }) {
   const { applyUsage } = useAiUsage();
   const [text, setText] = useState(fromText ?? "");
@@ -239,7 +345,7 @@ function AiInput({
   async function generate() {
     const trimmed = text.trim();
     if (trimmed.length < 30) {
-      setError("Add at least 30 characters of text or a topic description.");
+      setError(t.aiMinError);
       return;
     }
     setError("");
@@ -254,25 +360,20 @@ function AiInput({
         body: JSON.stringify({
           max_tokens: 2000,
           messages: [{ role: "user", content: prompt }],
-          // Also inject user memories related to the deck topic
           useMemory: true,
           memoryQuery: deck.name,
         }),
       });
       const data = await res.json();
       applyUsage(data.usage);
-      if (!res.ok) throw new Error(data.error || "AI generation failed.");
+      if (!res.ok) throw new Error(data.error || t.aiError);
 
       const parsed = extractJsonArray(data.text || "");
-      if (!parsed || parsed.length === 0) {
-        throw new Error(
-          "The AI response couldn't be read as flashcards. Try requesting fewer cards or using shorter text.",
-        );
-      }
+      if (!parsed || parsed.length === 0) throw new Error(t.aiParseError);
 
       onNext(parsed.map((c) => makeDraft(c.question, c.answer)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generation failed.");
+      setError(err instanceof Error ? err.message : t.generationFailed);
     } finally {
       setLoading(false);
     }
@@ -282,7 +383,7 @@ function AiInput({
     <div className="amc-ai">
       <textarea
         className="amc-ai-textarea"
-        placeholder={`Paste notes, a topic description, or any text related to "${deck.name}"…`}
+        placeholder={t.aiPlaceholder(deck.name)}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
@@ -293,7 +394,7 @@ function AiInput({
       />
       <div className="amc-ai-settings">
         <label className="amc-setting">
-          <span>Cards</span>
+          <span>{t.cardsLabel}</span>
           <select
             className="amc-select"
             value={quantity}
@@ -306,16 +407,16 @@ function AiInput({
           </select>
         </label>
         <label className="amc-setting">
-          <span>Difficulty</span>
+          <span>{t.difficultyLabel}</span>
           <select
             className="amc-select"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as Difficulty)}
             disabled={loading}
           >
-            <option value="basic">Basic</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
+            <option value="basic">{t.basic}</option>
+            <option value="intermediate">{t.intermediate}</option>
+            <option value="advanced">{t.advanced}</option>
           </select>
         </label>
       </div>
@@ -329,10 +430,10 @@ function AiInput({
         >
           {loading ? (
             <span className="amc-spinner-row">
-              <span className="amc-spinner" /> Generating…
+              <span className="amc-spinner" /> {t.generating}
             </span>
           ) : (
-            "Generate cards →"
+            t.generateBtn
           )}
         </button>
       </div>
@@ -340,7 +441,7 @@ function AiInput({
   );
 }
 
-function PdfInput({ deck, onNext }: { deck: Deck; onNext: (cards: DraftCard[]) => void }) {
+function PdfInput({ t, deck, onNext }: { t: T; deck: Deck; onNext: (cards: DraftCard[]) => void }) {
   const [extractedText, setExtractedText] = useState("");
   const [fileName, setFileName] = useState("");
   const [extracting, setExtracting] = useState(false);
@@ -356,17 +457,17 @@ function PdfInput({ deck, onNext }: { deck: Deck; onNext: (cards: DraftCard[]) =
       form.append("file", file);
       const res = await fetchWithSupabaseAuth("/api/upload", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Extraction failed.");
+      if (!res.ok) throw new Error(data.error || t.extractError);
       setExtractedText((data.text as string) || "");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not read file.");
+      setError(err instanceof Error ? err.message : t.readError);
     } finally {
       setExtracting(false);
     }
   }
 
   if (extractedText) {
-    return <AiInput deck={deck} onNext={onNext} fromText={extractedText} />;
+    return <AiInput t={t} deck={deck} onNext={onNext} fromText={extractedText} />;
   }
 
   return (
@@ -383,13 +484,13 @@ function PdfInput({ deck, onNext }: { deck: Deck; onNext: (cards: DraftCard[]) =
       >
         {extracting ? (
           <span className="amc-spinner-row">
-            <span className="amc-spinner" /> Reading {fileName}…
+            <span className="amc-spinner" /> {t.reading(fileName)}
           </span>
         ) : (
           <>
             <span className="amc-drop-icon">📄</span>
-            <p className="amc-drop-label">Drop a PDF, DOCX or image here</p>
-            <p className="amc-drop-sub">or click to browse</p>
+            <p className="amc-drop-label">{t.dropLabel}</p>
+            <p className="amc-drop-sub">{t.dropSub}</p>
           </>
         )}
       </div>
@@ -409,11 +510,13 @@ function PdfInput({ deck, onNext }: { deck: Deck; onNext: (cards: DraftCard[]) =
 }
 
 function ReviewCards({
+  t,
   deck,
   drafts: initialDrafts,
   onBack,
   onSave,
 }: {
+  t: T;
   deck: Deck;
   drafts: DraftCard[];
   onBack: () => void;
@@ -431,7 +534,6 @@ function ReviewCards({
       prev.map((d) => {
         if (d.id !== id) return d;
         const updated = { ...d, [field]: value };
-        // Re-check duplicate status when question changes
         if (field === "question") {
           updated.isDuplicate = deck.cards.some(
             (c) => normalize(c.question) === normalize(value),
@@ -458,9 +560,7 @@ function ReviewCards({
   return (
     <div className="amc-review">
       {dupeCount > 0 && (
-        <div className="amc-dupe-banner">
-          ⚠ {dupeCount} card{dupeCount > 1 ? "s" : ""} already exist in this deck and will be skipped.
-        </div>
+        <div className="amc-dupe-banner">{t.dupeWarning(dupeCount)}</div>
       )}
       <div className="amc-review-list">
         {drafts.map((d) => (
@@ -476,15 +576,13 @@ function ReviewCards({
                 disabled={d.isDuplicate}
                 onChange={() => toggle(d.id)}
               />
-              {d.isDuplicate && (
-                <span className="amc-dupe-tag">duplicate</span>
-              )}
+              {d.isDuplicate && <span className="amc-dupe-tag">{t.duplicate}</span>}
             </div>
             <textarea
               className="amc-review-field"
               value={d.question}
               onChange={(e) => edit(d.id, "question", e.target.value)}
-              placeholder="Question"
+              placeholder={t.question}
               rows={2}
               disabled={d.isDuplicate}
             />
@@ -492,7 +590,7 @@ function ReviewCards({
               className="amc-review-field amc-review-field--answer"
               value={d.answer}
               onChange={(e) => edit(d.id, "answer", e.target.value)}
-              placeholder="Answer"
+              placeholder={t.answer}
               rows={2}
               disabled={d.isDuplicate}
             />
@@ -501,7 +599,7 @@ function ReviewCards({
       </div>
       <div className="amc-footer amc-footer--review">
         <button className="amc-btn-ghost" type="button" onClick={onBack}>
-          ← Back
+          {t.back}
         </button>
         <button
           className="amc-btn-primary"
@@ -509,7 +607,7 @@ function ReviewCards({
           onClick={() => void handleSave()}
           disabled={toAdd === 0 || saving}
         >
-          {saving ? "Saving…" : `Add ${toAdd} card${toAdd !== 1 ? "s" : ""} to deck`}
+          {saving ? t.saving : t.addToDecK(toAdd)}
         </button>
       </div>
     </div>
@@ -521,11 +619,13 @@ function ReviewCards({
 // ─────────────────────────────────────────────
 
 export default function AddMoreCards({ deck, onClose, onSave }: Props) {
+  const { lang } = useLang();
+  const t = AMC[lang] ?? AMC.en;
+
   const [stage, setStage] = useState<Stage>("choose");
   const [drafts, setDrafts] = useState<DraftCard[]>([]);
   const [added, setAdded] = useState(0);
 
-  // Close on Escape
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -537,7 +637,6 @@ export default function AddMoreCards({ deck, onClose, onSave }: Props) {
   async function handleSave(cards: Array<{ question: string; answer: string }>) {
     await onSave(cards);
     setAdded(cards.length);
-    // Show success briefly, then close
     setTimeout(() => onClose(), 1400);
   }
 
@@ -546,63 +645,52 @@ export default function AddMoreCards({ deck, onClose, onSave }: Props) {
     setStage("review");
   }
 
-  const titleMap: Record<Stage, string> = {
-    choose: "Add flashcards",
-    manual: "Write manually",
-    ai: "Generate with AI",
-    pdf: "Generate from file",
-    review: "Review cards",
-  };
-
   return (
     <>
-      {/* Backdrop */}
       <div className="amc-backdrop" onClick={onClose} aria-hidden="true" />
 
-      {/* Panel */}
       <div className="amc-panel" role="dialog" aria-modal="true">
-        {/* Header */}
         <div className="amc-header">
           <div className="amc-header-left">
             {stage !== "choose" && added === 0 && (
               <button
                 className="amc-back"
                 type="button"
-                onClick={() => setStage(stage === "review" ? "choose" : "choose")}
-                aria-label="Back"
+                onClick={() => setStage("choose")}
+                aria-label={t.backLabel}
               >
                 ←
               </button>
             )}
             <div>
-              <h2 className="amc-title">{titleMap[stage]}</h2>
-              <p className="amc-deck-name">📚 {deck.name} · {deck.cards.length} cards</p>
+              <h2 className="amc-title">{t.titleMap[stage]}</h2>
+              <p className="amc-deck-name">{t.deckMeta(deck.name, deck.cards.length)}</p>
             </div>
           </div>
-          <button className="amc-close" type="button" onClick={onClose} aria-label="Close">
+          <button className="amc-close" type="button" onClick={onClose} aria-label={t.closeLabel}>
             ×
           </button>
         </div>
 
-        {/* Body */}
         <div className="amc-body">
           {added > 0 ? (
             <div className="amc-success">
               <span className="amc-success-icon">🎉</span>
               <p className="amc-success-text">
-                {added} card{added !== 1 ? "s" : ""} added to <strong>{deck.name}</strong>!
+                {t.successText(added, deck.name)} <strong>{deck.name}</strong>!
               </p>
             </div>
           ) : stage === "choose" ? (
-            <ChooseMode onChoose={(m) => setStage(m)} />
+            <ChooseMode t={t} onChoose={(m) => setStage(m)} />
           ) : stage === "manual" ? (
-            <ManualInput onNext={toReview} />
+            <ManualInput t={t} onNext={toReview} />
           ) : stage === "ai" ? (
-            <AiInput deck={deck} onNext={toReview} />
+            <AiInput t={t} deck={deck} onNext={toReview} />
           ) : stage === "pdf" ? (
-            <PdfInput deck={deck} onNext={toReview} />
+            <PdfInput t={t} deck={deck} onNext={toReview} />
           ) : (
             <ReviewCards
+              t={t}
               deck={deck}
               drafts={drafts}
               onBack={() => setStage("choose")}
