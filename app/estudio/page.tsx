@@ -171,20 +171,16 @@ export default function EstudioPage() {
           )}
 
           {tool === "generate" && <FlashcardGenerator onSaveDeck={handleSaveDeck} />}
-          {tool === "manual" && (
-            <ManualFlashcardBuilder
-              decks={decks}
-              onSaveDeck={handleSaveDeck}
-              onAppendCards={appendCards}
-              defaultDeckId={activeDeck?.id}
-            />
-          )}
+          {tool === "manual" && <ManualFlashcardBuilder onSaveDeck={handleSaveDeck} />}
           {tool === "study" && (
             <FlashcardStudy
               deck={activeDeck}
               decks={decks}
               onSelectDeck={(deck) => setActiveDeck(deck)}
               onSaveCardVisuals={saveCardVisuals}
+              onAppendCards={async (deckId, cards) => {
+                await appendCards(deckId, cards);
+              }}
             />
           )}
           {tool === "tutor" && <TutorMode />}
