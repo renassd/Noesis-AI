@@ -69,6 +69,10 @@ export default function AiUsageCard({ variant = "compact" }: Props) {
   const planLabel = usage.plan === "pro" ? usageText.proPlan : usageText.freePlan;
 
   if (variant === "inline") {
+    if (usage.creditsRemaining > 0) {
+      return null;
+    }
+
     return (
       <div className="ai-usage-card ai-usage-card--inline">
         <div className="ai-usage-inline-main">

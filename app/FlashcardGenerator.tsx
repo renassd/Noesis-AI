@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { useAuth } from "@/context/AuthContext";
 import { useAiUsage } from "@/context/AiUsageContext";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
@@ -72,7 +73,8 @@ ${text.slice(0, 4000)}`;
 export default function FlashcardGenerator({ onSaveDeck }: Props) {
   const { t } = useLang();
   const s = t.study;
-  const { applyUsage } = useAiUsage();
+  const { auth } = useAuth();
+  const { usage, loading: usageLoading, applyUsage } = useAiUsage();
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState(8);
   const [loading, setLoading] = useState(false);
@@ -82,8 +84,15 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
   const [error, setError] = useState("");
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
+  const usageReady = auth.signedIn && !usageLoading && !!usage;
+  const hasCredits = usageReady && usage.creditsRemaining > 0;
+  const canGenerate = hasCredits && !loading && text.trim().length >= 30;
 
   async function generate() {
+    if (!hasCredits) {
+      setError(s.tutorOutOfCredits);
+      return;
+    }
     if (text.trim().length < 30) {
       setError(s.generatorMinError);
       return;
@@ -182,7 +191,11 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
               className="gen-textarea"
               placeholder={s.generatorTextPlaceholder}
               value={text}
-              onChange={(event) => setText(event.target.value)}
+              onChange={(event) => {
+                if (error) setError("");
+                setText(event.target.value);
+              }}
+              disabled={loading || !hasCredits}
               rows={14}
             />
             <span className="gen-char-count">{s.generatorCharCount.replace("{n}", String(text.length))}</span>
@@ -208,7 +221,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
 
           {error && <p className="gen-error">{error}</p>}
 
-          <button className="gen-btn" type="button" onClick={generate} disabled={loading}>
+          <button className="gen-btn" type="button" onClick={generate} disabled={!canGenerate}>
             {loading ? (
               <span className="gen-loading">
                 <span className="gen-spinner" />
