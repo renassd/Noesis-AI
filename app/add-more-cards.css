@@ -549,25 +549,101 @@
   margin: 0;
 }
 
-/* ─── Trigger button (in FlashcardStudy) ─── */
-.study-add-more-btn {
+/* ─────────────────────────────────────────────
+   STUDY VIEW — Add more cards buttons
+───────────────────────────────────────────── */
+
+/* Header action group */
+.study-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  font-size: 0.78rem;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Header pill button */
+.study-add-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 13px;
+  font-size: 0.77rem;
   font-weight: 600;
-  border: 1.5px solid #6366f1;
+  border: 1.5px solid var(--line);
   border-radius: 999px;
-  background: transparent;
-  color: #6366f1;
+  background: var(--surface, #fff);
+  color: var(--muted);
   cursor: pointer;
-  transition: background 0.13s;
   white-space: nowrap;
+  transition: border-color 0.13s, color 0.13s, background 0.13s, box-shadow 0.13s;
 }
 
 .study-add-more-btn:hover {
-  background: rgba(99, 102, 241, 0.07);
+  border-color: #6366f1;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* Highlighted version for tiny decks */
+.study-add-more-btn--highlight {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.06);
+  animation: amc-pulse-border 2.4s ease-in-out infinite;
+}
+
+@keyframes amc-pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  50%       { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18); }
+}
+
+/* Below-card nudge strip — shown when deck has ≤ 4 cards */
+.study-tiny-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+}
+
+.study-tiny-nudge-text {
+  font-size: 0.77rem;
+  color: #6366f1;
+  line-height: 1.4;
+}
+
+.study-tiny-nudge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1.5px solid #6366f1;
+  border-radius: 999px;
+  background: #6366f1;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+
+.study-tiny-nudge-btn:hover {
+  background: #4f46e5;
+}
+
+/* Done screen actions row */
+.study-done-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 /* Done screen CTA */
@@ -575,8 +651,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
-  padding: 9px 20px;
+  padding: 9px 22px;
   font-size: 0.82rem;
   font-weight: 600;
   border: 1.5px solid #6366f1;
@@ -584,9 +659,51 @@
   background: transparent;
   color: #6366f1;
   cursor: pointer;
-  transition: background 0.13s;
+  transition: background 0.13s, border-color 0.13s;
 }
 
 .study-add-more-cta:hover {
   background: rgba(99, 102, 241, 0.08);
+}
+
+/* ─── Dark mode ─── */
+html.dark .study-add-more-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+html.dark .study-add-more-btn:hover,
+html.dark .study-add-more-btn--highlight {
+  border-color: #818cf8;
+  color: #818cf8;
+  background: rgba(129, 140, 248, 0.08);
+}
+
+html.dark .study-tiny-nudge {
+  background: rgba(129, 140, 248, 0.08);
+  border-color: rgba(129, 140, 248, 0.22);
+}
+
+html.dark .study-tiny-nudge-text {
+  color: #818cf8;
+}
+
+html.dark .study-tiny-nudge-btn {
+  background: #818cf8;
+  border-color: #818cf8;
+  color: #fff;
+}
+
+html.dark .study-tiny-nudge-btn:hover {
+  background: #6366f1;
+}
+
+html.dark .study-add-more-cta {
+  border-color: #818cf8;
+  color: #818cf8;
+}
+
+html.dark .study-add-more-cta:hover {
+  background: rgba(129, 140, 248, 0.1);
 }

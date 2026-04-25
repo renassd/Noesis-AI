@@ -97,6 +97,7 @@ export default function FlashcardStudy({
   const total = queue.length;
   const answered = Object.keys(results).length;
   const progress = total > 0 ? (answered / total) * 100 : 0;
+  const isTinyDeck = deck.cards.length <= 4;
 
   function mark(result: "easy" | "hard" | "wrong") {
     if (!card) return;
@@ -162,14 +163,19 @@ export default function FlashcardStudy({
               <span>{s.wrong}</span>
             </div>
           </div>
-          <button className="study-restart-btn" onClick={restart}>
-            {s.reviewAgain}
-          </button>
-          {onAppendCards && (
-            <button className="study-add-more-cta" type="button" onClick={() => setAddingMore(true)}>
-              + Add more cards
+          <div className="study-done-actions">
+            <button className="study-restart-btn" onClick={restart}>
+              {s.reviewAgain}
             </button>
-          )}
+            {onAppendCards && (
+              <button className="study-add-more-cta" type="button" onClick={() => setAddingMore(true)}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                Add more cards
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -184,32 +190,36 @@ export default function FlashcardStudy({
             {s.cardOf.replace("{current}", String(index + 1)).replace("{total}", String(total))} · {s.answered.replace("{n}", String(answered))}
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="study-header-actions">
           {onAppendCards && (
             <button
-              className="study-add-more-btn"
+              className={`study-add-more-btn${isTinyDeck ? " study-add-more-btn--highlight" : ""}`}
               type="button"
               onClick={() => setAddingMore(true)}
+              title="Add more flashcards to this deck"
             >
-              + Add cards
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+              </svg>
+              Add cards
             </button>
           )}
-        <div className="study-deck-picker-inline">
-          <select
-            className="study-deck-select"
-            value={deck.id}
-            onChange={(event) => {
-              const nextDeck = decks.find((item) => item.id === event.target.value);
-              if (nextDeck) onSelectDeck(nextDeck);
-            }}
-          >
-            {decks.map((currentDeck) => (
-              <option key={currentDeck.id} value={currentDeck.id}>
-                {currentDeck.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="study-deck-picker-inline">
+            <select
+              className="study-deck-select"
+              value={deck.id}
+              onChange={(event) => {
+                const nextDeck = decks.find((item) => item.id === event.target.value);
+                if (nextDeck) onSelectDeck(nextDeck);
+              }}
+            >
+              {decks.map((currentDeck) => (
+                <option key={currentDeck.id} value={currentDeck.id}>
+                  {currentDeck.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -248,6 +258,24 @@ export default function FlashcardStudy({
           </div>
         )}
       </div>
+
+      {isTinyDeck && onAppendCards && !flipped && (
+        <div className="study-tiny-nudge">
+          <span className="study-tiny-nudge-text">
+            This deck only has {deck.cards.length} card{deck.cards.length !== 1 ? "s" : ""} — expand it to study more
+          </span>
+          <button
+            className="study-tiny-nudge-btn"
+            type="button"
+            onClick={() => setAddingMore(true)}
+          >
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+            </svg>
+            Add more flashcards
+          </button>
+        </div>
+      )}
 
       {editingCard && (
         <CardEditor
