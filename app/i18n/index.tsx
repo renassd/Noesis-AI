@@ -17,8 +17,8 @@ export const DICT = {
     nav: { home: "Home", research: "Research", study: "Study", howItWorks: "How it works", openApp: "Use Neuvra" },
     landing: {
       eyebrow: "Research flows + memory tools",
-      headline: "Neuvra connects understanding and remembering.",
-      sub: "The landing page shows the complete flow. The independent pages let you go directly into the mode you need.",
+      headline: "Your new study buddy, where you can understand and study any topic while creating your own content.",
+      sub: "Turn any paper and class into something you actually understand and remember.",
       ctaPrimary: "Start studying ->",
       ctaSecondary: "Go to Research",
       proofResearch: "Research first",
@@ -192,8 +192,8 @@ export const DICT = {
     nav: { home: "Inicio", research: "Investigacion", study: "Estudio", howItWorks: "Como funciona", openApp: "Usar Neuvra" },
     landing: {
       eyebrow: "Flujos de investigacion + herramientas de memoria",
-      headline: "Neuvra conecta el entendimiento y el recuerdo.",
-      sub: "La pagina de inicio muestra el flujo completo. Las paginas independientes te llevan directamente al modo que necesitas.",
+      headline: "Tu nuevo compañero de estudio, donde podés entender y estudiar cualquier tema mientras creás tu propio contenido.",
+      sub: "Convertí cualquier paper o clase en algo que realmente entendés y recordás.",
       ctaPrimary: "Empezar a estudiar ->",
       ctaSecondary: "Ir a Investigacion",
       proofResearch: "Investigacion primero",
