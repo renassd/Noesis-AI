@@ -1,0 +1,592 @@
+/* ═══════════════════════════════════════
+   ADD MORE CARDS — modal overlay
+═══════════════════════════════════════ */
+
+/* ─── Backdrop ─── */
+.amc-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  animation: amc-fade-in 0.18s ease;
+}
+
+/* ─── Panel ─── */
+.amc-panel {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(680px, 100vw);
+  max-height: 82vh;
+  background: var(--surface, #fff);
+  border-radius: 20px 20px 0 0;
+  border: 1px solid var(--line);
+  border-bottom: none;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.14);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: amc-slide-up 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes amc-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes amc-slide-up {
+  from { transform: translateX(-50%) translateY(100%); }
+  to   { transform: translateX(-50%) translateY(0); }
+}
+
+/* ─── Header ─── */
+.amc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.amc-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.amc-back {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+
+.amc-back:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text);
+}
+
+.amc-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.amc-deck-name {
+  font-size: 0.74rem;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.amc-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+
+.amc-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+}
+
+/* ─── Body ─── */
+.amc-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* ─── Choose mode ─── */
+.amc-choose {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.amc-choose-label {
+  font-size: 0.80rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.amc-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.13s, background 0.13s, box-shadow 0.13s;
+  width: 100%;
+}
+
+.amc-mode-btn:hover {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.03);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.1);
+}
+
+.amc-mode-btn strong {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.amc-mode-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+
+.amc-mode-sub {
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+/* ─── Manual input ─── */
+.amc-manual {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.amc-manual-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 28px;
+  gap: 8px;
+  padding: 0 0 4px;
+}
+
+.amc-col-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.amc-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.amc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 28px;
+  gap: 8px;
+  align-items: start;
+}
+
+.amc-cell {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.81rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--text);
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.13s;
+}
+
+.amc-cell:focus {
+  border-color: #6366f1;
+}
+
+.amc-row-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+
+.amc-row-remove:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+.amc-row-remove:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.amc-add-row-btn {
+  align-self: flex-start;
+  font-size: 0.79rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.amc-add-row-btn:hover {
+  text-decoration: underline;
+}
+
+/* ─── AI input ─── */
+.amc-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.amc-ai-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 0.83rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: var(--text);
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  transition: border-color 0.13s;
+}
+
+.amc-ai-textarea:focus {
+  border-color: #6366f1;
+}
+
+.amc-ai-settings {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.amc-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.80rem;
+  color: var(--muted);
+}
+
+.amc-select {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 0.80rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface, #fff);
+  color: var(--text);
+  outline: none;
+}
+
+/* ─── PDF drop zone ─── */
+.amc-pdf {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.amc-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 40px 24px;
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.amc-drop-zone:hover {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.amc-drop-icon {
+  font-size: 2rem;
+}
+
+.amc-drop-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.amc-drop-sub {
+  font-size: 0.76rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ─── Review ─── */
+.amc-dupe-banner {
+  font-size: 0.78rem;
+  padding: 8px 12px;
+  background: #fef9ec;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.amc-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.amc-review-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: opacity 0.15s;
+}
+
+.amc-review-card--off {
+  opacity: 0.4;
+}
+
+.amc-review-card--dupe {
+  border-color: #fde68a;
+  background: #fef9ec;
+  opacity: 0.6;
+}
+
+.amc-review-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.amc-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+.amc-dupe-tag {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #fde68a;
+  color: #92400e;
+}
+
+.amc-review-field {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 0.81rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface, #fff);
+  color: var(--text);
+  resize: none;
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.13s;
+}
+
+.amc-review-field:focus {
+  border-color: #6366f1;
+}
+
+.amc-review-field--answer {
+  color: var(--muted);
+  font-size: 0.77rem;
+}
+
+/* ─── Footer ─── */
+.amc-footer {
+  padding-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.amc-footer--review {
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 14px;
+}
+
+.amc-btn-primary {
+  height: 38px;
+  padding: 0 20px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 9px;
+  background: #6366f1;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.13s, opacity 0.13s;
+}
+
+.amc-btn-primary:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.amc-btn-primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.amc-btn-ghost {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 0.81rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.amc-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text);
+}
+
+/* ─── Shared ─── */
+.amc-error {
+  font-size: 0.77rem;
+  color: #ef4444;
+  margin: 0;
+}
+
+.amc-spinner-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.amc-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: amc-spin 0.7s linear infinite;
+}
+
+@keyframes amc-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Success ─── */
+.amc-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.amc-success-icon {
+  font-size: 2.6rem;
+}
+
+.amc-success-text {
+  font-size: 1rem;
+  color: var(--text);
+  margin: 0;
+}
+
+/* ─── Trigger button (in FlashcardStudy) ─── */
+.study-add-more-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1.5px solid #6366f1;
+  border-radius: 999px;
+  background: transparent;
+  color: #6366f1;
+  cursor: pointer;
+  transition: background 0.13s;
+  white-space: nowrap;
+}
+
+.study-add-more-btn:hover {
+  background: rgba(99, 102, 241, 0.07);
+}
+
+/* Done screen CTA */
+.study-add-more-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 9px 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1.5px solid #6366f1;
+  border-radius: 999px;
+  background: transparent;
+  color: #6366f1;
+  cursor: pointer;
+  transition: background 0.13s;
+}
+
+.study-add-more-cta:hover {
+  background: rgba(99, 102, 241, 0.08);
+}

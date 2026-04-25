@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AddMoreCards from "./AddMoreCards";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
 import { useLang } from "./i18n";
@@ -15,6 +16,10 @@ interface Props {
     deckId: string,
     cardVisuals: Record<string, Partial<CardVisual>>,
   ) => Promise<void>;
+  onAppendCards?: (
+    deckId: string,
+    cards: Array<{ question: string; answer: string }>,
+  ) => Promise<void>;
 }
 
 export default function FlashcardStudy({
@@ -22,6 +27,7 @@ export default function FlashcardStudy({
   decks,
   onSelectDeck,
   onSaveCardVisuals,
+  onAppendCards,
 }: Props) {
   const { t } = useLang();
   const s = t.study;
@@ -32,6 +38,7 @@ export default function FlashcardStudy({
   const [queue, setQueue] = useState<Flashcard[]>([]);
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
   const [cardVisuals, setCardVisuals] = useState<Record<string, Partial<CardVisual>>>({});
+  const [addingMore, setAddingMore] = useState(false);
 
   useEffect(() => {
     if (!deck) return;
@@ -158,6 +165,11 @@ export default function FlashcardStudy({
           <button className="study-restart-btn" onClick={restart}>
             {s.reviewAgain}
           </button>
+          {onAppendCards && (
+            <button className="study-add-more-cta" type="button" onClick={() => setAddingMore(true)}>
+              + Add more cards
+            </button>
+          )}
         </div>
       </div>
     );
@@ -172,6 +184,16 @@ export default function FlashcardStudy({
             {s.cardOf.replace("{current}", String(index + 1)).replace("{total}", String(total))} · {s.answered.replace("{n}", String(answered))}
           </p>
         </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {onAppendCards && (
+            <button
+              className="study-add-more-btn"
+              type="button"
+              onClick={() => setAddingMore(true)}
+            >
+              + Add cards
+            </button>
+          )}
         <div className="study-deck-picker-inline">
           <select
             className="study-deck-select"
@@ -187,6 +209,7 @@ export default function FlashcardStudy({
               </option>
             ))}
           </select>
+        </div>
         </div>
       </div>
 
@@ -233,6 +256,16 @@ export default function FlashcardStudy({
             void updateCardVisual(cardId, visual);
           }}
           onClose={() => setEditingCard(null)}
+        />
+      )}
+
+      {addingMore && onAppendCards && (
+        <AddMoreCards
+          deck={deck}
+          onClose={() => setAddingMore(false)}
+          onSave={async (cards) => {
+            await onAppendCards(deck.id, cards);
+          }}
         />
       )}
     </div>

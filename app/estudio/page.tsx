@@ -6,6 +6,7 @@ import "../card-visual.css";
 import "../flashcard-generator.css";
 import "../flashcard-study.css";
 import "../memory-bank.css";
+import "../add-more-cards.css";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -80,7 +81,7 @@ export default function EstudioPage() {
 
   const [tool, setTool] = useState<Tool>("generate");
   const [activeDeck, setActiveDeck] = useState<Deck | null>(null);
-  const { decks, loading, error, addDeck, deleteDeck, renameDeck, saveCardVisuals } = useDecks();
+  const { decks, loading, error, addDeck, appendCards, deleteDeck, renameDeck, saveCardVisuals } = useDecks();
 
   useEffect(() => {
     if (activeDeck) {
@@ -186,6 +187,9 @@ export default function EstudioPage() {
               decks={decks}
               onSelectDeck={(deck) => setActiveDeck(deck)}
               onSaveCardVisuals={saveCardVisuals}
+              onAppendCards={async (deckId, cards) => {
+                await appendCards(deckId, cards);
+              }}
             />
           )}
           {tool === "tutor" && <TutorMode />}

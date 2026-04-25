@@ -205,6 +205,62 @@ export function useDecks() {
     }
   }
 
+  async function appendCards(
+    deckId: string,
+    cards: Array<{ question: string; answer: string }>,
+  ): Promise<Deck["cards"] | null> {
+    const newCards: Deck["cards"] = cards.map((c) => ({
+      id: crypto.randomUUID(),
+      question: c.question,
+      answer: c.answer,
+    }));
+
+    try {
+      if (usingLocalFallback) {
+        setDecks((prev) => {
+          const updated = prev.map((deck) =>
+            deck.id === deckId ? { ...deck, cards: [...deck.cards, ...newCards] } : deck,
+          );
+          saveLocalDecks(updated);
+          return updated;
+        });
+        return newCards;
+      }
+
+      const res = await fetchWithSupabaseAuth(`/api/decks/${deckId}/cards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cards }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Error adding cards");
+      }
+
+      const { cards: saved } = (await res.json()) as { cards: Deck["cards"] };
+      setDecks((prev) =>
+        prev.map((deck) =>
+          deck.id === deckId ? { ...deck, cards: [...deck.cards, ...saved] } : deck,
+        ),
+      );
+      return saved;
+    } catch (err) {
+      console.error(err);
+      // Optimistic local fallback
+      setUsingLocalFallback(true);
+      setError("Modo local activo: los mazos se guardan solo en este navegador.");
+      setDecks((prev) => {
+        const updated = prev.map((deck) =>
+          deck.id === deckId ? { ...deck, cards: [...deck.cards, ...newCards] } : deck,
+        );
+        saveLocalDecks(updated);
+        return updated;
+      });
+      return newCards;
+    }
+  }
+
   async function renameDeck(id: string, name: string) {
     try {
       if (usingLocalFallback) {
@@ -255,6 +311,7 @@ export function useDecks() {
     loading,
     error,
     addDeck,
+    appendCards,
     deleteDeck,
     renameDeck,
     saveCardVisuals,
