@@ -73,19 +73,13 @@ export default function AiUsageCard({ variant = "compact" }: Props) {
       <div className="ai-usage-card ai-usage-card--inline">
         <div className="ai-usage-inline-main">
           <div className="ai-usage-inline-copy">
-            <strong>
-              {usage.creditsRemaining} {usageText.creditsLeft}
-            </strong>
             <span>
-              {usageText.creditsUsed}: {usage.creditsUsed} - {usageText.resetsOn} {resetLabel}
+              {usageText.resetsOn} {resetLabel}
             </span>
           </div>
           <button type="button" className="ai-usage-refresh ai-usage-refresh--inline" onClick={handleUpgradeClick}>
             {usageText.refresh}
           </button>
-        </div>
-        <div className="ai-usage-meter-bar">
-          <div className="ai-usage-meter-fill" style={{ width: `${percentUsed}%` }} />
         </div>
       </div>
     );
