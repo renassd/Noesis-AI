@@ -5,6 +5,7 @@ import "../workspace.css";
 import "../card-visual.css";
 import "../flashcard-generator.css";
 import "../flashcard-study.css";
+import "../memory-bank.css";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,6 +16,7 @@ import FlashcardGenerator from "../FlashcardGenerator";
 import FlashcardStudy from "../FlashcardStudy";
 import LangToggle from "../LangToggle";
 import ManualFlashcardBuilder from "../ManualFlashcardBuilder";
+import MemoryBank from "../MemoryBank";
 import MyDecks from "../MyDecks";
 import TutorMode from "../TutorMode";
 import { useLang } from "../i18n";
@@ -22,7 +24,7 @@ import ThemeToggle from "../theme/ThemeToggle";
 import type { Deck, Flashcard } from "../types";
 import { useDecks } from "../useDecks";
 
-type Tool = "generate" | "manual" | "study" | "tutor" | "decks";
+type Tool = "generate" | "manual" | "study" | "tutor" | "decks" | "memory";
 
 export default function EstudioPage() {
   const { t } = useLang();
@@ -62,6 +64,13 @@ export default function EstudioPage() {
         <path d="M5 5V4a1 1 0 011-1h4a1 1 0 011 1v1"
           stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
         <path d="M6 9.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+    )},
+    { id: "memory", label: "Memory Bank", icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 2C5.24 2 3 4.24 3 7c0 1.7.84 3.2 2.13 4.12V13h5.74v-1.88C12.16 10.2 13 8.7 13 7c0-2.76-2.24-5-5-5z"
+          stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+        <path d="M5.5 13h5M6.5 11v-1M9.5 11v-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
       </svg>
     )},
   ];
@@ -177,6 +186,7 @@ export default function EstudioPage() {
             />
           )}
           {tool === "tutor" && <TutorMode />}
+          {tool === "memory" && <MemoryBank />}
           {tool === "decks" && (
             <MyDecks
               decks={decks}

@@ -8,6 +8,7 @@ import {
 } from "@/lib/ai-usage";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { AuthError, requireAuthenticatedUser } from "@/lib/server-auth";
+import { searchMemories, getMemorySettings, formatMemoriesForContext } from "@/lib/memory";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -177,6 +178,8 @@ export async function POST(req: NextRequest) {
         system?: string;
         messages?: ChatMessage[];
         max_tokens?: number;
+        useMemory?: boolean;
+        memoryQuery?: string;
       }
     | undefined;
   let reservation: AiRequestReservation | null = null;
@@ -199,7 +202,28 @@ export async function POST(req: NextRequest) {
       system?: string;
       messages?: ChatMessage[];
       max_tokens?: number;
+      useMemory?: boolean;
+      memoryQuery?: string;
     };
+
+    // ── Memory injection ──────────────────────────────────────────
+    // If the caller passes useMemory:true + a memoryQuery, we retrieve
+    // the most relevant memories and prepend them to the system prompt.
+    if (body.useMemory && body.memoryQuery?.trim()) {
+      const memSettings = await getMemorySettings(user.id);
+      if (memSettings.memory_enabled) {
+        const memories = await searchMemories(
+          user.id,
+          body.memoryQuery.trim(),
+          memSettings.max_context_entries,
+        );
+        const memBlock = formatMemoriesForContext(memories);
+        if (memBlock) {
+          body.system = memBlock + "\n\n" + (body.system ?? "");
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────
 
     if (!body.messages?.length) {
       return NextResponse.json(
