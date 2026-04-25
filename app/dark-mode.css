@@ -2466,3 +2466,25 @@ html.dark .manual-card__customize:hover {
   border-color: var(--dm-blue-500);
   color: var(--dm-blue-500);
 }
+
+/* ── Manual builder deck selector & success (dark mode) ── */
+html.dark .manual-builder__deck-select {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+html.dark .manual-builder__deck-select:focus {
+  border-color: #818cf8;
+}
+
+html.dark .manual-builder__deck-hint {
+  background: rgba(129, 140, 248, 0.12);
+  color: #818cf8;
+}
+
+html.dark .manual-builder__success {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
