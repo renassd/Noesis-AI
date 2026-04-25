@@ -17,9 +17,15 @@ export default function AiUsageCard({ variant = "compact" }: Props) {
 
   const resetLabel = useMemo(() => {
     if (!usage) return "";
-    return new Date(usage.nextResetAt).toLocaleDateString(
+    const nextReset = new Date(usage.nextResetAt);
+    const now = new Date();
+    const sameDay = nextReset.toDateString() === now.toDateString();
+
+    return nextReset.toLocaleString(
       lang === "en" ? "en-US" : "es-PY",
-      { year: "numeric", month: "short", day: "numeric" },
+      sameDay
+        ? { hour: "2-digit", minute: "2-digit" }
+        : { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },
     );
   }, [usage, lang]);
 

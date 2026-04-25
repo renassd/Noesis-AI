@@ -10,6 +10,8 @@ type PlanConfig = {
   model: string;
 };
 
+const USAGE_RESET_WINDOW_HOURS = 6;
+
 type UsageRow = {
   user_id: string;
   plan: string | null;
@@ -77,9 +79,9 @@ function normalizePlan(plan: string | null | undefined): UserPlan {
   return plan === "pro" ? "pro" : "free";
 }
 
-function addMonth(value: Date): Date {
+function addResetWindow(value: Date): Date {
   const next = new Date(value);
-  next.setMonth(next.getMonth() + 1);
+  next.setHours(next.getHours() + USAGE_RESET_WINDOW_HOURS);
   return next;
 }
 
@@ -92,7 +94,7 @@ function createSnapshot(row: UsageRow): AiUsageSnapshot {
   const config = PLAN_CONFIG[plan];
   const creditsUsed = Math.max(0, row.credits_used ?? 0);
   const lastResetAt = toIsoString(row.last_reset_at);
-  const nextResetAt = addMonth(new Date(lastResetAt)).toISOString();
+  const nextResetAt = addResetWindow(new Date(lastResetAt)).toISOString();
 
   return {
     plan,
@@ -159,7 +161,7 @@ async function ensureUsageRow(userId: string): Promise<UsageRow> {
 
 async function resetIfNeeded(row: UsageRow): Promise<UsageRow> {
   const lastResetAt = new Date(toIsoString(row.last_reset_at));
-  const nextResetAt = addMonth(lastResetAt);
+  const nextResetAt = addResetWindow(lastResetAt);
   if (Date.now() < nextResetAt.getTime()) {
     return row;
   }
@@ -177,7 +179,7 @@ async function resetIfNeeded(row: UsageRow): Promise<UsageRow> {
     .single<UsageRow>();
 
   if (error || !data) {
-    throw new Error(error?.message ?? "No se pudo reiniciar el uso mensual.");
+    throw new Error(error?.message ?? "No se pudo reiniciar la ventana de uso.");
   }
 
   return data;
@@ -237,7 +239,7 @@ export async function reserveAiRequest(params: {
 
   if (usage.creditsRemaining < 1) {
     throw new AiUsageError(
-      "Ya alcanzaste tu límite mensual. Actualizá a Pro para seguir usando Neosis.",
+      "Ya alcanzaste tu limite de uso actual. Espera al proximo reinicio o actualiza a Pro para seguir usando Neosis.",
       403,
       usage,
     );
