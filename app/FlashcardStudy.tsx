@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AddMoreCards from "./AddMoreCards";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
 import { useLang } from "./i18n";
@@ -16,10 +15,6 @@ interface Props {
     deckId: string,
     cardVisuals: Record<string, Partial<CardVisual>>,
   ) => Promise<void>;
-  onAppendCards?: (
-    deckId: string,
-    cards: Array<{ question: string; answer: string }>,
-  ) => Promise<void>;
 }
 
 export default function FlashcardStudy({
@@ -27,7 +22,6 @@ export default function FlashcardStudy({
   decks,
   onSelectDeck,
   onSaveCardVisuals,
-  onAppendCards,
 }: Props) {
   const { t } = useLang();
   const s = t.study;
@@ -38,7 +32,6 @@ export default function FlashcardStudy({
   const [queue, setQueue] = useState<Flashcard[]>([]);
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
   const [cardVisuals, setCardVisuals] = useState<Record<string, Partial<CardVisual>>>({});
-  const [addingMore, setAddingMore] = useState(false);
 
   useEffect(() => {
     if (!deck) return;
@@ -84,7 +77,10 @@ export default function FlashcardStudy({
             >
               <div>
                 <strong>{currentDeck.name}</strong>
-                <span>{currentDeck.cards.length} {currentDeck.cards.length === 1 ? s.deckCard : s.deckCards}</span>
+                <span>
+                  {currentDeck.cards.length}{" "}
+                  {currentDeck.cards.length === 1 ? s.deckCard : s.deckCards}
+                </span>
               </div>
             </button>
           ))}
@@ -97,7 +93,6 @@ export default function FlashcardStudy({
   const total = queue.length;
   const answered = Object.keys(results).length;
   const progress = total > 0 ? (answered / total) * 100 : 0;
-  const isTinyDeck = deck.cards.length <= 4;
 
   function mark(result: "easy" | "hard" | "wrong") {
     if (!card) return;
@@ -163,19 +158,9 @@ export default function FlashcardStudy({
               <span>{s.wrong}</span>
             </div>
           </div>
-          <div className="study-done-actions">
-            <button className="study-restart-btn" onClick={restart}>
-              {s.reviewAgain}
-            </button>
-            {onAppendCards && (
-              <button className="study-add-more-cta" type="button" onClick={() => setAddingMore(true)}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-                Add more cards
-              </button>
-            )}
-          </div>
+          <button className="study-restart-btn" onClick={restart}>
+            {s.reviewAgain}
+          </button>
         </div>
       </div>
     );
@@ -187,23 +172,11 @@ export default function FlashcardStudy({
         <div>
           <h2 className="ws-panel-title">{deck.name}</h2>
           <p className="ws-panel-sub">
-            {s.cardOf.replace("{current}", String(index + 1)).replace("{total}", String(total))} · {s.answered.replace("{n}", String(answered))}
+            {s.cardOf.replace("{current}", String(index + 1)).replace("{total}", String(total))} ·{" "}
+            {s.answered.replace("{n}", String(answered))}
           </p>
         </div>
-        <div className="study-header-actions">
-          {onAppendCards && (
-            <button
-              className={`study-add-more-btn${isTinyDeck ? " study-add-more-btn--highlight" : ""}`}
-              type="button"
-              onClick={() => setAddingMore(true)}
-              title="Add more flashcards to this deck"
-            >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
-              </svg>
-              Add cards
-            </button>
-          )}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="study-deck-picker-inline">
             <select
               className="study-deck-select"
@@ -259,24 +232,6 @@ export default function FlashcardStudy({
         )}
       </div>
 
-      {isTinyDeck && onAppendCards && !flipped && (
-        <div className="study-tiny-nudge">
-          <span className="study-tiny-nudge-text">
-            This deck only has {deck.cards.length} card{deck.cards.length !== 1 ? "s" : ""} — expand it to study more
-          </span>
-          <button
-            className="study-tiny-nudge-btn"
-            type="button"
-            onClick={() => setAddingMore(true)}
-          >
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
-            </svg>
-            Add more flashcards
-          </button>
-        </div>
-      )}
-
       {editingCard && (
         <CardEditor
           card={editingCard}
@@ -284,16 +239,6 @@ export default function FlashcardStudy({
             void updateCardVisual(cardId, visual);
           }}
           onClose={() => setEditingCard(null)}
-        />
-      )}
-
-      {addingMore && onAppendCards && (
-        <AddMoreCards
-          deck={deck}
-          onClose={() => setAddingMore(false)}
-          onSave={async (cards) => {
-            await onAppendCards(deck.id, cards);
-          }}
         />
       )}
     </div>
