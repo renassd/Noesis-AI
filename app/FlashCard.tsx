@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, type CSSProperties, type KeyboardEvent } from "react";
+import { useLang } from "./i18n";
 import { renderInlineRichText } from "./lib/renderRichText";
 import { useTheme } from "./theme/ThemeContext";
 import { CARD_TEMPLATES } from "./theme/card-templates";
@@ -64,6 +65,8 @@ export default function FlashCard({
   showLabel = true,
   onEdit,
 }: FlashCardProps) {
+  const { lang, t } = useLang();
+  const s = t.study;
   const { prefs } = useTheme();
 
   const visual: CardVisual = useMemo(() => {
@@ -130,7 +133,11 @@ export default function FlashCard({
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); }
       }}
-      aria-label={flipped ? `Respuesta: ${card.answer}` : `Pregunta: ${card.question}`}
+      aria-label={
+        flipped
+          ? `${s.manualAnswerLabel}: ${card.answer}`
+          : `${s.manualQuestionLabel}: ${card.question}`
+      }
       aria-pressed={flipped}
     >
       {onEdit && (
@@ -140,8 +147,8 @@ export default function FlashCard({
             event.stopPropagation();
             onEdit(card);
           }}
-          aria-label="Editar tarjeta"
-          title="Personalizar esta tarjeta"
+          aria-label={lang === "en" ? "Edit card" : "Editar tarjeta"}
+          title={lang === "en" ? "Customize this card" : "Personalizar esta tarjeta"}
           type="button"
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -155,7 +162,7 @@ export default function FlashCard({
           <StickerLayer stickers={visual.stickers} />
           {showLabel && (
             <span className="fc-label" style={{ color: template.accentColor }}>
-              Pregunta
+              {s.manualQuestionLabel}
             </span>
           )}
           <div className="fc-text" dangerouslySetInnerHTML={{ __html: renderInlineRichText(card.question) }} />
@@ -165,7 +172,7 @@ export default function FlashCard({
                 <path d="M2.5 8a5.5 5.5 0 1 0 1.1-3.3M2.5 4V8H6.5"
                   stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              Ver respuesta
+              {lang === "en" ? "See answer" : "Ver respuesta"}
             </span>
           )}
         </div>
@@ -175,7 +182,7 @@ export default function FlashCard({
           <StickerLayer stickers={visual.stickers} />
           {showLabel && (
             <span className="fc-label" style={{ color: template.accentColor }}>
-              Respuesta
+              {s.manualAnswerLabel}
             </span>
           )}
           {imageUrl && (
@@ -190,7 +197,7 @@ export default function FlashCard({
                 <path d="M13.5 8a5.5 5.5 0 1 1-1.1-3.3M13.5 4V8H9.5"
                   stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              Volver
+              {lang === "en" ? "Back" : "Volver"}
             </span>
           )}
         </div>
