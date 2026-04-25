@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import ColorModeToggle from "../ColorModeToggle";
 import AiUsageCard from "@/components/AiUsageCard";
+import { useAiUsage } from "@/context/AiUsageContext";
 import FlashcardGenerator from "../FlashcardGenerator";
 import FlashcardStudy from "../FlashcardStudy";
 import LangToggle from "../LangToggle";
@@ -28,8 +29,10 @@ type Tool = "generate" | "manual" | "study" | "tutor" | "decks" | "memory";
 
 export default function EstudioPage() {
   const { t } = useLang();
+  const { usage } = useAiUsage();
   const s = t.study;
   const nav = t.nav;
+  const showUpgradeCard = usage?.creditsRemaining === 0;
 
   const TOOLS: { id: Tool; label: string; icon: React.ReactNode }[] = [
     { id: "generate", label: s.generate, icon: (
@@ -134,7 +137,7 @@ export default function EstudioPage() {
             ))}
           </div>
 
-          {tool !== "tutor" && <AiUsageCard variant="compact" />}
+          {tool !== "tutor" && showUpgradeCard && <AiUsageCard variant="compact" />}
 
           {decks.length > 0 && (
             <div className="ws-deck-list">

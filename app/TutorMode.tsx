@@ -65,7 +65,7 @@ export default function TutorMode() {
   async function startSession() {
     if (!topic.trim()) return;
     if (!hasCredits) {
-      setError("Ya no te quedan creditos de IA.");
+      setError(s.tutorOutOfCredits);
       return;
     }
 
@@ -81,7 +81,7 @@ export default function TutorMode() {
       setStarted(true);
       setMessages([firstMsg, { role: "assistant", content: text }]);
     } catch {
-      setError("Ocurrio un error. Intenta de nuevo.");
+      setError(s.tutorError);
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ export default function TutorMode() {
   async function send() {
     if (!input.trim() || loading) return;
     if (!hasCredits) {
-      setError("Ya no te quedan creditos de IA.");
+      setError(s.tutorOutOfCredits);
       return;
     }
     const userMsg: Message = { role: "user", content: input.trim() };
@@ -103,7 +103,7 @@ export default function TutorMode() {
       setInput("");
       setMessages([...updated, { role: "assistant", content: text }]);
     } catch {
-      setError("Ocurrio un error. Intenta de nuevo.");
+      setError(s.tutorError);
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,7 @@ import TutorMode from "./TutorMode";
 import ResearchMode from "./ResearchMode";
 import MyDecks from "./MyDecks";
 import AiUsageCard from "@/components/AiUsageCard";
+import { useAiUsage } from "@/context/AiUsageContext";
 import ThemeToggle from "./theme/ThemeToggle";
 import { useLang } from "./i18n";
 import type { Flashcard, Deck } from "./types";
@@ -25,9 +26,11 @@ export default function WorkspaceApp({
   onToolChange,
 }: WorkspaceAppProps) {
   const { t } = useLang();
+  const { usage } = useAiUsage();
   const s = t.study;
   const researchSection = t.nav.research;
   const studySection = t.nav.study;
+  const showUpgradeCard = usage?.creditsRemaining === 0;
 
   const TOOLS: { id: Tool; label: string; icon: React.ReactNode; section: string }[] = [
     {
@@ -166,7 +169,7 @@ export default function WorkspaceApp({
             ))}
           </nav>
 
-          {tool !== "tutor" && tool !== "research" && <AiUsageCard variant="compact" />}
+          {tool !== "tutor" && tool !== "research" && showUpgradeCard && <AiUsageCard variant="compact" />}
 
           {decks.length > 0 && (
             <div className="ws-deck-list">

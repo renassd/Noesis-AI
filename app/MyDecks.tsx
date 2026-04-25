@@ -19,7 +19,7 @@ export default function MyDecks({
   onDelete,
   onRename,
 }: Props) {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const s = t.study;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -90,7 +90,7 @@ export default function MyDecks({
               )}
               <span className="deck-card-meta">
                 {deck.cards.length} {deck.cards.length === 1 ? s.deckCard : s.deckCards} ·{" "}
-                {new Date(deck.createdAt).toLocaleDateString("es-AR")}
+                {new Date(deck.createdAt).toLocaleDateString(lang === "en" ? "en-US" : "es-PY")}
               </span>
             </div>
 

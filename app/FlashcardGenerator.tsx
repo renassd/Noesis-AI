@@ -5,6 +5,7 @@ import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useAiUsage } from "@/context/AiUsageContext";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
+import { useLang } from "./i18n";
 import { detectLang, langInstruction } from "./lib/detectLang";
 import type { CardVisual } from "./theme/types";
 import type { Flashcard } from "./types";
@@ -69,6 +70,8 @@ ${text.slice(0, 4000)}`;
 }
 
 export default function FlashcardGenerator({ onSaveDeck }: Props) {
+  const { t } = useLang();
+  const s = t.study;
   const { applyUsage } = useAiUsage();
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState(8);
@@ -82,7 +85,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
 
   async function generate() {
     if (text.trim().length < 30) {
-      setError("Ingresa al menos 30 caracteres de texto para generar tarjetas.");
+      setError(s.generatorMinError);
       return;
     }
 
@@ -103,14 +106,14 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
 
       const data = await res.json();
       applyUsage(data.usage);
-      if (!res.ok) throw new Error(data.error || "Error al generar las tarjetas.");
+      if (!res.ok) throw new Error(data.error || s.generatorRequestError);
 
       const rawText = data.text || "";
-      if (!rawText.trim()) throw new Error("La IA no devolvio contenido. Intenta de nuevo.");
+      if (!rawText.trim()) throw new Error(s.generatorEmptyError);
 
       const parsed = extractJsonArray(rawText);
       if (!parsed || parsed.length === 0) {
-        throw new Error("No se pudo leer el formato de las tarjetas. Intenta con un texto mas claro.");
+        throw new Error(s.generatorParseError);
       }
 
       const validCards = parsed.filter(
@@ -122,7 +125,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
       );
 
       if (validCards.length === 0) {
-        throw new Error("Las tarjetas generadas no tienen el formato esperado.");
+        throw new Error(s.generatorFormatError);
       }
 
       const generatedCards: GeneratedCard[] = validCards.map((card, index) => ({
@@ -137,7 +140,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
         setDeckName(`Deck ${new Date().toLocaleDateString()}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al generar las tarjetas.");
+      setError(err instanceof Error ? err.message : s.generatorRequestError);
     } finally {
       setLoading(false);
     }
@@ -168,26 +171,26 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
   return (
     <div className="ws-panel">
       <div className="ws-panel-header">
-        <h2 className="ws-panel-title">Generar flashcards con IA</h2>
+        <h2 className="ws-panel-title">{s.generatorTitle}</h2>
       </div>
 
       <div className="gen-layout">
         <div className="gen-input-col">
           <div className="gen-field">
-            <label className="gen-label">Tu texto o apuntes</label>
+            <label className="gen-label">{s.generatorTextLabel}</label>
             <textarea
               className="gen-textarea"
-              placeholder="Pega aca tu texto, apuntes o resumen. Minimo 30 caracteres."
+              placeholder={s.generatorTextPlaceholder}
               value={text}
               onChange={(event) => setText(event.target.value)}
               rows={14}
             />
-            <span className="gen-char-count">{text.length} caracteres</span>
+            <span className="gen-char-count">{s.generatorCharCount.replace("{n}", String(text.length))}</span>
           </div>
 
           <div className="gen-options">
             <div className="gen-field">
-              <label className="gen-label">Cantidad de tarjetas</label>
+              <label className="gen-label">{s.generatorQuantityLabel}</label>
               <div className="gen-qty-row">
                 {[5, 8, 12, 16, 20].map((n) => (
                   <button
@@ -209,9 +212,9 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
             {loading ? (
               <span className="gen-loading">
                 <span className="gen-spinner" />
-                Generando tarjetas...
+                {s.generatorSubmitting}
               </span>
-            ) : "Generar flashcards ->"}
+            ) : s.generatorSubmit}
           </button>
         </div>
 
@@ -219,8 +222,8 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
           <div className="gen-output-col">
             <div className="gen-output-header">
               <div>
-                <span className="gen-output-badge">{cards.length} tarjetas generadas</span>
-                <p className="gen-output-hint">Hace clic en una tarjeta para ver la respuesta</p>
+                <span className="gen-output-badge">{s.generatorOutputCount.replace("{n}", String(cards.length))}</span>
+                <p className="gen-output-hint">{s.generatorOutputHint}</p>
               </div>
 
               <div className="gen-output-actions">
@@ -228,7 +231,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
                   <div className="gen-save-row">
                     <input
                       className="gen-name-input"
-                      placeholder="Nombre del mazo"
+                      placeholder={s.generatorDeckPlaceholder}
                       value={deckName}
                       onChange={(event) => setDeckName(event.target.value)}
                     />
@@ -238,7 +241,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
                       onClick={() => void saveDeck()}
                       disabled={saved || loading}
                     >
-                      {saved ? "Guardado" : "Guardar mazo"}
+                      {saved ? s.generatorSaved : s.generatorSaveDeck}
                     </button>
                   </div>
                 )}
