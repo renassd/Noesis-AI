@@ -39,6 +39,7 @@ export default function TutorMode() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const usageReady = auth.signedIn && !usageLoading && !!usage;
   const hasCredits = usageReady && usage.creditsRemaining > 0;
@@ -62,39 +63,47 @@ export default function TutorMode() {
   }
 
   async function startSession() {
-    if (!topic.trim() || !hasCredits) return;
-    setStarted(true);
+    if (!topic.trim()) return;
+    if (!hasCredits) {
+      setError("Ya no te quedan creditos de IA.");
+      return;
+    }
 
     const firstMsg: Message = {
       role: "user",
       content: `Quiero aprender sobre: ${topic.trim()}`,
     };
-    setMessages([firstMsg]);
     setLoading(true);
+    setError("");
 
     try {
       const text = await callAI([firstMsg], buildTutorSystem(topic, langInstruction(detectLang(topic.trim()))));
+      setStarted(true);
       setMessages([firstMsg, { role: "assistant", content: text }]);
     } catch {
-      setMessages([firstMsg, { role: "assistant", content: "Ocurrio un error. Intenta de nuevo." }]);
+      setError("Ocurrio un error. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
   }
 
   async function send() {
-    if (!input.trim() || loading || !hasCredits) return;
+    if (!input.trim() || loading) return;
+    if (!hasCredits) {
+      setError("Ya no te quedan creditos de IA.");
+      return;
+    }
     const userMsg: Message = { role: "user", content: input.trim() };
     const updated = [...messages, userMsg];
-    setMessages(updated);
-    setInput("");
     setLoading(true);
+    setError("");
 
     try {
       const text = await callAI(updated, buildTutorSystem(topic, langInstruction(detectLang(input.trim()))));
+      setInput("");
       setMessages([...updated, { role: "assistant", content: text }]);
     } catch {
-      setMessages([...updated, { role: "assistant", content: "Ocurrio un error. Intenta de nuevo." }]);
+      setError("Ocurrio un error. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -112,7 +121,10 @@ export default function TutorMode() {
               className="tutor-topic-input"
               placeholder={s.tutorPlaceholder}
               value={topic}
-              onChange={(e) => setTopic(e.target.value)}
+              onChange={(e) => {
+                if (error) setError("");
+                setTopic(e.target.value);
+              }}
               onKeyDown={(e) => e.key === "Enter" && void startSession()}
               disabled={!hasCredits}
             />
@@ -120,6 +132,7 @@ export default function TutorMode() {
               {s.tutorStart}
             </button>
           </div>
+          {error && <p className="gen-error">{error}</p>}
           <div className="tutor-examples">
             {s.tutorExamples.map((example) => (
               <button key={example} className="tutor-example" type="button" onClick={() => setTopic(example)}>
@@ -185,7 +198,10 @@ export default function TutorMode() {
           className="chat-input"
           placeholder={s.tutorPlaceholder}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            if (error) setError("");
+            setInput(e.target.value);
+          }}
           onKeyDown={(e) => e.key === "Enter" && void send()}
           disabled={loading || !hasCredits}
         />
@@ -193,6 +209,8 @@ export default function TutorMode() {
           {s.send}
         </button>
       </div>
+
+      {error && <p className="gen-error" style={{ margin: "0 22px 14px" }}>{error}</p>}
 
       <AiUsageCard variant="inline" />
     </div>

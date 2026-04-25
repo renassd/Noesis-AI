@@ -407,6 +407,7 @@ export default function ResearchMode() {
   const { usage, loading: usageLoading, applyUsage } = useAiUsage();
   const [sessionState, setSessionState] = useState<SessionState>(() => getInitialState(lang));
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [pastedImage, setPastedImage] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -507,7 +508,11 @@ export default function ResearchMode() {
 
   async function send() {
     const trimmed = input.trim();
-    if ((!trimmed && !pastedImage && !attachment) || loading || !hasCredits) return;
+    if ((!trimmed && !pastedImage && !attachment) || loading) return;
+    if (!hasCredits) {
+      setError(lang === "en" ? "You ran out of AI credits." : "Ya no te quedan creditos de IA.");
+      return;
+    }
 
     const messageContent = trimmed ||
       (attachment
@@ -540,25 +545,8 @@ export default function ResearchMode() {
     };
     const updated = [...currentMsgs, userMsg];
 
-    setSessionState((prev) => {
-      const nextId = prev.activeSessionId === DRAFT_SESSION_ID ? generateSessionId() : prev.activeSessionId;
-      return {
-        activeSessionId: nextId,
-        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
-          const next = {
-            ...session,
-            id: nextId,
-            messages: { ...session.messages, [activeTool]: updated },
-            input: "",
-            savedAt: Date.now(),
-          };
-          return { ...next, title: deriveSessionTitle(next, lang) };
-        }),
-      };
-    });
-
-    setPastedImage(null);
     setLoading(true);
+    setError("");
 
     try {
       const res = await fetchWithSupabaseAuth("/api/ai", {
@@ -568,27 +556,31 @@ export default function ResearchMode() {
       });
       const data = await res.json();
       applyUsage(data.usage);
-      const text = res.ok ? (data.text || "").trim() : data.error || "Ocurrió un error. Intentá de nuevo.";
-      setSessionState((prev) => ({
-        ...prev,
-        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
-          ...session,
-          messages: { ...session.messages, [activeTool]: [...updated, { role: "assistant", content: text }] },
-          savedAt: Date.now(),
-        })),
-      }));
+      if (!res.ok) {
+        setError(data.error || (lang === "en" ? "Could not send the message." : "No se pudo enviar el mensaje."));
+        return;
+      }
+      const text = (data.text || "").trim();
+      setSessionState((prev) => {
+        const nextId = prev.activeSessionId === DRAFT_SESSION_ID ? generateSessionId() : prev.activeSessionId;
+        return {
+          activeSessionId: nextId,
+          sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
+            const next = {
+              ...session,
+              id: nextId,
+              messages: { ...session.messages, [activeTool]: [...updated, { role: "assistant", content: text }] },
+              input: "",
+              attachment: null,
+              savedAt: Date.now(),
+            };
+            return { ...next, title: deriveSessionTitle(next, lang) };
+          }),
+        };
+      });
+      setPastedImage(null);
     } catch {
-      setSessionState((prev) => ({
-        ...prev,
-        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
-          ...session,
-          messages: {
-            ...session.messages,
-            [activeTool]: [...updated, { role: "assistant", content: "Ocurrió un error de red. Intentá de nuevo." }],
-          },
-          savedAt: Date.now(),
-        })),
-      }));
+      setError(lang === "en" ? "Network error. Try again." : "Ocurrio un error de red. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -602,6 +594,7 @@ export default function ResearchMode() {
   }
 
   function updateInput(nextValue: string) {
+    if (error) setError("");
     setSessionState((prev) => ({
       ...prev,
       sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
