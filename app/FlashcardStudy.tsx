@@ -259,24 +259,6 @@ export default function FlashcardStudy({
         )}
       </div>
 
-      {isTinyDeck && onAppendCards && !flipped && (
-        <div className="study-tiny-nudge">
-          <span className="study-tiny-nudge-text">
-            This deck only has {deck.cards.length} card{deck.cards.length !== 1 ? "s" : ""} — expand it to study more
-          </span>
-          <button
-            className="study-tiny-nudge-btn"
-            type="button"
-            onClick={() => setAddingMore(true)}
-          >
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
-            </svg>
-            Add more flashcards
-          </button>
-        </div>
-      )}
-
       {editingCard && (
         <CardEditor
           card={editingCard}
