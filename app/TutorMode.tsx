@@ -2,6 +2,7 @@
 
 import AiUsageCard from "@/components/AiUsageCard";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { useAuth } from "@/context/AuthContext";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { useEffect, useRef, useState } from "react";
 import { detectLang, langInstruction } from "./lib/detectLang";
@@ -30,7 +31,8 @@ ${langHint}`;
 
 export default function TutorMode() {
   const { t } = useLang();
-  const { usage, applyUsage } = useAiUsage();
+  const { auth } = useAuth();
+  const { usage, loading: usageLoading, applyUsage } = useAiUsage();
   const s = t.study;
   const [topic, setTopic] = useState("");
   const [started, setStarted] = useState(false);
@@ -38,7 +40,8 @@ export default function TutorMode() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const hasCredits = !usage || usage.creditsRemaining > 0;
+  const usageReady = auth.signedIn && !usageLoading && !!usage;
+  const hasCredits = usageReady && usage.creditsRemaining > 0;
   const canSend = hasCredits && !loading && !!input.trim();
   const canStart = hasCredits && !!topic.trim();
 

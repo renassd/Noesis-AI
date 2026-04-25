@@ -3,6 +3,7 @@
 import Image from "next/image";
 import AiUsageCard from "@/components/AiUsageCard";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { useAuth } from "@/context/AuthContext";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { buildDocumentSystemContext } from "./lib/pdfChunking";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
@@ -402,7 +403,8 @@ function getAttachmentLabel(
 
 export default function ResearchMode() {
   const { lang } = useLang();
-  const { usage, applyUsage } = useAiUsage();
+  const { auth } = useAuth();
+  const { usage, loading: usageLoading, applyUsage } = useAiUsage();
   const [sessionState, setSessionState] = useState<SessionState>(() => getInitialState(lang));
   const [loading, setLoading] = useState(false);
   const [pastedImage, setPastedImage] = useState<string | null>(null);
@@ -416,7 +418,8 @@ export default function ResearchMode() {
   const currentMsgs = activeSession.messages[activeTool] ?? [];
   const input = activeSession.input;
   const attachment = activeSession.attachment;
-  const hasCredits = !usage || usage.creditsRemaining > 0;
+  const usageReady = auth.signedIn && !usageLoading && !!usage;
+  const hasCredits = usageReady && usage.creditsRemaining > 0;
   const canSend = hasCredits && !loading && (!!input.trim() || !!pastedImage || !!attachment);
   const hiddenImageMarkers = new Set(["[Pasted image attached]", "[Imagen pegada]"]);
   const isSyntheticAttachmentLabel = (content: string) =>
