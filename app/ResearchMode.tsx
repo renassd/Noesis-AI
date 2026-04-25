@@ -552,7 +552,14 @@ export default function ResearchMode() {
       const res = await fetchWithSupabaseAuth("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ max_tokens: 1200, system: systemPrompt, messages: updated }),
+        body: JSON.stringify({
+          max_tokens: 1200,
+          system: systemPrompt,
+          messages: updated,
+          // Inject relevant memories from past sessions for this query
+          useMemory: true,
+          memoryQuery: trimmed || activeTool,
+        }),
       });
       const data = await res.json();
       applyUsage(data.usage);
@@ -579,6 +586,25 @@ export default function ResearchMode() {
         };
       });
       setPastedImage(null);
+
+      // Extract and store memories from significant AI responses (fire-and-forget)
+      if (auth.signedIn && text.length > 200) {
+        const extractContent = trimmed
+          ? `Pregunta: ${trimmed}\n\nRespuesta:\n${text}`
+          : text;
+        const extractLabel = attachment?.fileName
+          ? attachment.fileName
+          : `Research: ${activeTool}`;
+        void fetchWithSupabaseAuth("/api/memory/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: extractContent,
+            source_type: "research",
+            source_label: extractLabel,
+          }),
+        });
+      }
     } catch {
       setError(lang === "en" ? "Network error. Try again." : "Ocurrio un error de red. Intenta de nuevo.");
     } finally {

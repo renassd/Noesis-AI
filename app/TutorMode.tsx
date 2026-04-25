@@ -18,6 +18,8 @@ function MarkdownMessage({ content }: { content: string }) {
 function buildTutorSystem(topic: string, langHint: string): string {
   return `You are Neuvra, an expert academic tutor. The student wants to learn about: "${topic}".
 
+If there is a <user_memory> block present, the student has studied these topics in past sessions. Use that context naturally: build on what they already know, connect new concepts to prior learning, and avoid re-explaining things they have already mastered. Reference past knowledge when relevant ("As you studied before…", "You already know X, so…").
+
 Your teaching method:
 1. **First response**: Explain the concept with a clear analogy and concrete examples. End with a direct comprehension question.
 2. **Follow-up responses**: If the student answered well, advance or deepen. If they answered poorly, re-explain from a different angle.
@@ -50,11 +52,26 @@ export default function TutorMode() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  async function callAI(msgs: Message[], system: string): Promise<string> {
+  // Fire-and-forget: extract memories from a tutor exchange (never blocks the UI)
+  function fireExtract(content: string, label: string) {
+    void fetchWithSupabaseAuth("/api/memory/extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, source_type: "tutor", source_label: label }),
+    });
+  }
+
+  async function callAI(msgs: Message[], system: string, memoryQuery?: string): Promise<string> {
     const res = await fetchWithSupabaseAuth("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ max_tokens: 1000, system, messages: msgs }),
+      body: JSON.stringify({
+        max_tokens: 1000,
+        system,
+        messages: msgs,
+        // Inject relevant past-session memories when a topic is known
+        ...(memoryQuery ? { useMemory: true, memoryQuery } : {}),
+      }),
     });
     const data = await res.json();
     applyUsage(data.usage);
@@ -77,9 +94,15 @@ export default function TutorMode() {
     setError("");
 
     try {
-      const text = await callAI([firstMsg], buildTutorSystem(topic, langInstruction(detectLang(topic.trim()))));
+      const text = await callAI(
+        [firstMsg],
+        buildTutorSystem(topic, langInstruction(detectLang(topic.trim()))),
+        topic, // search past memories on this topic
+      );
       setStarted(true);
       setMessages([firstMsg, { role: "assistant", content: text }]);
+      // Extract the first full explanation — richest content for long-term memory
+      fireExtract(`Tema: ${topic}\n\nExplicación del tutor:\n${text}`, `Tutor: ${topic}`);
     } catch {
       setError(s.tutorError);
     } finally {
@@ -99,9 +122,21 @@ export default function TutorMode() {
     setError("");
 
     try {
-      const text = await callAI(updated, buildTutorSystem(topic, langInstruction(detectLang(input.trim()))));
+      const text = await callAI(
+        updated,
+        buildTutorSystem(topic, langInstruction(detectLang(input.trim()))),
+        `${topic} ${input.trim()}`, // narrow the memory search to topic + current question
+      );
+      const finalMessages: Message[] = [...updated, { role: "assistant", content: text }];
       setInput("");
-      setMessages([...updated, { role: "assistant", content: text }]);
+      setMessages(finalMessages);
+      // Extract every 3rd assistant response to keep memory growing without spamming
+      const assistantCount = finalMessages.filter((m) => m.role === "assistant").length;
+      if (assistantCount % 3 === 0) {
+        const recentExchange =
+          `Estudiante: ${input.trim()}\n\nTutor: ${text}`;
+        fireExtract(`Tema: ${topic}\n\n${recentExchange}`, `Tutor: ${topic}`);
+      }
     } catch {
       setError(s.tutorError);
     } finally {
@@ -150,7 +185,14 @@ export default function TutorMode() {
       <div className="ws-panel-header">
         <div>
           <h2 className="ws-panel-title">{s.tutorHeader} - {topic}</h2>
-          <p className="ws-panel-sub">{s.tutorSubheader}</p>
+          <p className="ws-panel-sub">
+            {s.tutorSubheader}
+            {auth.signedIn && (
+              <span className="tutor-memory-badge" title="El tutor recuerda lo que estudiaste en sesiones anteriores">
+                🧠 memoria activa
+              </span>
+            )}
+          </p>
         </div>
         <button
           className="tutor-reset-btn"
