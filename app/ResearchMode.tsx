@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import AiUsageCard from "@/components/AiUsageCard";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { buildDocumentSystemContext } from "./lib/pdfChunking";
@@ -835,6 +836,8 @@ export default function ResearchMode() {
                 <span>{loading ? (lang === "en" ? "Sending..." : "Enviando...") : lang === "en" ? "Send" : "Enviar"}</span>
               </button>
             </div>
+
+            <AiUsageCard variant="inline" />
           </div>
         </div>
         </div>

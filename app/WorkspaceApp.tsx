@@ -166,7 +166,7 @@ export default function WorkspaceApp({
             ))}
           </nav>
 
-          <AiUsageCard variant="compact" />
+          {tool !== "tutor" && tool !== "research" && <AiUsageCard variant="compact" />}
 
           {decks.length > 0 && (
             <div className="ws-deck-list">

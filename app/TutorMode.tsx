@@ -1,5 +1,6 @@
 "use client";
 
+import AiUsageCard from "@/components/AiUsageCard";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { useEffect, useRef, useState } from "react";
@@ -185,6 +186,8 @@ export default function TutorMode() {
           {s.send}
         </button>
       </div>
+
+      <AiUsageCard variant="inline" />
     </div>
   );
 }

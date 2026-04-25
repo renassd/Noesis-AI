@@ -1,19 +1,25 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/app/i18n";
 
 type Props = {
-  variant?: "compact" | "full";
+  variant?: "compact" | "full" | "inline";
 };
 
 export default function AiUsageCard({ variant = "compact" }: Props) {
   const { auth } = useAuth();
+  const router = useRouter();
   const { lang, t } = useLang();
   const usageText = t.usage;
-  const { usage, loading, error, refreshUsage } = useAiUsage();
+  const { usage, loading, error } = useAiUsage();
+
+  function handleUpgradeClick() {
+    router.push("/#pricing");
+  }
 
   const resetLabel = useMemo(() => {
     if (!usage) return "";
@@ -50,7 +56,7 @@ export default function AiUsageCard({ variant = "compact" }: Props) {
       <div className={`ai-usage-card ai-usage-card--${variant}`}>
         <div className="ai-usage-header">
           <h3>{usageText.title}</h3>
-          <button type="button" className="ai-usage-refresh" onClick={() => void refreshUsage()}>
+          <button type="button" className="ai-usage-refresh" onClick={handleUpgradeClick}>
             {usageText.refresh}
           </button>
         </div>
@@ -62,6 +68,29 @@ export default function AiUsageCard({ variant = "compact" }: Props) {
   const percentUsed = Math.min(100, Math.round((usage.creditsUsed / usage.monthlyCredits) * 100));
   const planLabel = usage.plan === "pro" ? usageText.proPlan : usageText.freePlan;
 
+  if (variant === "inline") {
+    return (
+      <div className="ai-usage-card ai-usage-card--inline">
+        <div className="ai-usage-inline-main">
+          <div className="ai-usage-inline-copy">
+            <strong>
+              {usage.creditsRemaining} {usageText.creditsLeft}
+            </strong>
+            <span>
+              {usageText.creditsUsed}: {usage.creditsUsed} - {usageText.resetsOn} {resetLabel}
+            </span>
+          </div>
+          <button type="button" className="ai-usage-refresh ai-usage-refresh--inline" onClick={handleUpgradeClick}>
+            {usageText.refresh}
+          </button>
+        </div>
+        <div className="ai-usage-meter-bar">
+          <div className="ai-usage-meter-fill" style={{ width: `${percentUsed}%` }} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`ai-usage-card ai-usage-card--${variant}`}>
       <div className="ai-usage-header">
@@ -72,7 +101,7 @@ export default function AiUsageCard({ variant = "compact" }: Props) {
             <span className={`ai-usage-plan-badge ai-usage-plan-badge--${usage.plan}`}>{planLabel}</span>
           </div>
         </div>
-        <button type="button" className="ai-usage-refresh" onClick={() => void refreshUsage()}>
+        <button type="button" className="ai-usage-refresh" onClick={handleUpgradeClick}>
           {usageText.refresh}
         </button>
       </div>

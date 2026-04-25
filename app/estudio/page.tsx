@@ -125,7 +125,7 @@ export default function EstudioPage() {
             ))}
           </div>
 
-          <AiUsageCard variant="compact" />
+          {tool !== "tutor" && <AiUsageCard variant="compact" />}
 
           {decks.length > 0 && (
             <div className="ws-deck-list">

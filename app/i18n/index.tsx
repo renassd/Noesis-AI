@@ -157,7 +157,7 @@ export const DICT = {
       monthlyLimit: "Window limit",
       resetsOn: "Resets at",
       upgradeHint: "Upgrade to Pro to keep generating cards, tutor answers and research outputs without hitting the free cap.",
-      refresh: "Refresh",
+      refresh: "Upgrade",
       signInHint: "Sign in to view your plan and AI credits.",
       loading: "Loading usage...",
       unavailable: "Could not load AI usage right now.",

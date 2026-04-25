@@ -1824,6 +1824,19 @@ html.dark .ai-usage-refresh {
   color: var(--dm-muted);
 }
 
+html.dark .ai-usage-card--inline {
+  background: rgba(20, 25, 38, 0.82);
+  border-color: rgba(52, 65, 97, 0.7);
+}
+
+html.dark .ai-usage-inline-copy strong {
+  color: var(--dm-ink);
+}
+
+html.dark .ai-usage-inline-copy span {
+  color: var(--dm-muted);
+}
+
 html.dark .ai-usage-meter-bar {
   background: rgba(37, 46, 66, 0.95);
 }

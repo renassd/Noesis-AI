@@ -3,7 +3,6 @@
 import "../standalone.css";
 import "../workspace.css";
 import "../research-interface.css";
-import AiUsageCard from "@/components/AiUsageCard";
 import Link from "next/link";
 import Image from "next/image";
 import ColorModeToggle from "../ColorModeToggle";
@@ -36,7 +35,6 @@ export default function InvestigacionPage() {
 
       <div className="standalone-layout standalone-layout-single">
         <main className="standalone-main research-main">
-          <AiUsageCard variant="full" />
           <ResearchMode />
         </main>
       </div>
