@@ -46,21 +46,34 @@ function makeDraft(question: string, answer: string): DraftCard {
 
 function extractJsonArray(raw: string): Array<{ question: string; answer: string }> | null {
   const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+
+  function parseCandidate(src: string): Array<{ question: string; answer: string }> | null {
+    try {
+      const parsed: unknown = JSON.parse(src);
+      const arr = Array.isArray(parsed) ? parsed : null;
+      if (!arr) return null;
+      const valid = arr.filter(
+        (item): item is { question: string; answer: string } =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as Record<string, unknown>).question === "string" &&
+          typeof (item as Record<string, unknown>).answer === "string",
+      );
+      return valid.length > 0 ? valid : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Try the whole cleaned string first (handles responses that are pure JSON)
+  const direct = parseCandidate(cleaned);
+  if (direct) return direct;
+
+  // Fall back to extracting between first [ and last ]
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
-  if (start === -1 || end === -1) return null;
-  try {
-    const parsed = JSON.parse(cleaned.slice(start, end + 1)) as unknown[];
-    return parsed.filter(
-      (item): item is { question: string; answer: string } =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof (item as Record<string, unknown>).question === "string" &&
-        typeof (item as Record<string, unknown>).answer === "string",
-    );
-  } catch {
-    return null;
-  }
+  if (start === -1 || end === -1 || end <= start) return null;
+  return parseCandidate(cleaned.slice(start, end + 1));
 }
 
 function buildAiPrompt(
@@ -71,36 +84,30 @@ function buildAiPrompt(
   difficulty: Difficulty,
   langHint: string,
 ): string {
-  const diffGuide: Record<Difficulty, string> = {
-    basic: "Focus on core definitions, key terms, and foundational concepts.",
-    intermediate: "Focus on mechanisms, applications, comparisons, and cause-effect relationships.",
-    advanced: "Focus on synthesis, edge cases, nuanced distinctions, and critical analysis.",
-  };
-
+  // Keep the existing-cards sample small to preserve output token budget
   const sample = existing
-    .slice(0, 6)
-    .map((c, i) => `${i + 1}. Q: "${c.question}" / A: "${c.answer.slice(0, 80)}"`)
-    .join("\n");
+    .slice(0, 3)
+    .map((c) => `"${c.question}"`)
+    .join(", ");
 
-  return `You are a study assistant expanding an existing flashcard deck.
+  const diffNote =
+    difficulty === "basic"
+      ? "Focus on definitions and key terms."
+      : difficulty === "advanced"
+        ? "Focus on synthesis, edge cases, and critical analysis."
+        : "Focus on mechanisms, applications, and comparisons.";
 
-DECK: "${deckName}"
-${sample ? `\nEXISTING CARDS (do NOT repeat or rephrase these):\n${sample}\n` : ""}
-DIFFICULTY: ${difficulty.toUpperCase()} — ${diffGuide[difficulty]}
+  // Cap input text at 2500 chars so the total prompt stays within free-plan limits
+  const textChunk = text.slice(0, 2500);
 
-Generate exactly ${quantity} NEW flashcards from the text below.
+  return `Generate exactly ${quantity} flashcards for the deck "${deckName}". ${diffNote}
+${sample ? `Do NOT repeat these existing questions: ${sample}.` : ""}
 ${langHint}
-
-STRICT RULES:
-- Respond ONLY with a JSON array. No other text.
-- Each object: { "question": "...", "answer": "..." }
-- Do NOT duplicate existing questions.
-- Stay on topic with the deck "${deckName}".
-- Answers: 1–3 concise sentences.
-- Use LaTeX for formulas: $...$ inline, $$...$$ block.
+Respond ONLY with a valid JSON array, no other text:
+[{"question":"...","answer":"..."}]
 
 TEXT:
-${text.slice(0, 4000)}`;
+${textChunk}`;
 }
 
 // ─────────────────────────────────────────────
@@ -257,7 +264,11 @@ function AiInput({
       if (!res.ok) throw new Error(data.error || "AI generation failed.");
 
       const parsed = extractJsonArray(data.text || "");
-      if (!parsed || parsed.length === 0) throw new Error("Could not parse AI response.");
+      if (!parsed || parsed.length === 0) {
+        throw new Error(
+          "The AI response couldn't be read as flashcards. Try requesting fewer cards or using shorter text.",
+        );
+      }
 
       onNext(parsed.map((c) => makeDraft(c.question, c.answer)));
     } catch (err) {
