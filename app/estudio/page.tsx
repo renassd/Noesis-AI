@@ -185,9 +185,6 @@ export default function EstudioPage() {
               decks={decks}
               onSelectDeck={(deck) => setActiveDeck(deck)}
               onSaveCardVisuals={saveCardVisuals}
-              onAppendCards={async (deckId, cards) => {
-                await appendCards(deckId, cards);
-              }}
             />
           )}
           {tool === "tutor" && <TutorMode />}
