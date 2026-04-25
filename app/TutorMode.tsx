@@ -30,7 +30,7 @@ ${langHint}`;
 
 export default function TutorMode() {
   const { t } = useLang();
-  const { applyUsage } = useAiUsage();
+  const { usage, applyUsage } = useAiUsage();
   const s = t.study;
   const [topic, setTopic] = useState("");
   const [started, setStarted] = useState(false);
@@ -38,6 +38,9 @@ export default function TutorMode() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const hasCredits = !usage || usage.creditsRemaining > 0;
+  const canSend = hasCredits && !loading && !!input.trim();
+  const canStart = hasCredits && !!topic.trim();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -56,7 +59,7 @@ export default function TutorMode() {
   }
 
   async function startSession() {
-    if (!topic.trim()) return;
+    if (!topic.trim() || !hasCredits) return;
     setStarted(true);
 
     const firstMsg: Message = {
@@ -77,7 +80,7 @@ export default function TutorMode() {
   }
 
   async function send() {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || !hasCredits) return;
     const userMsg: Message = { role: "user", content: input.trim() };
     const updated = [...messages, userMsg];
     setMessages(updated);
@@ -108,8 +111,9 @@ export default function TutorMode() {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void startSession()}
+              disabled={!hasCredits}
             />
-            <button className="tutor-start-btn" type="button" onClick={() => void startSession()} disabled={!topic.trim()}>
+            <button className="tutor-start-btn" type="button" onClick={() => void startSession()} disabled={!canStart}>
               {s.tutorStart}
             </button>
           </div>
@@ -180,9 +184,9 @@ export default function TutorMode() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && void send()}
-          disabled={loading}
+          disabled={loading || !hasCredits}
         />
-        <button className="chat-send-btn" type="button" onClick={() => void send()} disabled={loading || !input.trim()}>
+        <button className="chat-send-btn" type="button" onClick={() => void send()} disabled={!canSend}>
           {s.send}
         </button>
       </div>

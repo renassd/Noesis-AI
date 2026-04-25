@@ -402,7 +402,7 @@ function getAttachmentLabel(
 
 export default function ResearchMode() {
   const { lang } = useLang();
-  const { applyUsage } = useAiUsage();
+  const { usage, applyUsage } = useAiUsage();
   const [sessionState, setSessionState] = useState<SessionState>(() => getInitialState(lang));
   const [loading, setLoading] = useState(false);
   const [pastedImage, setPastedImage] = useState<string | null>(null);
@@ -416,6 +416,8 @@ export default function ResearchMode() {
   const currentMsgs = activeSession.messages[activeTool] ?? [];
   const input = activeSession.input;
   const attachment = activeSession.attachment;
+  const hasCredits = !usage || usage.creditsRemaining > 0;
+  const canSend = hasCredits && !loading && (!!input.trim() || !!pastedImage || !!attachment);
   const hiddenImageMarkers = new Set(["[Pasted image attached]", "[Imagen pegada]"]);
   const isSyntheticAttachmentLabel = (content: string) =>
     content.startsWith("Use the attached file:") || content.startsWith("Usa el archivo adjunto:");
@@ -502,7 +504,7 @@ export default function ResearchMode() {
 
   async function send() {
     const trimmed = input.trim();
-    if ((!trimmed && !pastedImage && !attachment) || loading) return;
+    if ((!trimmed && !pastedImage && !attachment) || loading || !hasCredits) return;
 
     const messageContent = trimmed ||
       (attachment
@@ -805,7 +807,7 @@ export default function ResearchMode() {
               onChange={(event) => updateInput(event.target.value)}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
-              disabled={loading}
+              disabled={loading || !hasCredits}
               rows={4}
               aria-label={lang === "en" ? "Research input" : "Input de investigación"}
             />
@@ -823,7 +825,7 @@ export default function ResearchMode() {
                 type="button"
                 className="ri-send"
                 onClick={() => void send()}
-                disabled={loading || (!input.trim() && !pastedImage && !attachment)}
+                disabled={!canSend}
                 aria-label={lang === "en" ? "Send" : "Enviar"}
               >
                 {loading ? (
