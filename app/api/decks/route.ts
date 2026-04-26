@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       console.error("Error fetching decks:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "No se pudieron cargar los mazos." }, { status: 500 });
     }
 
     const normalizedDecks =
@@ -138,7 +138,8 @@ export async function POST(req: NextRequest) {
 
     if (cardsError) {
       await supabaseAdmin.from("decks").delete().eq("id", deck.id);
-      return NextResponse.json({ error: cardsError.message }, { status: 500 });
+      console.error("Error inserting flashcards:", cardsError);
+      return NextResponse.json({ error: "No se pudieron guardar las tarjetas." }, { status: 500 });
     }
 
     return NextResponse.json(

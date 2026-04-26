@@ -16,6 +16,9 @@ function renderMath(expr: string, displayMode: boolean): string {
     throwOnError: false,
     displayMode,
     strict: "ignore",
+    // Disables \href, \htmlClass, \htmlId, \htmlStyle, \htmlData macros
+    // that KaTeX would otherwise render as raw HTML, enabling XSS.
+    trust: false,
   });
 }
 

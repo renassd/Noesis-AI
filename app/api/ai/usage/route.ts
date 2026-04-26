@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     console.error("Error en GET /api/ai/usage:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "No se pudo cargar el uso de IA." },
+      { error: "No se pudo cargar el uso de IA." },
       { status: 500 },
     );
   }

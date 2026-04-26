@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { AuthError, requireAuthenticatedUser } from "@/lib/server-auth";
 
 const WIKIPEDIA_API = {
   en: {
@@ -209,8 +210,10 @@ async function searchCommons(query: string) {
   };
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    await requireAuthenticatedUser(req);
+
     const body = (await req.json()) as { prompt?: string };
     const prompt = normalizePrompt(body.prompt || "");
 
@@ -277,9 +280,9 @@ export async function POST(req: Request) {
       },
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "card image lookup failed" },
-      { status: 500 },
-    );
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: "Card image lookup failed." }, { status: 500 });
   }
 }

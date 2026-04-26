@@ -32,7 +32,8 @@ export async function DELETE(
     const { error } = await supabaseAdmin.from("decks").delete().eq("id", id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("Error deleting deck:", error);
+      return NextResponse.json({ error: "No se pudo eliminar el mazo." }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
@@ -74,7 +75,8 @@ export async function PATCH(
         .single();
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("Error renaming deck:", error);
+        return NextResponse.json({ error: "No se pudo renombrar el mazo." }, { status: 500 });
       }
 
       return NextResponse.json({

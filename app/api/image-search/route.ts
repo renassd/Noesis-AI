@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { AuthError, requireAuthenticatedUser } from "@/lib/server-auth";
 
 type CommonsApiPage = {
   title?: string;
@@ -70,8 +71,10 @@ async function searchCommons(query: string) {
   return (await response.json()) as CommonsApiResponse;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    await requireAuthenticatedUser(req);
+
     const body = (await req.json()) as { query?: string };
     const query = normalizeQuery(body.query || "");
 
@@ -97,9 +100,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ imageUrl: null, provider: "wikimedia-commons" });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "image search failed" },
-      { status: 500 },
-    );
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: "Image search failed." }, { status: 500 });
   }
 }

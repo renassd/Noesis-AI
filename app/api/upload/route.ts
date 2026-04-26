@@ -5,18 +5,20 @@ import { extractUploadedFile, FileExtractionError } from "@/lib/server/file-extr
 
 export async function POST(req: NextRequest) {
   const ip = (req.headers.get("x-forwarded-for") ?? "unknown").split(",")[0]?.trim() || "unknown";
-  let rateLimitScope = "anonymous";
 
+  // Require a valid session — anonymous uploads open unlimited CPU-bound OCR pipelines
+  let userId: string;
   try {
     const { user } = await requireAuthenticatedUser(req);
-    rateLimitScope = user.id;
+    userId = user.id;
   } catch (error) {
-    if (!(error instanceof AuthError)) {
-      console.warn("[/api/upload] Continuing as anonymous because session validation failed.", error);
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   }
 
-  const rateLimit = checkRateLimit(getRateLimitKey(["upload", rateLimitScope, ip]), 20, 5 * 60 * 1000);
+  const rateLimit = checkRateLimit(getRateLimitKey(["upload", userId, ip]), 20, 5 * 60 * 1000);
   if (!rateLimit.ok) {
     return NextResponse.json(
       { error: "Too many uploads. Try again in a few minutes." },
