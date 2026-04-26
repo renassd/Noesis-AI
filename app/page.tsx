@@ -586,18 +586,34 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="pricing-grid">
-                {t.pricing.map((card) => (
-                  <article
-                    key={card.label}
-                    className={`compare-card${"featured" in card && card.featured ? " featured" : ""}`}
-                  >
-                    <span className="compare-label">{card.label}</span>
-                    <div className="price">{card.price}</div>
-                    <p>{card.desc}</p>
-                    <ul>{card.items.map((item) => <li key={item}>{item}</li>)}</ul>
-                  </article>
-                ))}
+                {t.pricing.map((card) => {
+                  const featured = "featured" in card && card.featured;
+                  const badge = "badge" in card ? card.badge : undefined;
+                  const cta = "cta" in card ? card.cta : undefined;
+                  const period = "period" in card ? card.period : undefined;
+                  return (
+                    <article
+                      key={card.label}
+                      className={`compare-card${featured ? " featured" : ""}`}
+                    >
+                      {badge && <div className="plan-badge">{badge}</div>}
+                      <span className="compare-label">{card.label}</span>
+                      <div className="price-block">
+                        <div className="price">{card.price}</div>
+                        {period && <span className="price-period">{period}</span>}
+                      </div>
+                      <p className="plan-desc">{card.desc}</p>
+                      <ul className="plan-features">
+                        {card.items.map((item) => <li key={item}>{item}</li>)}
+                      </ul>
+                      {cta && <button type="button" className="plan-cta">{cta}</button>}
+                    </article>
+                  );
+                })}
               </div>
+              {"pricingTrust" in l && l.pricingTrust && (
+                <p className="pricing-trust">{l.pricingTrust}</p>
+              )}
             </div>
           </div>
         </section>

@@ -621,23 +621,171 @@ h2 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .canvas-box strong { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--ink); }
 .canvas-box span { display: block; color: var(--muted); line-height: 1.55; font-size: 12px; }
 
-/* Pricing */
-.pricing-shell { padding: 24px; }
-.section-tight { margin-bottom: 14px; }
-.pricing-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
-.compare-card { padding: 22px; background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: var(--r-lg); transition: box-shadow 0.22s; }
-.compare-card:hover { box-shadow: var(--shadow); }
+/* ─── Pricing ─── */
+.pricing-shell { padding: 32px 24px 24px; }
+.section-tight { margin-bottom: 18px; }
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: center;
+}
+
+.compare-card {
+  position: relative;
+  padding: 30px 26px 26px;
+  background: rgba(255,255,255,.97);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transition: box-shadow 0.22s, transform 0.22s;
+}
+.compare-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.09);
+  transform: translateY(-3px);
+}
+
+/* "Best value" badge on featured card */
+.plan-badge {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(217,119,6,.35);
+}
+
+.compare-card .compare-label { margin-bottom: 16px; }
+
+.price-block { margin-bottom: 6px; }
+.price {
+  font-size: 2.8rem;
+  line-height: 1;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.price-period {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.plan-desc {
+  margin: 12px 0 18px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
 .compare-card p, .compare-card li { color: var(--muted); line-height: 1.7; font-size: 14px; }
-.compare-card .compare-label { margin-bottom: 14px; }
-.compare-card.featured { background: linear-gradient(165deg,#173c9b,#2052c8); color: #fff; border-color: transparent; box-shadow: 0 16px 44px rgba(23,60,155,.26); }
-.compare-card.featured:hover { box-shadow: 0 24px 54px rgba(23,60,155,.36); transform: translateY(-2px); }
-.compare-card.featured p, .compare-card.featured li { color: rgba(255,255,255,.84); }
-.compare-card.featured .compare-label { background: rgba(255,255,255,.16); color: rgba(255,255,255,.92); }
-.price { font-size: 2rem; line-height: 1; margin-bottom: 10px; font-family: var(--font-display); }
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  display: grid;
+  gap: 8px;
+  flex: 1;
+}
 ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 7px; }
-li { position: relative; padding-left: 16px; font-size: 14px; }
-li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--blue-700); }
-.compare-card.featured li::before { background: rgba(255,255,255,.7); }
+li { position: relative; padding-left: 18px; font-size: 14px; }
+li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 7px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--blue-700);
+}
+
+/* CTA button */
+.plan-cta {
+  display: block;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 11px;
+  border: 1.5px solid rgba(0,0,0,0.14);
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  margin-top: auto;
+  letter-spacing: 0.01em;
+}
+.plan-cta:hover {
+  border-color: #2e63de;
+  color: #2e63de;
+  background: rgba(46,99,222,0.05);
+  box-shadow: 0 2px 8px rgba(46,99,222,0.12);
+}
+
+/* Featured / Pro Annual card */
+.compare-card.featured {
+  background: linear-gradient(145deg, #1636a0 0%, #1e52cc 55%, #2563eb 100%);
+  border-color: transparent;
+  box-shadow: 0 20px 60px rgba(23,60,155,.35), 0 4px 20px rgba(23,60,155,.2);
+  transform: scale(1.04) translateY(-6px);
+  z-index: 1;
+}
+.compare-card.featured:hover {
+  box-shadow: 0 28px 72px rgba(23,60,155,.45), 0 4px 20px rgba(23,60,155,.24);
+  transform: scale(1.04) translateY(-10px);
+}
+.compare-card.featured p,
+.compare-card.featured .plan-desc,
+.compare-card.featured li { color: rgba(255,255,255,.82); }
+.compare-card.featured .price,
+.compare-card.featured .compare-label { color: #fff; }
+.compare-card.featured .compare-label { background: rgba(255,255,255,.15); color: rgba(255,255,255,.95); }
+.compare-card.featured .price-period { color: rgba(255,255,255,.6); }
+.compare-card.featured li::before { background: rgba(255,255,255,.65); }
+.compare-card.featured .plan-cta {
+  background: rgba(255,255,255,.97);
+  border-color: transparent;
+  color: #1636a0;
+  box-shadow: 0 2px 14px rgba(0,0,0,.18);
+  font-weight: 700;
+}
+.compare-card.featured .plan-cta:hover {
+  background: #fff;
+  box-shadow: 0 4px 22px rgba(0,0,0,.24);
+}
+
+/* Trust signal */
+.pricing-trust {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 24px;
+  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.pricing-trust::before {
+  content: "✓";
+  color: #10b981;
+  font-weight: 700;
+  font-size: 14px;
+}
 
 /* CTA / Waitlist */
 .waitlist-section { padding: 48px 0; }
@@ -1132,6 +1280,9 @@ footer { padding: 32px 0 52px; border-top: 1px solid var(--line); }
   .footer-inner { grid-template-columns: 1fr; }
   .footer-links-grid { flex-wrap: wrap; gap: 24px; }
   .gen-layout { grid-template-columns: 1fr; }
+  /* Reset featured card scale on mobile so it doesn't overflow */
+  .compare-card.featured { transform: none; }
+  .compare-card.featured:hover { transform: translateY(-4px); }
 }
 
 @media (max-width: 860px) {

@@ -581,7 +581,8 @@ html.dark .compare-card {
 }
 
 html.dark .compare-card p,
-html.dark .compare-card li {
+html.dark .compare-card li,
+html.dark .compare-card .plan-desc {
   color: var(--dm-muted);
 }
 
@@ -590,13 +591,29 @@ html.dark .compare-card .compare-label {
   color: var(--dm-blue-500);
 }
 
+html.dark .compare-card .plan-cta {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+html.dark .compare-card .plan-cta:hover {
+  border-color: #818cf8;
+  color: #818cf8;
+  background: rgba(129, 140, 248, 0.08);
+}
+
+html.dark .compare-card .price-period {
+  color: var(--dm-muted);
+}
+
 html.dark .compare-card.featured {
-  background: linear-gradient(165deg, #0f2464, #1a3a90);
+  background: linear-gradient(145deg, #0d1f5c, #152d8a, #1a3aad);
   border-color: rgba(91, 142, 245, 0.3);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(91, 142, 245, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(91, 142, 245, 0.2);
 }
 
 html.dark .compare-card.featured p,
+html.dark .compare-card.featured .plan-desc,
 html.dark .compare-card.featured li {
   color: rgba(200, 220, 255, 0.82);
 }
@@ -604,6 +621,20 @@ html.dark .compare-card.featured li {
 html.dark .compare-card.featured .compare-label {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(200, 220, 255, 0.92);
+}
+
+html.dark .compare-card.featured .plan-cta {
+  background: rgba(255, 255, 255, 0.92);
+  color: #152d8a;
+  border-color: transparent;
+}
+
+html.dark .compare-card.featured .plan-cta:hover {
+  background: #fff;
+}
+
+html.dark .pricing-trust {
+  color: var(--dm-muted);
 }
 
 html.dark li::before {

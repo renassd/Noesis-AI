@@ -49,6 +49,7 @@ export const DICT = {
       step4: "Build flashcards and decks from the exact same source without copy-pasting between tools.",
       pricingTitle: "Choose the plan that fits your study flow.",
       pricingSub: "Start free, upgrade to monthly, or save more with the annual plan.",
+      pricingTrust: "No credit card required for Free · Cancel Pro anytime",
       waitlistEyebrow: "Early access",
       waitlistTitle: "Understand first. Remember after.\nBoth in one place.",
       waitlistSub: "Neuvra is not just another flashcard app or another AI research assistant. It is the layer that connects understanding, synthesis and memory, built for students and researchers.",
@@ -81,9 +82,9 @@ export const DICT = {
       { title: "Create and manage your decks", description: "Build, label and organise decks manually while AI fills the gaps automatically." },
     ],
     pricing: [
-      { label: "Free", price: "$0", desc: "For getting started with research and study.", items: ["Limited AI credits", "Flashcards, tutor and research tools", "Upgrade anytime when you need more"] },
-      { label: "Pro Monthly", price: "$10/mo", desc: "Flexible monthly access to the full Neuvra workflow.", items: ["More AI usage every window", "Research, tutor and flashcards in one place", "Cancel anytime"] },
-      { label: "Pro Annual", price: "$95/yr", desc: "Regularly $120/year. Annual billing saves 20%.", items: ["Best value for long-term study", "Full access to all Pro features", "One payment for the whole year"], featured: true },
+      { label: "Free", price: "$0", period: "", desc: "Everything you need to get started with AI-powered study.", items: ["Limited AI credits each window", "Flashcards, tutor and research tools", "Upgrade anytime when you need more"], cta: "Start for free" },
+      { label: "Pro Monthly", price: "$10", period: "per month", desc: "Full Neuvra access, billed monthly — no long-term commitment.", items: ["More AI usage every window", "All research, tutor and flashcard tools", "Cancel anytime"], cta: "Get monthly access" },
+      { label: "Pro Annual", price: "$95", period: "per year · save 20%", desc: "The smartest way to study all year without interruptions.", items: ["Best value for serious learners", "Full access to every Pro feature", "One payment, zero interruptions"], featured: true, badge: "Best value", cta: "Get annual plan" },
     ],
     study: {
       pageTitle: "Study", generate: "Generate flashcards", manualNav: "Create manually", review: "Review flashcards", tutor: "Tutor mode", decks: "My decks", recentDecks: "Recent decks", home: "Home", research: "Research",
@@ -224,6 +225,7 @@ export const DICT = {
       step4: "Crea flashcards y mazos desde la misma fuente sin copiar y pegar entre herramientas.",
       pricingTitle: "Elige el plan que mejor se adapte a tu forma de estudiar.",
       pricingSub: "Empieza gratis, pasa al mensual o ahorra mas con el plan anual.",
+      pricingTrust: "Sin tarjeta de credito para Free · Cancela Pro cuando quieras",
       waitlistEyebrow: "Acceso anticipado",
       waitlistTitle: "Entiende primero. Recuerda despues.\nLas dos cosas en un solo lugar.",
       waitlistSub: "Neuvra no es solo otra app de flashcards ni otro asistente de investigacion con IA. Es la capa que conecta comprension, sintesis y memoria.",
@@ -256,9 +258,9 @@ export const DICT = {
       { title: "Crea y gestiona tus mazos", description: "Construye, etiqueta y organiza mazos mientras la IA completa los vacios automaticamente." },
     ],
     pricing: [
-      { label: "Free", price: "USD 0", desc: "Para empezar con investigacion y estudio.", items: ["Creditos de IA limitados", "Flashcards, tutor e investigacion", "Actualiza cuando necesites mas"] },
-      { label: "Pro Mensual", price: "USD 10/mes", desc: "Acceso mensual flexible a todo el flujo de Neuvra.", items: ["Mas uso de IA por ventana", "Investigacion, tutor y flashcards en un solo lugar", "Cancela cuando quieras"] },
-      { label: "Pro Anual", price: "USD 95/año", desc: "Precio regular USD 120 al año. El plan anual tiene 20% de descuento.", items: ["La mejor opcion para estudiar a largo plazo", "Acceso completo a todas las funciones Pro", "Un solo pago para todo el año"], featured: true },
+      { label: "Free", price: "USD 0", period: "", desc: "Todo lo que necesitas para empezar a estudiar con IA.", items: ["Creditos de IA limitados por ventana", "Flashcards, tutor e investigacion", "Mejora cuando necesites mas"], cta: "Empezar gratis" },
+      { label: "Pro Mensual", price: "USD 10", period: "por mes", desc: "Acceso completo a Neuvra, cobro mensual sin compromiso.", items: ["Mas uso de IA cada ventana", "Todas las herramientas de investigacion y estudio", "Cancela cuando quieras"], cta: "Obtener acceso mensual" },
+      { label: "Pro Anual", price: "USD 95", period: "por año · ahorrás 20%", desc: "La forma mas inteligente de estudiar todo el año sin interrupciones.", items: ["La mejor relacion precio-valor", "Acceso completo a todas las funciones Pro", "Un solo pago, sin interrupciones"], featured: true, badge: "Mejor valor", cta: "Obtener plan anual" },
     ],
     study: {
       pageTitle: "Estudio", generate: "Generar flashcards", manualNav: "Crear manualmente", review: "Repasar flashcards", tutor: "Modo tutor", decks: "Mis mazos", recentDecks: "Mazos recientes", home: "Inicio", research: "Investigacion",
