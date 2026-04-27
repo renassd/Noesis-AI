@@ -174,7 +174,7 @@ export default function EstudioPage() {
               <div className="study-empty">
                 <h2 className="study-empty-title">{authText.signinTitle}</h2>
                 <p className="study-empty-sub">{authText.signinDescription}</p>
-                <button className="auth-submit" type="button" onClick={openModal}>
+                <button className="auth-submit route-auth-cta" type="button" onClick={openModal}>
                   {authText.signinCta}
                 </button>
               </div>

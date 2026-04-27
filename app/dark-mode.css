@@ -1762,6 +1762,20 @@ html.dark .auth-google:hover {
   border-color: var(--dm-blue-500);
 }
 
+html.dark .route-auth-cta {
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(127, 176, 255, 0.08) inset;
+}
+
+html.dark .route-auth-cta:hover {
+  box-shadow: 0 20px 38px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(127, 176, 255, 0.12) inset;
+}
+
+html.dark .route-auth-cta:focus-visible {
+  box-shadow:
+    0 0 0 4px rgba(127, 176, 255, 0.18),
+    0 20px 38px rgba(0, 0, 0, 0.42);
+}
+
 html.dark .glc-hero {
   background: linear-gradient(160deg, rgba(20, 32, 60, 0.88), rgba(14, 22, 44, 0.98));
   border-color: var(--dm-card-border);
