@@ -611,9 +611,6 @@ export default function HomePage() {
                   );
                 })}
               </div>
-              {"pricingTrust" in l && l.pricingTrust && (
-                <p className="pricing-trust">{l.pricingTrust}</p>
-              )}
             </div>
           </div>
         </section>
