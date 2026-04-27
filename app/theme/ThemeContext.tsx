@@ -85,6 +85,10 @@ export function applyThemeToCss(prefs: ThemePreferences): void {
   const font = FONT_LABELS[prefs.fontFamily];
   const accent = prefs.accentColor ?? scheme.blue700;
   const accentLight = prefs.accentColor ? toAlpha(prefs.accentColor, 0.12) : scheme.surfaceBlue;
+  const isDarkLike =
+    prefs.colorScheme === "dark" ||
+    prefs.colorScheme === "forest" ||
+    prefs.colorScheme === "ocean";
 
   const vars: Record<string, string> = {
     "--bg": scheme.bg,
@@ -124,8 +128,8 @@ export function applyThemeToCss(prefs: ThemePreferences): void {
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => root.style.setProperty(key, value));
   root.classList.remove("light", "dark");
-  root.classList.add(prefs.colorScheme === "dark" ? "dark" : "light");
-  root.setAttribute("data-color-mode", prefs.colorScheme === "dark" ? "dark" : "light");
+  root.classList.add(isDarkLike ? "dark" : "light");
+  root.setAttribute("data-color-mode", isDarkLike ? "dark" : "light");
   document.body.setAttribute("data-theme", prefs.colorScheme);
   applyCardVisualToCss(prefs.cardVisual ?? DEFAULT_CARD_VISUAL);
 }

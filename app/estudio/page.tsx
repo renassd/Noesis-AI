@@ -23,14 +23,17 @@ import { useLang } from "../i18n";
 import ThemeToggle from "../theme/ThemeToggle";
 import type { Deck, Flashcard } from "../types";
 import { useDecks } from "../useDecks";
+import { useAuth } from "@/context/AuthContext";
 
 type Tool = "generate" | "manual" | "study" | "tutor" | "decks";
 
 export default function EstudioPage() {
   const { t } = useLang();
+  const { auth, ready, openModal } = useAuth();
   const { usage } = useAiUsage();
   const s = t.study;
   const nav = t.nav;
+  const authText = t.auth;
   const showUpgradeCard = usage?.creditsRemaining === 0;
 
   const TOOLS: { id: Tool; label: string; icon: React.ReactNode }[] = [
@@ -93,6 +96,8 @@ export default function EstudioPage() {
     await deleteDeck(id);
     if (activeDeck?.id === id) setActiveDeck(null);
   }
+
+  const blocked = ready && !auth.signedIn;
 
   return (
     <div className="standalone-shell">
@@ -164,6 +169,18 @@ export default function EstudioPage() {
         </aside>
 
         <main className="standalone-main">
+          {blocked ? (
+            <div className="ws-panel ws-panel-centered">
+              <div className="study-empty">
+                <h2 className="study-empty-title">{authText.signinTitle}</h2>
+                <p className="study-empty-sub">{authText.signinDescription}</p>
+                <button className="auth-submit" type="button" onClick={openModal}>
+                  {authText.signinCta}
+                </button>
+              </div>
+            </div>
+          ) : !ready ? null : (
+            <>
           {error && (
             <div style={{ marginBottom: 16 }}>
               <p className="gen-error">{error}</p>
@@ -202,6 +219,8 @@ export default function EstudioPage() {
               onDelete={(id) => void handleDeleteDeck(id)}
               onRename={(id, name) => void renameDeck(id, name)}
             />
+          )}
+            </>
           )}
         </main>
       </div>

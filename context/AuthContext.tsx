@@ -21,6 +21,7 @@ interface AuthState {
 
 interface AuthCtx {
   auth: AuthState;
+  ready: boolean;
   openModal: () => void;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -41,6 +42,7 @@ function readName(email: string, metadata?: Record<string, unknown>) {
 
 const AuthContext = createContext<AuthCtx>({
   auth: DEFAULT,
+  ready: false,
   openModal: () => {},
   signInWithGoogle: async () => {},
   signOut: async () => {},
@@ -48,12 +50,14 @@ const AuthContext = createContext<AuthCtx>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthState>(DEFAULT);
+  const [ready, setReady] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabaseBrowser();
     if (!supabase) {
       setAuth(DEFAULT);
+      setReady(true);
       return;
     }
 
@@ -67,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error || !data.user?.email) {
         setAuth(DEFAULT);
+        setReady(true);
         return;
       }
 
@@ -76,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: readName(data.user.email, data.user.user_metadata),
         userId: data.user.id,
       });
+      setReady(true);
     };
 
     void syncSession();
@@ -88,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = session?.user;
       if (!user?.email) {
         setAuth(DEFAULT);
+        setReady(true);
         return;
       }
 
@@ -97,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: readName(user.email, user.user_metadata),
         userId: user.id,
       });
+      setReady(true);
       setModalOpen(false);
     });
 
@@ -136,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const openModal = useCallback(() => setModalOpen(true), []);
 
   return (
-    <AuthContext.Provider value={{ auth, openModal, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ auth, ready, openModal, signInWithGoogle, signOut }}>
       {children}
       {modalOpen && (
         <AuthModal

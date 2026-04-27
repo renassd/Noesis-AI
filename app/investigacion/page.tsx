@@ -9,10 +9,14 @@ import ColorModeToggle from "../ColorModeToggle";
 import LangToggle from "../LangToggle";
 import ResearchMode from "../ResearchMode";
 import { useLang } from "../i18n";
+import { useAuth } from "@/context/AuthContext";
 
 export default function InvestigacionPage() {
   const { t } = useLang();
+  const { auth, ready, openModal } = useAuth();
   const nav = t.nav;
+  const authText = t.auth;
+  const blocked = ready && !auth.signedIn;
 
   return (
     <div className="standalone-shell research-shell">
@@ -35,7 +39,19 @@ export default function InvestigacionPage() {
 
       <div className="standalone-layout standalone-layout-single">
         <main className="standalone-main research-main">
-          <ResearchMode />
+          {blocked ? (
+            <div className="ws-panel ws-panel-centered">
+              <div className="study-empty">
+                <h2 className="study-empty-title">{authText.signinTitle}</h2>
+                <p className="study-empty-sub">{authText.signinDescription}</p>
+                <button className="auth-submit" type="button" onClick={openModal}>
+                  {authText.signinCta}
+                </button>
+              </div>
+            </div>
+          ) : !ready ? null : (
+            <ResearchMode />
+          )}
         </main>
       </div>
     </div>
