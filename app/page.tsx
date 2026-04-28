@@ -615,6 +615,30 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ══ MISSION ══ */}
+        <section id="mission">
+          <div className="wrap">
+            <div className="section-header reveal" style={{ maxWidth: 680 }}>
+              <div>
+                <SectionReveal text={l.missionTitle} />
+                <FadeReveal delay={80}>{l.missionBody}</FadeReveal>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══ WHO WE ARE ══ */}
+        <section id="who-we-are">
+          <div className="wrap">
+            <div className="section-header reveal" style={{ maxWidth: 680 }}>
+              <div>
+                <SectionReveal text={l.whoWeAreTitle} />
+                <FadeReveal delay={80}>{l.whoWeAreBody}</FadeReveal>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ══ WAITLIST — redesigned ══ */}
         <WaitlistSection lang={lang} l={l} />
 
