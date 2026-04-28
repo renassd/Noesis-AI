@@ -603,3 +603,496 @@ html.dark .gen-image-status-badge.is-failed {
   background: #462920;
   color: #ffb38f;
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   ABOUT SECTION — flashcard UI
+   ═══════════════════════════════════════════════════════════════ */
+
+#about {
+  padding: 64px 0 72px;
+}
+
+.about-section-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* ── Selector pill ───────────────────────────────────────────── */
+
+.about-selector-wrap {
+  position: relative;
+  z-index: 10;
+}
+
+.about-selector-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 14px var(--font-body);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 160ms, box-shadow 160ms, transform 120ms var(--ease-out);
+}
+
+.about-selector-btn:hover {
+  border-color: var(--blue-500);
+  box-shadow: var(--shadow-sm);
+}
+
+.about-selector-btn:active {
+  transform: scale(0.97);
+}
+
+.about-selector-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  transition: transform 200ms var(--ease-out);
+}
+
+.about-selector-chevron.open {
+  transform: rotate(180deg);
+}
+
+.about-selector-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px) scale(0.96);
+  transform-origin: top center;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow);
+  padding: 5px;
+  z-index: 20;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.about-selector-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.about-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  font: 500 13.5px var(--font-body);
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms, color 120ms;
+}
+
+.about-selector-item:hover {
+  background: var(--surface-blue);
+  color: var(--blue-900);
+}
+
+.about-selector-item.active {
+  color: var(--blue-900);
+  font-weight: 600;
+}
+
+.about-selector-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Stacked ghost cards ─────────────────────────────────────── */
+
+.about-stage {
+  position: relative;
+  width: min(620px, 100%);
+}
+
+.about-ghost {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  pointer-events: none;
+}
+
+.about-ghost--1 {
+  transform: translateY(10px) scale(0.965);
+  opacity: 0.55;
+  z-index: 0;
+}
+
+.about-ghost--2 {
+  transform: translateY(20px) scale(0.93);
+  opacity: 0.28;
+  z-index: -1;
+}
+
+/* ── Main card ───────────────────────────────────────────────── */
+
+.about-card {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.8) inset,
+    0 16px 48px rgba(23, 60, 155, 0.10);
+  padding: 40px 44px 36px;
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.about-card[data-visible="false"] {
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+}
+
+.about-card[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ── Icon badge ──────────────────────────────────────────────── */
+
+.about-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  margin-bottom: 22px;
+}
+
+.about-icon--blue {
+  background: var(--surface-blue);
+  color: var(--blue-700);
+}
+
+.about-icon--purple {
+  background: #f0ebff;
+  color: #7c3aed;
+}
+
+/* ── Card typography ─────────────────────────────────────────── */
+
+.about-card-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0 0 16px;
+  line-height: 1.1;
+}
+
+.about-card-body {
+  font-size: 1.01rem;
+  line-height: 1.78;
+  color: var(--muted);
+  margin: 0 0 28px;
+}
+
+/* ── Card footer & CTA ───────────────────────────────────────── */
+
+.about-card-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.about-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+  font: 600 13.5px var(--font-body);
+  cursor: pointer;
+  transition: border-color 160ms, background 160ms, color 160ms, transform 120ms var(--ease-out);
+}
+
+.about-card-cta:hover {
+  border-color: var(--blue-500);
+  background: var(--surface-blue);
+  color: var(--blue-900);
+}
+
+.about-card-cta:active {
+  transform: scale(0.97);
+}
+
+/* ── Pagination dots ─────────────────────────────────────────── */
+
+.about-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.about-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  border: none;
+  background: var(--line);
+  cursor: pointer;
+  padding: 0;
+  transition: background 200ms, width 220ms var(--ease-out);
+}
+
+.about-dot.active {
+  background: var(--blue-700);
+  width: 24px;
+}
+
+/* ── Navbar dropdown ─────────────────────────────────────────── */
+
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font: 500 14px var(--font-body);
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.18s, background 0.18s;
+}
+
+.nav-dropdown-btn:hover,
+.nav-dropdown-btn[aria-expanded="true"] {
+  color: var(--blue-900);
+  background: var(--surface-blue);
+}
+
+.nav-dropdown-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  transition: transform 200ms var(--ease-out);
+}
+
+.nav-dropdown-chevron.open {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px) scale(0.96);
+  transform-origin: top center;
+  min-width: 210px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow);
+  padding: 5px;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.nav-dropdown-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.nav-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  font: 500 13.5px var(--font-body);
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms, color 120ms;
+}
+
+.nav-dropdown-item:hover {
+  background: var(--surface-blue);
+  color: var(--blue-900);
+}
+
+.nav-dropdown-item.active {
+  color: var(--blue-900);
+  font-weight: 600;
+}
+
+.nav-dropdown-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+
+@media (max-width: 680px) {
+  #about {
+    padding: 48px 0 56px;
+  }
+
+  .about-card {
+    padding: 28px 24px 24px;
+  }
+
+  .about-card-title {
+    font-size: 1.65rem;
+  }
+
+  .about-ghost--1 {
+    transform: translateY(8px) scale(0.965);
+  }
+
+  .about-ghost--2 {
+    transform: translateY(16px) scale(0.93);
+  }
+}
+
+/* ── Dark mode ───────────────────────────────────────────────── */
+
+html.dark .about-selector-btn {
+  background: rgba(18, 28, 60, 0.95);
+  border-color: rgba(91, 142, 245, 0.2);
+  color: #d6e0f5;
+}
+
+html.dark .about-selector-btn:hover {
+  border-color: rgba(91, 142, 245, 0.4);
+}
+
+html.dark .about-selector-menu {
+  background: #111827;
+  border-color: rgba(91, 142, 245, 0.15);
+}
+
+html.dark .about-selector-item {
+  color: #c0cad8;
+}
+
+html.dark .about-selector-item:hover {
+  background: rgba(91, 142, 245, 0.1);
+  color: #b9d2ff;
+}
+
+html.dark .about-selector-item.active {
+  color: #89b8ff;
+}
+
+html.dark .about-ghost {
+  background: rgba(14, 20, 38, 0.92);
+  border-color: rgba(91, 142, 245, 0.12);
+}
+
+html.dark .about-card {
+  background: rgba(14, 20, 38, 0.97);
+  border-color: rgba(91, 142, 245, 0.2);
+  box-shadow:
+    0 2px 0 rgba(91, 142, 245, 0.06) inset,
+    0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .about-card-title {
+  color: #d6e0f5;
+}
+
+html.dark .about-card-body {
+  color: #7a90b4;
+}
+
+html.dark .about-card-cta {
+  border-color: rgba(91, 142, 245, 0.2);
+  color: #c0cad8;
+}
+
+html.dark .about-card-cta:hover {
+  background: rgba(91, 142, 245, 0.1);
+  border-color: rgba(91, 142, 245, 0.4);
+  color: #89b8ff;
+}
+
+html.dark .about-dot {
+  background: rgba(91, 142, 245, 0.2);
+}
+
+html.dark .about-dot.active {
+  background: #5b8ef5;
+}
+
+html.dark .about-icon--blue {
+  background: rgba(91, 142, 245, 0.12);
+  color: #89b8ff;
+}
+
+html.dark .about-icon--purple {
+  background: rgba(124, 58, 237, 0.12);
+  color: #c4b5fd;
+}
+
+html.dark .nav-dropdown-btn:hover,
+html.dark .nav-dropdown-btn[aria-expanded="true"] {
+  background: rgba(91, 142, 245, 0.12);
+  color: #89b8ff;
+}
+
+html.dark .nav-dropdown-menu {
+  background: #111827;
+  border-color: rgba(91, 142, 245, 0.15);
+}
+
+html.dark .nav-dropdown-item {
+  color: #c0cad8;
+}
+
+html.dark .nav-dropdown-item:hover {
+  background: rgba(91, 142, 245, 0.1);
+  color: #b9d2ff;
+}
+
+html.dark .nav-dropdown-item.active {
+  color: #89b8ff;
+}

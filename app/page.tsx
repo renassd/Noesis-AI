@@ -7,6 +7,7 @@ import ColorModeToggle from "./ColorModeToggle";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
 import WorkflowStepCards from "./WorkflowStepCards";
+import { AboutCards, NavAboutDropdown, type AboutCardKey } from "./AboutCards";
 import { ImageAccordionPanels } from "@/components/ui/interactive-image-accordion";
 import { useAuth } from "@/context/AuthContext";
 
@@ -450,6 +451,7 @@ export default function HomePage() {
   const { auth, openModal, signOut } = useAuth();
   const l = t.landing;
   const nav = t.nav;
+  const [aboutCard, setAboutCard] = useState<AboutCardKey>("whoWeAre");
 
   useScrollReveal();
   useTopbarScroll();
@@ -470,6 +472,7 @@ export default function HomePage() {
           <div className="nav-group">
             <nav className="nav">
               <a href="#workflow-flow">{nav.howItWorks}</a>
+              <NavAboutDropdown activeCard={aboutCard} onSwitch={setAboutCard} />
             </nav>
             <div className="topbar-auth">
               {auth.signedIn ? (
@@ -615,27 +618,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ══ MISSION ══ */}
-        <section id="mission">
+        {/* ══ ABOUT — flashcard section ══ */}
+        <section id="about">
           <div className="wrap">
-            <div className="section-header reveal" style={{ maxWidth: 680 }}>
-              <div>
-                <SectionReveal text={l.missionTitle} />
-                <FadeReveal delay={80}>{l.missionBody}</FadeReveal>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ══ WHO WE ARE ══ */}
-        <section id="who-we-are">
-          <div className="wrap">
-            <div className="section-header reveal" style={{ maxWidth: 680 }}>
-              <div>
-                <SectionReveal text={l.whoWeAreTitle} />
-                <FadeReveal delay={80}>{l.whoWeAreBody}</FadeReveal>
-              </div>
-            </div>
+            <AboutCards activeCard={aboutCard} onSwitch={setAboutCard} />
           </div>
         </section>
 
