@@ -763,88 +763,127 @@ html.dark .gen-image-status-badge.is-failed {
   }
 }
 
-/* ── Tagline / centered copy section ────────────────────────── */
+/* ── Tagline / centered dark section ────────────────────────── */
 
 .tagline-section {
-  padding: 72px 0 80px;
-  background: linear-gradient(160deg, #0d1b36 0%, #1a2a5c 60%, #0f2870 100%);
+  position: relative;
+  padding: 96px 0 100px;
+  background: linear-gradient(170deg, #0a1628 0%, #111e42 45%, #0d1b36 100%);
+  overflow: hidden;
+}
+
+/* Soft radial glow behind the text */
+.tagline-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 680px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(46, 99, 222, 0.22) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .tagline-inner {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 600px;
+  max-width: 640px;
   margin: 0 auto;
-  gap: 0;
 }
 
+/* Eyebrow */
+.tagline-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(91, 142, 245, 0.12);
+  border: 1px solid rgba(91, 142, 245, 0.22);
+  color: #89b8ff;
+  font: 700 10px var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 28px;
+}
+
+.tagline-eyebrow::before {
+  content: "";
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #5b8ef5;
+  animation: wl-blink 2.4s ease-in-out infinite;
+}
+
+/* Title */
 .tagline-title {
   font-family: var(--font-body);
-  font-size: clamp(2rem, 3.4vw, 2.9rem);
-  font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: -0.04em;
   color: #fff;
-  margin: 16px 0 18px;
+  margin: 0 0 22px;
 }
 
+/* Subtitle */
 .tagline-sub {
-  color: rgba(180, 200, 240, 0.82);
-  font-size: 0.97rem;
+  color: rgba(176, 196, 235, 0.78);
+  font-size: 1rem;
   line-height: 1.72;
-  margin: 0 0 24px;
+  max-width: 520px;
+  margin: 0 0 36px;
 }
 
-.tagline-features {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* Feature chips row */
+.tagline-chips {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 10px;
-  align-items: flex-start;
+  justify-content: center;
 }
 
-.tagline-features li {
-  display: flex;
+.tagline-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-  color: rgba(200, 220, 255, 0.9);
-  padding: 0;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(200, 218, 255, 0.88);
+  font: 500 13px var(--font-body);
+  backdrop-filter: blur(4px);
 }
 
-.tagline-features li::before { display: none; }
-
-.tagline-section .waitlist-eyebrow-pill {
-  background: rgba(91, 142, 245, 0.15);
-  border-color: rgba(91, 142, 245, 0.25);
-  color: #89b8ff;
-}
-
-.tagline-section .waitlist-eyebrow-pill::before {
-  background: #5b8ef5;
-}
-
-.tagline-section .waitlist-feature-dot {
+.tagline-chip::before {
+  content: "";
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
   background: #5b8ef5;
   flex-shrink: 0;
 }
 
 @media (max-width: 680px) {
   .tagline-section {
-    padding: 48px 0 56px;
+    padding: 64px 0 72px;
   }
 
   .tagline-title {
-    font-size: clamp(1.7rem, 6vw, 2.2rem);
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
   }
 
-  .tagline-features {
-    align-items: flex-start;
+  .tagline-glow {
     width: 100%;
+    height: 300px;
   }
 }
 

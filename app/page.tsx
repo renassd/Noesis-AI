@@ -422,11 +422,12 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ══ TAGLINE — centered copy ══ */}
+        {/* ══ TAGLINE — centered dark section ══ */}
         <section className="tagline-section">
+          <div className="tagline-glow" aria-hidden="true" />
           <div className="wrap">
             <div className="tagline-inner reveal">
-              <span className="waitlist-eyebrow-pill">{l.waitlistEyebrow}</span>
+              <span className="tagline-eyebrow">{l.waitlistEyebrow}</span>
               <h2 className="tagline-title">
                 {lang === "en" ? (
                   <>Understand first.<br />Remember after.</>
@@ -439,17 +440,14 @@ export default function HomePage() {
                   ? "Neuvra connects the research tools you use to understand with the memory tools you use to retain — in a single, focused flow."
                   : "Neuvra conecta las herramientas de investigación que usás para entender con las herramientas de memoria que usás para retener, en un flujo único y enfocado."}
               </p>
-              <ul className="tagline-features">
+              <div className="tagline-chips">
                 {(lang === "en"
-                  ? ["Literature reviews & paper summaries", "AI flashcards from any material", "Tutor mode for active recall"]
-                  : ["Revisiones de literatura y resúmenes", "Flashcards con IA desde cualquier material", "Modo tutor para recuerdo activo"]
+                  ? ["Literature reviews", "AI flashcards", "Tutor mode", "Active recall"]
+                  : ["Revisiones de literatura", "Flashcards con IA", "Modo tutor", "Recuerdo activo"]
                 ).map((item) => (
-                  <li key={item}>
-                    <span className="waitlist-feature-dot" aria-hidden="true" />
-                    {item}
-                  </li>
+                  <span key={item} className="tagline-chip">{item}</span>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         </section>
