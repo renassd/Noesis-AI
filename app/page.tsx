@@ -472,6 +472,7 @@ export default function HomePage() {
           <div className="nav-group">
             <nav className="nav">
               <a href="#workflow-flow">{nav.howItWorks}</a>
+              <a href="#about">{l.whoWeAreTitle}</a>
             </nav>
             <div className="topbar-auth">
               {auth.signedIn ? (
