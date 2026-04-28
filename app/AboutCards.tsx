@@ -129,20 +129,36 @@ export function AboutCards({
   const [displayedCard, setDisplayedCard] = useState<AboutCardKey>(activeCard);
   const [visible, setVisible] = useState(true);
   const [selectorOpen, setSelectorOpen] = useState(false);
+
+  const revealRef = useRef<HTMLDivElement>(null);
   const selectorRef = useRef<HTMLDivElement>(null);
   const isFirst = useRef(true);
 
-  // Animate transition whenever activeCard changes (from navbar or internal tabs)
+  // Entrance animation on scroll into view
   useEffect(() => {
-    if (isFirst.current) {
-      isFirst.current = false;
-      return;
-    }
+    const el = revealRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("about-visible");
+          io.disconnect();
+        }
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -32px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Animate card switch
+  useEffect(() => {
+    if (isFirst.current) { isFirst.current = false; return; }
     setVisible(false);
     const timer = setTimeout(() => {
       setDisplayedCard(activeCard);
       setVisible(true);
-    }, 160);
+    }, 170);
     return () => clearTimeout(timer);
   }, [activeCard]);
 
@@ -171,86 +187,74 @@ export function AboutCards({
   }
 
   const CARDS = {
-    whoWeAre: {
-      Icon: WhoIcon,
-      iconClass: "about-icon--blue",
-      title: l.whoWeAreTitle,
-      body: l.whoWeAreBody,
-    },
-    mission: {
-      Icon: MissionIcon,
-      iconClass: "about-icon--purple",
-      title: l.missionTitle,
-      body: l.missionBody,
-    },
+    whoWeAre: { Icon: WhoIcon, iconClass: "about-icon--blue", title: l.whoWeAreTitle, body: l.whoWeAreBody },
+    mission:  { Icon: MissionIcon, iconClass: "about-icon--purple", title: l.missionTitle, body: l.missionBody },
   } as const;
 
   const card = CARDS[displayedCard];
   const { Icon } = card;
   const ctaLabel = lang === "en" ? "Explore more →" : "Explorar más →";
-  const selectorLabel = CARDS[displayedCard].title;
 
   return (
-    <div className="about-section-inner">
+    <div className="about-section-inner" ref={revealRef}>
 
-      {/* ── Selector pill ── */}
-      <div className="about-selector-wrap" ref={selectorRef}>
-        <button
-          className="about-selector-btn"
-          aria-expanded={selectorOpen}
-          aria-haspopup="listbox"
-          onClick={() => setSelectorOpen((v) => !v)}
-          type="button"
-        >
-          <span>{selectorLabel}</span>
-          <span className={`about-selector-chevron${selectorOpen ? " open" : ""}`}>
-            <ChevronDown />
-          </span>
-        </button>
+      {/* ── Selector + stage grouped tightly ── */}
+      <div className="about-group">
 
-        <div
-          className={`about-selector-menu${selectorOpen ? " open" : ""}`}
-          role="listbox"
-        >
-          {(["whoWeAre", "mission"] as AboutCardKey[]).map((key) => {
-            const ItemIcon = CARDS[key].Icon;
-            return (
-              <button
-                key={key}
-                role="option"
-                aria-selected={activeCard === key}
-                className={`about-selector-item${activeCard === key ? " active" : ""}`}
-                onClick={() => switchCard(key)}
-                type="button"
-              >
-                <span className={`about-selector-item-icon ${key === "whoWeAre" ? "about-icon--blue" : "about-icon--purple"}`}>
-                  <ItemIcon />
-                </span>
-                {CARDS[key].title}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+        {/* Selector pill — acts as the card's header control */}
+        <div className="about-selector-wrap" ref={selectorRef}>
+          <button
+            className="about-selector-btn"
+            aria-expanded={selectorOpen}
+            aria-haspopup="listbox"
+            onClick={() => setSelectorOpen((v) => !v)}
+            type="button"
+          >
+            <span>{CARDS[displayedCard].title}</span>
+            <span className={`about-selector-chevron${selectorOpen ? " open" : ""}`}>
+              <ChevronDown />
+            </span>
+          </button>
 
-      {/* ── Stacked stage ── */}
-      <div className="about-stage">
-        <div className="about-ghost about-ghost--2" aria-hidden="true" />
-        <div className="about-ghost about-ghost--1" aria-hidden="true" />
-
-        <div
-          className="about-card"
-          data-visible={String(visible)}
-        >
-          <div className={`about-card-icon ${card.iconClass}`}>
-            <Icon />
-          </div>
-          <h2 className="about-card-title">{card.title}</h2>
-          <p className="about-card-body">{card.body}</p>
-          <div className="about-card-footer">
-            <button className="about-card-cta" type="button">{ctaLabel}</button>
+          <div className={`about-selector-menu${selectorOpen ? " open" : ""}`} role="listbox">
+            {(["whoWeAre", "mission"] as AboutCardKey[]).map((key) => {
+              const ItemIcon = CARDS[key].Icon;
+              return (
+                <button
+                  key={key}
+                  role="option"
+                  aria-selected={activeCard === key}
+                  className={`about-selector-item${activeCard === key ? " active" : ""}`}
+                  onClick={() => switchCard(key)}
+                  type="button"
+                >
+                  <span className={`about-selector-item-icon ${key === "whoWeAre" ? "about-icon--blue" : "about-icon--purple"}`}>
+                    <ItemIcon />
+                  </span>
+                  {CARDS[key].title}
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        {/* Stacked stage */}
+        <div className="about-stage">
+          <div className="about-ghost about-ghost--2" aria-hidden="true" />
+          <div className="about-ghost about-ghost--1" aria-hidden="true" />
+
+          <div className="about-card" data-visible={String(visible)}>
+            <div className={`about-card-icon ${card.iconClass}`}>
+              <Icon />
+            </div>
+            <h2 className="about-card-title">{card.title}</h2>
+            <p className="about-card-body">{card.body}</p>
+            <div className="about-card-footer">
+              <button className="about-card-cta" type="button">{ctaLabel}</button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* ── Pagination dots ── */}
@@ -265,6 +269,7 @@ export function AboutCards({
           />
         ))}
       </div>
+
     </div>
   );
 }

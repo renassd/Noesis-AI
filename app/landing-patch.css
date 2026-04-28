@@ -610,14 +610,33 @@ html.dark .gen-image-status-badge.is-failed {
    ═══════════════════════════════════════════════════════════════ */
 
 #about {
-  padding: 64px 0 72px;
+  padding: 40px 0 52px;
 }
 
+/* Entrance animation — JS adds .about-visible on scroll */
 .about-section-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 440ms var(--ease-out), transform 440ms var(--ease-out);
+  transition-delay: 80ms;
+}
+
+.about-section-inner.about-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tight group: selector pill sits directly above the card */
+.about-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 
 /* ── Selector pill ───────────────────────────────────────────── */
@@ -726,7 +745,7 @@ html.dark .gen-image-status-badge.is-failed {
 
 .about-stage {
   position: relative;
-  width: min(620px, 100%);
+  width: min(700px, 100%);
 }
 
 .about-ghost {
@@ -762,17 +781,30 @@ html.dark .gen-image-status-badge.is-failed {
     0 2px 0 rgba(255, 255, 255, 0.8) inset,
     0 16px 48px rgba(23, 60, 155, 0.10);
   padding: 40px 44px 36px;
-  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+  transition:
+    opacity 170ms var(--ease-out),
+    transform 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
 }
 
 .about-card[data-visible="false"] {
   opacity: 0;
-  transform: translateY(8px) scale(0.98);
+  transform: translateY(10px) scale(0.985);
 }
 
 .about-card[data-visible="true"] {
   opacity: 1;
   transform: translateY(0) scale(1);
+}
+
+/* Subtle lift on hover — only when card is fully visible */
+@media (hover: hover) and (pointer: fine) {
+  .about-card[data-visible="true"]:hover {
+    transform: translateY(-4px) scale(1);
+    box-shadow:
+      0 2px 0 rgba(255, 255, 255, 0.8) inset,
+      0 28px 64px rgba(23, 60, 155, 0.15);
+  }
 }
 
 /* ── Icon badge ──────────────────────────────────────────────── */
@@ -973,7 +1005,16 @@ html.dark .gen-image-status-badge.is-failed {
 
 @media (max-width: 680px) {
   #about {
-    padding: 48px 0 56px;
+    padding: 32px 0 40px;
+  }
+
+  .about-section-inner {
+    gap: 16px;
+  }
+
+  .about-group {
+    gap: 8px;
+    width: 100%;
   }
 
   .about-card {
@@ -981,15 +1022,21 @@ html.dark .gen-image-status-badge.is-failed {
   }
 
   .about-card-title {
-    font-size: 1.65rem;
+    font-size: 1.6rem;
+  }
+
+  .about-card-body {
+    font-size: 0.97rem;
   }
 
   .about-ghost--1 {
     transform: translateY(8px) scale(0.965);
+    opacity: 0.4;
   }
 
   .about-ghost--2 {
-    transform: translateY(16px) scale(0.93);
+    transform: translateY(15px) scale(0.93);
+    opacity: 0.2;
   }
 }
 
@@ -1034,6 +1081,14 @@ html.dark .about-card {
   box-shadow:
     0 2px 0 rgba(91, 142, 245, 0.06) inset,
     0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.dark .about-card[data-visible="true"]:hover {
+    box-shadow:
+      0 2px 0 rgba(91, 142, 245, 0.06) inset,
+      0 28px 64px rgba(0, 0, 0, 0.55);
+  }
 }
 
 html.dark .about-card-title {
