@@ -472,7 +472,13 @@ export default function HomePage() {
           <div className="nav-group">
             <nav className="nav">
               <a href="#workflow-flow">{nav.howItWorks}</a>
-              <a href="#about">{l.whoWeAreTitle}</a>
+              <a
+                href="#about"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById("about")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+              >{l.whoWeAreTitle}</a>
             </nav>
             <div className="topbar-auth">
               {auth.signedIn ? (
