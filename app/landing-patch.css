@@ -763,6 +763,91 @@ html.dark .gen-image-status-badge.is-failed {
   }
 }
 
+/* ── Tagline / centered copy section ────────────────────────── */
+
+.tagline-section {
+  padding: 72px 0 80px;
+  background: linear-gradient(160deg, #0d1b36 0%, #1a2a5c 60%, #0f2870 100%);
+}
+
+.tagline-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  gap: 0;
+}
+
+.tagline-title {
+  font-family: var(--font-body);
+  font-size: clamp(2rem, 3.4vw, 2.9rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: #fff;
+  margin: 16px 0 18px;
+}
+
+.tagline-sub {
+  color: rgba(180, 200, 240, 0.82);
+  font-size: 0.97rem;
+  line-height: 1.72;
+  margin: 0 0 24px;
+}
+
+.tagline-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.tagline-features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: rgba(200, 220, 255, 0.9);
+  padding: 0;
+}
+
+.tagline-features li::before { display: none; }
+
+.tagline-section .waitlist-eyebrow-pill {
+  background: rgba(91, 142, 245, 0.15);
+  border-color: rgba(91, 142, 245, 0.25);
+  color: #89b8ff;
+}
+
+.tagline-section .waitlist-eyebrow-pill::before {
+  background: #5b8ef5;
+}
+
+.tagline-section .waitlist-feature-dot {
+  background: #5b8ef5;
+  flex-shrink: 0;
+}
+
+@media (max-width: 680px) {
+  .tagline-section {
+    padding: 48px 0 56px;
+  }
+
+  .tagline-title {
+    font-size: clamp(1.7rem, 6vw, 2.2rem);
+  }
+
+  .tagline-features {
+    align-items: flex-start;
+    width: 100%;
+  }
+}
+
 /* ── Dark mode ───────────────────────────────────────────────── */
 
 html.dark .about-card {

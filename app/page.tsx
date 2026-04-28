@@ -422,6 +422,38 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ══ TAGLINE — centered copy ══ */}
+        <section className="tagline-section">
+          <div className="wrap">
+            <div className="tagline-inner reveal">
+              <span className="waitlist-eyebrow-pill">{l.waitlistEyebrow}</span>
+              <h2 className="tagline-title">
+                {lang === "en" ? (
+                  <>Understand first.<br />Remember after.</>
+                ) : (
+                  <>Entendé primero.<br />Recordá después.</>
+                )}
+              </h2>
+              <p className="tagline-sub">
+                {lang === "en"
+                  ? "Neuvra connects the research tools you use to understand with the memory tools you use to retain — in a single, focused flow."
+                  : "Neuvra conecta las herramientas de investigación que usás para entender con las herramientas de memoria que usás para retener, en un flujo único y enfocado."}
+              </p>
+              <ul className="tagline-features">
+                {(lang === "en"
+                  ? ["Literature reviews & paper summaries", "AI flashcards from any material", "Tutor mode for active recall"]
+                  : ["Revisiones de literatura y resúmenes", "Flashcards con IA desde cualquier material", "Modo tutor para recuerdo activo"]
+                ).map((item) => (
+                  <li key={item}>
+                    <span className="waitlist-feature-dot" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       {/* ══ FOOTER ══ */}
