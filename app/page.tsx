@@ -238,6 +238,142 @@ function ResearchMockPanel({ lang }: { lang: "en" | "es" }) {
 
 
 
+function HarvardWordmark() {
+  return (
+    <svg viewBox="0 0 320 88" role="img" aria-labelledby="harvard-logo-title" className="credibility-logo-svg">
+      <title id="harvard-logo-title">Harvard University</title>
+      <g fill="none" fillRule="evenodd">
+        <path
+          d="M28 8h32c8.837 0 16 7.163 16 16v40c0 8.837-7.163 16-16 16H28c-8.837 0-16-7.163-16-16V24C12 15.163 19.163 8 28 8Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          opacity="0.72"
+        />
+        <path
+          d="M44 18l10 9v26l-10 7-10-7V27l10-9Z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          opacity="0.58"
+        />
+        <text
+          x="44"
+          y="45"
+          textAnchor="middle"
+          fill="currentColor"
+          fontFamily="Georgia, 'Times New Roman', serif"
+          fontSize="18"
+          fontWeight="700"
+          letterSpacing="0.16em"
+        >
+          H
+        </text>
+        <text
+          x="102"
+          y="40"
+          fill="currentColor"
+          fontFamily="Georgia, 'Times New Roman', serif"
+          fontSize="26"
+          fontWeight="700"
+          letterSpacing="0.08em"
+        >
+          HARVARD
+        </text>
+        <text
+          x="102"
+          y="60"
+          fill="currentColor"
+          fontFamily="var(--font-body)"
+          fontSize="11"
+          fontWeight="500"
+          letterSpacing="0.24em"
+          opacity="0.72"
+        >
+          UNIVERSITY
+        </text>
+      </g>
+    </svg>
+  );
+}
+
+function PennWordmark() {
+  return (
+    <svg viewBox="0 0 340 88" role="img" aria-labelledby="penn-logo-title" className="credibility-logo-svg">
+      <title id="penn-logo-title">University of Pennsylvania</title>
+      <g fill="none" fillRule="evenodd">
+        <path
+          d="M31 8h34c9.389 0 17 7.611 17 17v38c0 9.389-7.611 17-17 17H31c-9.389 0-17-7.611-17-17V25C14 15.611 21.611 8 31 8Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          opacity="0.72"
+        />
+        <path
+          d="M48 18l11 8v27l-11 8-11-8V26l11-8Z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          opacity="0.58"
+        />
+        <path d="M38 35h20M38 43h20M48 27v24" stroke="currentColor" strokeWidth="1.2" opacity="0.46" />
+        <text
+          x="105"
+          y="33"
+          fill="currentColor"
+          fontFamily="var(--font-body)"
+          fontSize="11"
+          fontWeight="600"
+          letterSpacing="0.24em"
+          opacity="0.72"
+        >
+          UNIVERSITY OF
+        </text>
+        <text
+          x="104"
+          y="59"
+          fill="currentColor"
+          fontFamily="Georgia, 'Times New Roman', serif"
+          fontSize="28"
+          fontWeight="700"
+          letterSpacing="0.05em"
+        >
+          PENNSYLVANIA
+        </text>
+      </g>
+    </svg>
+  );
+}
+
+function CredibilitySection({ lang, title }: { lang: "en" | "es"; title: string }) {
+  const { ref, visible } = useReveal(0.12, "0px 0px -28px 0px");
+  const logos = [
+    { key: "harvard", label: "Harvard University", artwork: <HarvardWordmark /> },
+    { key: "upenn", label: "University of Pennsylvania", artwork: <PennWordmark /> },
+  ];
+
+  return (
+    <section className="credibility-section" ref={ref as React.Ref<HTMLElement>}>
+      <div className="wrap">
+        <div className={`credibility-shell${visible ? " is-visible" : ""}`}>
+          <FadeReveal as="span" className="credibility-kicker">
+            {lang === "en" ? "Built for serious learners" : "Pensado para estudiantes exigentes"}
+          </FadeReveal>
+          <SectionReveal text={title} as="h2" className="credibility-title" />
+          <div className="credibility-grid" aria-label={title}>
+            {logos.map((logo, index) => (
+              <article
+                key={logo.key}
+                className="credibility-logo-card"
+                style={{ "--logo-delay": `${120 + index * 90}ms` } as React.CSSProperties}
+                aria-label={logo.label}
+              >
+                <div className="credibility-logo-art">{logo.artwork}</div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function HomePage() {
   const { t, lang } = useLang();
   const { auth, openModal, signOut } = useAuth();
@@ -336,6 +472,8 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        <CredibilitySection lang={lang} title={l.credibilityTitle} />
 
         {/* ══ WORKFLOW ══ */}
         <section id="workflow">

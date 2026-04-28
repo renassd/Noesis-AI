@@ -1547,6 +1547,94 @@ footer { padding: 32px 0 52px; border-top: 1px solid var(--line); }
   margin-top: 0;
 }
 
+.credibility-section {
+  padding: 14px 0 18px;
+}
+
+.credibility-shell {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.credibility-kicker {
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
+  font: 600 11px/1.2 var(--font-body);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.credibility-title {
+  margin: 0;
+  max-width: 24ch;
+  color: color-mix(in srgb, var(--ink) 84%, var(--muted) 16%);
+  font: 500 clamp(1rem, 1.2vw, 1.08rem)/1.4 var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.credibility-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+.credibility-logo-card {
+  min-height: 124px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 24px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, white 6%), color-mix(in srgb, var(--surface-alt) 92%, transparent)),
+    radial-gradient(circle at top, color-mix(in srgb, var(--blue-100) 18%, transparent), transparent 56%);
+  color: color-mix(in srgb, var(--ink) 72%, var(--muted) 28%);
+  opacity: 0;
+  transform: translateY(18px);
+  filter: saturate(0.8);
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.05);
+  transition:
+    opacity 0.5s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    filter 0.22s ease;
+}
+
+.credibility-shell.is-visible .credibility-logo-card {
+  opacity: 0.72;
+  transform: translateY(0);
+  transition-delay: var(--logo-delay, 0ms);
+}
+
+.credibility-logo-card:hover {
+  opacity: 1;
+  transform: translateY(-2px) scale(1.018);
+  color: color-mix(in srgb, var(--ink) 88%, var(--muted) 12%);
+  border-color: color-mix(in srgb, var(--blue-300) 42%, var(--line) 58%);
+  filter: saturate(1);
+  box-shadow: 0 20px 44px rgba(17, 24, 39, 0.08);
+}
+
+.credibility-logo-art {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.credibility-logo-svg {
+  width: min(100%, 280px);
+  height: auto;
+  display: block;
+}
+
 @media (max-width: 860px) {
   .hero {
     padding-top: 36px;
@@ -1584,9 +1672,31 @@ footer { padding: 32px 0 52px; border-top: 1px solid var(--line); }
   #workflow {
     padding-top: 40px;
   }
+
+  .credibility-section {
+    padding: 10px 0 16px;
+  }
+
+  .credibility-grid {
+    gap: 12px;
+  }
+
+  .credibility-logo-card {
+    min-height: 112px;
+    padding: 18px 18px;
+  }
 }
 
 @media (max-width: 640px) {
+  .credibility-title {
+    max-width: 18ch;
+    letter-spacing: 0.06em;
+  }
+
+  .credibility-grid {
+    grid-template-columns: 1fr;
+  }
+
   .landing-proof-cards {
     flex-direction: column;
     gap: 0;
