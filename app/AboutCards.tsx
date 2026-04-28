@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useLang } from "./i18n";
 
 export type AboutCardKey = "whoWeAre" | "mission";
@@ -31,110 +31,14 @@ export function ChevronDown({ size = 14 }: { size?: number }) {
   );
 }
 
-// ── Nav dropdown (used in the topbar) ────────────────────────────────────────
+// ── AboutCards — two cards side by side ──────────────────────────────────────
 
-export function NavAboutDropdown({
-  activeCard,
-  onSwitch,
-}: {
-  activeCard: AboutCardKey;
-  onSwitch: (key: AboutCardKey) => void;
-}) {
-  const { t } = useLang();
-  const l = t.landing;
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointer(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  function select(key: AboutCardKey) {
-    setOpen(false);
-    onSwitch(key);
-    setTimeout(() => {
-      document.getElementById("about")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 40);
-  }
-
-  return (
-    <div className="nav-dropdown" ref={ref}>
-      <button
-        className="nav-dropdown-btn"
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        onClick={() => setOpen((v) => !v)}
-        type="button"
-      >
-        {l.whoWeAreTitle}
-        <span className={`nav-dropdown-chevron${open ? " open" : ""}`}>
-          <ChevronDown size={12} />
-        </span>
-      </button>
-
-      <div className={`nav-dropdown-menu${open ? " open" : ""}`} role="listbox">
-        <button
-          role="option"
-          aria-selected={activeCard === "whoWeAre"}
-          className={`nav-dropdown-item${activeCard === "whoWeAre" ? " active" : ""}`}
-          onClick={() => select("whoWeAre")}
-          type="button"
-        >
-          <span className="nav-dropdown-item-icon about-icon--blue">
-            <WhoIcon />
-          </span>
-          {l.whoWeAreTitle}
-        </button>
-        <button
-          role="option"
-          aria-selected={activeCard === "mission"}
-          className={`nav-dropdown-item${activeCard === "mission" ? " active" : ""}`}
-          onClick={() => select("mission")}
-          type="button"
-        >
-          <span className="nav-dropdown-item-icon about-icon--purple">
-            <MissionIcon />
-          </span>
-          {l.missionTitle}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── AboutCards (the flashcard section) ───────────────────────────────────────
-
-export function AboutCards({
-  activeCard,
-  onSwitch,
-}: {
-  activeCard: AboutCardKey;
-  onSwitch: (key: AboutCardKey) => void;
-}) {
+export function AboutCards() {
   const { t, lang } = useLang();
   const l = t.landing;
-
-  const [displayedCard, setDisplayedCard] = useState<AboutCardKey>(activeCard);
-  const [visible, setVisible] = useState(true);
-  const [selectorOpen, setSelectorOpen] = useState(false);
-
   const revealRef = useRef<HTMLDivElement>(null);
-  const selectorRef = useRef<HTMLDivElement>(null);
-  const isFirst = useRef(true);
 
-  // Entrance animation on scroll into view
+  // Trigger staggered card entrance on scroll into view
   useEffect(() => {
     const el = revealRef.current;
     if (!el) return;
@@ -151,125 +55,51 @@ export function AboutCards({
     return () => io.disconnect();
   }, []);
 
-  // Animate card switch
-  useEffect(() => {
-    if (isFirst.current) { isFirst.current = false; return; }
-    setVisible(false);
-    const timer = setTimeout(() => {
-      setDisplayedCard(activeCard);
-      setVisible(true);
-    }, 170);
-    return () => clearTimeout(timer);
-  }, [activeCard]);
-
-  // Close selector on outside click / Escape
-  useEffect(() => {
-    if (!selectorOpen) return;
-    function onPointer(e: MouseEvent) {
-      if (selectorRef.current && !selectorRef.current.contains(e.target as Node))
-        setSelectorOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setSelectorOpen(false);
-    }
-    document.addEventListener("mousedown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [selectorOpen]);
-
-  function switchCard(key: AboutCardKey) {
-    setSelectorOpen(false);
-    if (key === activeCard) return;
-    onSwitch(key);
-  }
-
-  const CARDS = {
-    whoWeAre: { Icon: WhoIcon, iconClass: "about-icon--blue", title: l.whoWeAreTitle, body: l.whoWeAreBody },
-    mission:  { Icon: MissionIcon, iconClass: "about-icon--purple", title: l.missionTitle, body: l.missionBody },
-  } as const;
-
-  const card = CARDS[displayedCard];
-  const { Icon } = card;
   const ctaLabel = lang === "en" ? "Explore more →" : "Explorar más →";
+
+  function scrollToWaitlist() {
+    document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <div className="about-section-inner" ref={revealRef}>
+      <div className="about-cards-grid">
 
-      {/* ── Selector + stage grouped tightly ── */}
-      <div className="about-group">
-
-        {/* Selector pill — acts as the card's header control */}
-        <div className="about-selector-wrap" ref={selectorRef}>
-          <button
-            className="about-selector-btn"
-            aria-expanded={selectorOpen}
-            aria-haspopup="listbox"
-            onClick={() => setSelectorOpen((v) => !v)}
-            type="button"
-          >
-            <span>{CARDS[displayedCard].title}</span>
-            <span className={`about-selector-chevron${selectorOpen ? " open" : ""}`}>
-              <ChevronDown />
-            </span>
-          </button>
-
-          <div className={`about-selector-menu${selectorOpen ? " open" : ""}`} role="listbox">
-            {(["whoWeAre", "mission"] as AboutCardKey[]).map((key) => {
-              const ItemIcon = CARDS[key].Icon;
-              return (
-                <button
-                  key={key}
-                  role="option"
-                  aria-selected={activeCard === key}
-                  className={`about-selector-item${activeCard === key ? " active" : ""}`}
-                  onClick={() => switchCard(key)}
-                  type="button"
-                >
-                  <span className={`about-selector-item-icon ${key === "whoWeAre" ? "about-icon--blue" : "about-icon--purple"}`}>
-                    <ItemIcon />
-                  </span>
-                  {CARDS[key].title}
-                </button>
-              );
-            })}
+        {/* Who We Are */}
+        <div
+          className="about-card"
+          style={{ "--card-delay": "60ms" } as React.CSSProperties}
+        >
+          <div className="about-card-icon about-icon--blue">
+            <WhoIcon />
+          </div>
+          <h2 className="about-card-title">{l.whoWeAreTitle}</h2>
+          <p className="about-card-body">{l.whoWeAreBody}</p>
+          <div className="about-card-footer">
+            <button className="about-card-cta" onClick={scrollToWaitlist} type="button">
+              {ctaLabel}
+            </button>
           </div>
         </div>
 
-        {/* Stacked stage */}
-        <div className="about-stage">
-          <div className="about-ghost about-ghost--2" aria-hidden="true" />
-          <div className="about-ghost about-ghost--1" aria-hidden="true" />
-
-          <div className="about-card" data-visible={String(visible)}>
-            <div className={`about-card-icon ${card.iconClass}`}>
-              <Icon />
-            </div>
-            <h2 className="about-card-title">{card.title}</h2>
-            <p className="about-card-body">{card.body}</p>
-            <div className="about-card-footer">
-              <button className="about-card-cta" type="button">{ctaLabel}</button>
-            </div>
+        {/* Mission */}
+        <div
+          className="about-card"
+          style={{ "--card-delay": "150ms" } as React.CSSProperties}
+        >
+          <div className="about-card-icon about-icon--purple">
+            <MissionIcon />
+          </div>
+          <h2 className="about-card-title">{l.missionTitle}</h2>
+          <p className="about-card-body">{l.missionBody}</p>
+          <div className="about-card-footer">
+            <button className="about-card-cta" onClick={scrollToWaitlist} type="button">
+              {ctaLabel}
+            </button>
           </div>
         </div>
 
       </div>
-
-      {/* ── Pagination dots ── */}
-      <div className="about-dots" aria-label="card navigation">
-        {(["whoWeAre", "mission"] as AboutCardKey[]).map((key) => (
-          <button
-            key={key}
-            className={`about-dot${activeCard === key ? " active" : ""}`}
-            onClick={() => switchCard(key)}
-            type="button"
-            aria-label={CARDS[key].title}
-          />
-        ))}
-      </div>
-
     </div>
   );
 }

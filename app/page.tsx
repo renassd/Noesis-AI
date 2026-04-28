@@ -7,7 +7,7 @@ import ColorModeToggle from "./ColorModeToggle";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
 import WorkflowStepCards from "./WorkflowStepCards";
-import { AboutCards, NavAboutDropdown, type AboutCardKey } from "./AboutCards";
+import { AboutCards } from "./AboutCards";
 import { ImageAccordionPanels } from "@/components/ui/interactive-image-accordion";
 import { useAuth } from "@/context/AuthContext";
 
@@ -380,6 +380,7 @@ function WaitlistSection({ lang, l }: { lang: "en" | "es"; l: ReturnType<typeof 
 
   return (
     <section
+      id="waitlist"
       className="waitlist-section"
       ref={sectionRef as React.Ref<HTMLElement>}
     >
@@ -451,7 +452,6 @@ export default function HomePage() {
   const { auth, openModal, signOut } = useAuth();
   const l = t.landing;
   const nav = t.nav;
-  const [aboutCard, setAboutCard] = useState<AboutCardKey>("whoWeAre");
 
   useScrollReveal();
   useTopbarScroll();
@@ -472,7 +472,6 @@ export default function HomePage() {
           <div className="nav-group">
             <nav className="nav">
               <a href="#workflow-flow">{nav.howItWorks}</a>
-              <NavAboutDropdown activeCard={aboutCard} onSwitch={setAboutCard} />
             </nav>
             <div className="topbar-auth">
               {auth.signedIn ? (
@@ -621,7 +620,7 @@ export default function HomePage() {
         {/* ══ ABOUT — flashcard section ══ */}
         <section id="about">
           <div className="wrap">
-            <AboutCards activeCard={aboutCard} onSwitch={setAboutCard} />
+            <AboutCards />
           </div>
         </section>
 
