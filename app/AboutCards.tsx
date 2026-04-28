@@ -34,7 +34,7 @@ export function ChevronDown({ size = 14 }: { size?: number }) {
 // ── AboutCards — two cards side by side ──────────────────────────────────────
 
 export function AboutCards() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const l = t.landing;
   const revealRef = useRef<HTMLDivElement>(null);
 
@@ -55,48 +55,22 @@ export function AboutCards() {
     return () => io.disconnect();
   }, []);
 
-  const ctaLabel = lang === "en" ? "Explore more →" : "Explorar más →";
-
-  function scrollToWaitlist() {
-    document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   return (
     <div className="about-section-inner" ref={revealRef}>
       <div className="about-cards-grid">
 
         {/* Who We Are */}
-        <div
-          className="about-card"
-          style={{ "--card-delay": "60ms" } as React.CSSProperties}
-        >
-          <div className="about-card-icon about-icon--blue">
-            <WhoIcon />
-          </div>
+        <div className="about-card" style={{ "--card-delay": "60ms" } as React.CSSProperties}>
+          <div className="about-card-icon about-icon--blue"><WhoIcon /></div>
           <h2 className="about-card-title">{l.whoWeAreTitle}</h2>
           <p className="about-card-body">{l.whoWeAreBody}</p>
-          <div className="about-card-footer">
-            <button className="about-card-cta" onClick={scrollToWaitlist} type="button">
-              {ctaLabel}
-            </button>
-          </div>
         </div>
 
         {/* Mission */}
-        <div
-          className="about-card"
-          style={{ "--card-delay": "150ms" } as React.CSSProperties}
-        >
-          <div className="about-card-icon about-icon--purple">
-            <MissionIcon />
-          </div>
+        <div className="about-card" style={{ "--card-delay": "150ms" } as React.CSSProperties}>
+          <div className="about-card-icon about-icon--purple"><MissionIcon /></div>
           <h2 className="about-card-title">{l.missionTitle}</h2>
           <p className="about-card-body">{l.missionBody}</p>
-          <div className="about-card-footer">
-            <button className="about-card-cta" onClick={scrollToWaitlist} type="button">
-              {ctaLabel}
-            </button>
-          </div>
         </div>
 
       </div>
