@@ -7,7 +7,6 @@ import ColorModeToggle from "./ColorModeToggle";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
 import WorkflowStepCards from "./WorkflowStepCards";
-import { AboutCards } from "./AboutCards";
 import { ImageAccordionPanels } from "@/components/ui/interactive-image-accordion";
 import { useAuth } from "@/context/AuthContext";
 
@@ -354,6 +353,7 @@ export default function HomePage() {
   const { auth, openModal, signOut } = useAuth();
   const l = t.landing;
   const nav = t.nav;
+  const aboutHref = lang === "es" ? "/quienes-somos" : "/who-we-are";
 
   useScrollReveal();
   useTopbarScroll();
@@ -374,13 +374,7 @@ export default function HomePage() {
           <div className="nav-group">
             <nav className="nav">
               <a href="#workflow-flow">{nav.howItWorks}</a>
-              <a
-                href="#about"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById("about")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                }}
-              >{l.whoWeAreTitle}</a>
+              <Link href={aboutHref}>{l.whoWeAreTitle}</Link>
             </nav>
             <div className="topbar-auth">
               {auth.signedIn ? (
@@ -482,6 +476,7 @@ export default function HomePage() {
                   <ResearchMockPanel lang={lang} />
                 </article>
               </div>
+              <CredibilitySection lang={lang} title={l.credibilityTitle} />
             </div>
           </div>
         </section>
@@ -527,11 +522,6 @@ export default function HomePage() {
         </section>
 
         {/* ══ ABOUT — flashcard section ══ */}
-        <section id="about">
-          <div className="wrap">
-            <AboutCards />
-          </div>
-        </section>
 
         {/* ══ TAGLINE — light card section ══ */}
         <section className="tagline-section">
@@ -575,8 +565,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <CredibilitySection lang={lang} title={l.credibilityTitle} />
-
       </main>
 
       {/* ══ FOOTER ══ */}
@@ -601,7 +589,7 @@ export default function HomePage() {
               </div>
               <div className="footer-col">
                 <h4>{l.footerCompany}</h4>
-                <a href="#">{l.footerAbout}</a>
+                <Link href={aboutHref}>{l.footerAbout}</Link>
                 <a href="#">{l.footerBlog}</a>
                 <a href="#">{l.footerContact}</a>
               </div>

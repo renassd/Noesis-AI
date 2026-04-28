@@ -794,22 +794,25 @@ li::before {
 .compare-card.featured .price-period { color: rgba(255,255,255,.6); }
 .compare-card.featured li::before { background: rgba(255,255,255,.65); }
 .compare-card.featured .plan-cta {
-  background: rgba(255,255,255,.97);
-  border-color: transparent;
-  color: #1636a0;
-  box-shadow: 0 2px 14px rgba(0,0,0,.18);
+  border: 1.5px solid rgba(151, 190, 255, 0.68);
+  background: rgba(255,255,255,0.94);
+  color: #2563eb;
+  box-shadow: 0 2px 14px rgba(8,24,82,0.12);
   font-weight: 700;
 }
 .compare-card.featured .plan-cta:hover {
-  background: #fff;
-  box-shadow: 0 10px 28px rgba(0,0,0,.24);
-  transform: translateY(-3px) scale(1.01);
+  border-color: #bfdbfe;
+  color: #1e40af;
+  background: #dbeafe;
+  box-shadow: 0 10px 24px rgba(8,24,82,0.18);
+  transform: translateY(-2px);
 }
 .compare-card.featured .plan-cta:focus-visible {
-  box-shadow: 0 0 0 4px rgba(255,255,255,.2), 0 10px 28px rgba(0,0,0,.24);
+  border-color: #bfdbfe;
+  box-shadow: 0 0 0 4px rgba(191,219,254,0.2);
 }
 .compare-card.featured .plan-cta:active {
-  transform: translateY(-1px) scale(0.995);
+  transform: translateY(0);
 }
 
 /* Trust signal */

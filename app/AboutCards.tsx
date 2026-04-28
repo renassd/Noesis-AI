@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useLang } from "./i18n";
 
-export type AboutCardKey = "whoWeAre" | "mission";
+export type AboutCardKey = "whoWeAre" | "vision" | "mission";
 
 export function WhoIcon() {
   return (
@@ -66,11 +66,18 @@ export function AboutCards() {
           <p className="about-card-body">{l.whoWeAreBody}</p>
         </div>
 
-        {/* Mission */}
+        {/* Vision */}
         <div className="about-card" style={{ "--card-delay": "150ms" } as React.CSSProperties}>
           <div className="about-card-icon about-icon--purple"><MissionIcon /></div>
           <h2 className="about-card-title">{l.missionTitle}</h2>
           <p className="about-card-body">{l.missionBody}</p>
+        </div>
+
+        {/* Mission */}
+        <div className="about-card about-card--featured" style={{ "--card-delay": "240ms" } as React.CSSProperties}>
+          <div className="about-card-icon about-icon--purple"><MissionIcon /></div>
+          <h2 className="about-card-title">{l.missionLabel}</h2>
+          <p className="about-card-body">{l.missionStatement}</p>
         </div>
 
       </div>

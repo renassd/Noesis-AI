@@ -624,13 +624,15 @@ html.dark .compare-card.featured .compare-label {
 }
 
 html.dark .compare-card.featured .plan-cta {
-  background: rgba(255, 255, 255, 0.92);
-  color: #152d8a;
-  border-color: transparent;
+  border-color: rgba(151, 190, 255, 0.68);
+  color: #2563eb;
+  background: rgba(255,255,255,0.94);
 }
 
 html.dark .compare-card.featured .plan-cta:hover {
-  background: #fff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+  background: #dbeafe;
 }
 
 html.dark .pricing-trust {
