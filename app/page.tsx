@@ -408,15 +408,19 @@ export default function HomePage() {
           <div className="wrap">
             <div className="landing-hero-grid reveal">
               <div className="landing-hero-copy">
-                <span className="eyebrow">
+                <span className="eyebrow hero-eyebrow">
                   {lang === "es" ? "Plataforma de investigación y estudio con IA" : "AI-powered research and study platform"}
                 </span>
                 <WordReveal text={l.headline} className="landing-headline" />
                 <FadeReveal as="p" className="landing-sub" delay={120}>{l.sub}</FadeReveal>
-                <div className="hero-scroll-hint" aria-hidden="true">
-                  <span className="hero-scroll-line" />
-                  <span className="hero-scroll-label">scroll</span>
-                </div>
+                <FadeReveal as="div" className="hero-actions" delay={220}>
+                  <button type="button" className="tagline-cta tagline-cta--primary" onClick={openModal}>
+                    {l.ctaPrimary}
+                  </button>
+                  <a href="#workflow-flow" className="tagline-cta tagline-cta--secondary">
+                    {l.ctaSecondary}
+                  </a>
+                </FadeReveal>
               </div>
               <div className="landing-proof-cards">
                 <div className="landing-proof-card lpc-blue">
@@ -438,6 +442,70 @@ export default function HomePage() {
             </div>
             <div className="hero-accordion-strip reveal" id="features">
               <ImageAccordionPanels />
+            </div>
+          </div>
+        </section>
+
+        {/* ══ FEATURE CARDS ══ */}
+        <section className="feature-cards-section">
+          <div className="wrap">
+            <div className="feature-cards-header section-header reveal">
+              <div>
+                <SectionReveal text={l.featuresTitle} />
+                <FadeReveal delay={60}>{l.featuresSub}</FadeReveal>
+              </div>
+            </div>
+            <div className="feature-cards-grid reveal">
+              <article className="feature-item">
+                <div className="feature-item-badge feature-item-badge--blue" aria-hidden="true">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h3 className="feature-item-title">{lang === "en" ? "Research" : "Investigación"}</h3>
+                <p className="feature-item-body">
+                  {lang === "en"
+                    ? "Upload papers, summarize evidence, and generate structured academic outputs — all without leaving your flow."
+                    : "Sube papers, resume evidencia y genera resultados académicos estructurados sin salir de tu flujo."}
+                </p>
+                <a href="/investigacion" className="feature-item-link">
+                  {lang === "en" ? "Open Research →" : "Abrir Investigación →"}
+                </a>
+              </article>
+              <article className="feature-item feature-item--accent">
+                <div className="feature-item-badge feature-item-badge--green" aria-hidden="true">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h3 className="feature-item-title">{lang === "en" ? "Study & Tutor" : "Estudio y Tutor"}</h3>
+                <p className="feature-item-body">
+                  {lang === "en"
+                    ? "Clarify concepts with step-by-step explanations and active recall before you start memorizing anything."
+                    : "Aclara conceptos con explicaciones paso a paso y recuerdo activo antes de memorizar."}
+                </p>
+                <a href="/estudio" className="feature-item-link">
+                  {lang === "en" ? "Open Study →" : "Abrir Estudio →"}
+                </a>
+              </article>
+              <article className="feature-item">
+                <div className="feature-item-badge feature-item-badge--blue" aria-hidden="true">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                    <rect x="2" y="5" width="20" height="15" rx="3" stroke="currentColor" strokeWidth="1.75"/>
+                    <path d="M2 10h20" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+                    <path d="M7 2v3M17 2v3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <h3 className="feature-item-title">{lang === "en" ? "Flashcards" : "Flashcards"}</h3>
+                <p className="feature-item-body">
+                  {lang === "en"
+                    ? "Turn any material into spaced-repetition decks. Same source, no tool-switching, ready to review."
+                    : "Convierte cualquier material en mazos de repetición espaciada. Sin cambiar de herramienta."}
+                </p>
+                <a href="/estudio" className="feature-item-link">
+                  {lang === "en" ? "Open Flashcards →" : "Abrir Flashcards →"}
+                </a>
+              </article>
             </div>
           </div>
         </section>
