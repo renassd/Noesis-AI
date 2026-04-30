@@ -1,0 +1,234 @@
+/* ══════════════════════════════════════════════════════════════
+   LANDING — VISUAL DEBOXING
+   Import LAST in layout.tsx so this wins over all dark-mode
+   patches. Removes heavy borders and outer wrapper boxes;
+   uses spacing and very soft shadows instead.
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ── 1. SECTION SEPARATORS — breathe with space, not lines ─────── */
+
+/* Hero: more top air */
+.hero {
+  padding-top: 72px;
+}
+
+/* Feature cards: remove the border-top rule we added earlier,
+   replace with generous padding */
+.feature-cards-section {
+  border-top: none;
+  padding-top: 88px;
+  padding-bottom: 80px;
+}
+
+/* Workflow: remove the visible border-top separator */
+#workflow {
+  border-top: none;
+  padding-top: 80px;
+  padding-bottom: 16px;
+}
+
+/* Pricing: add section-level padding, remove it from the shell */
+#pricing {
+  padding-top: 80px;
+  padding-bottom: 84px;
+}
+
+.pricing-shell {
+  padding: 0;
+}
+
+/* Tagline: more air around it */
+.tagline-section {
+  padding-top: 64px;
+  padding-bottom: 80px;
+}
+
+
+/* ── 2. WORKFLOW BOARD — no outer wrapper box ───────────────────── */
+
+.workflow-board {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Slightly wider gap between the two side-by-side cards */
+.workflow-grid {
+  gap: 24px;
+}
+
+
+/* ── 3. TIMELINE & WORKFLOW CARDS — soft, not walled ───────────── */
+
+/* Pure white surface instead of gradient,
+   border at 30% opacity instead of full var(--line) */
+.timeline-card {
+  background: var(--surface);
+  border-color: rgba(214, 224, 240, 0.35);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 2px 18px rgba(23, 60, 155, 0.05);
+}
+
+.workflow-card {
+  background: var(--surface);
+  border-color: rgba(214, 224, 240, 0.35);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 2px 18px rgba(23, 60, 155, 0.05);
+}
+
+
+/* ── 4. FEATURE ITEMS — shadow-led, no hard border ─────────────── */
+
+.feature-item {
+  border-color: rgba(214, 224, 240, 0.3);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 16px rgba(23, 60, 155, 0.04),
+    0 6px 28px rgba(23, 60, 155, 0.04);
+}
+
+.feature-item--accent {
+  border-color: rgba(173, 196, 236, 0.45);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 4px 24px rgba(23, 60, 155, 0.07),
+    0 8px 36px rgba(23, 60, 155, 0.05);
+}
+
+
+/* ── 5. TAGLINE CARD — background only, no border ──────────────── */
+
+.tagline-card {
+  border: none;
+  box-shadow: 0 8px 48px rgba(23, 60, 155, 0.07);
+}
+
+
+/* ── 6. CREDIBILITY — more vertical air ────────────────────────── */
+
+.credibility-section {
+  padding: 44px 0 52px;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   These selectors match specificity of the dark-mode patches
+   so same-specificity + later import = these win.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Dark: hero top padding */
+html.dark .hero {
+  padding-top: 72px;
+}
+
+/* Dark: remove the outer workflow board box (most visible offender) */
+html.dark .workflow-board {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Dark: remove the pricing shell box */
+html.dark .pricing-shell {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Dark: softer timeline card — less layered depth */
+html.dark .timeline-card {
+  background: rgba(14, 20, 38, 0.52);
+  border-color: rgba(91, 142, 245, 0.1);
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.28);
+}
+
+/* Dark: softer workflow card */
+html.dark .workflow-card {
+  background: rgba(14, 20, 38, 0.52);
+  border-color: rgba(91, 142, 245, 0.1);
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.28);
+}
+
+/* Dark: tagline card — shadow only, no visible border */
+html.dark .tagline-card {
+  border: none;
+  box-shadow: 0 14px 64px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark: feature items — softer */
+html.dark .feature-item {
+  border-color: rgba(91, 142, 245, 0.09);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.24);
+}
+
+html.dark .feature-item--accent {
+  border-color: rgba(91, 142, 245, 0.16);
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark: remove section top-border separators */
+html.dark #workflow {
+  border-top: none;
+}
+
+
+/* ── 7. RESPONSIVE ADJUSTMENTS ──────────────────────────────────── */
+
+@media (max-width: 860px) {
+  .hero {
+    padding-top: 52px;
+  }
+
+  .feature-cards-section {
+    padding-top: 64px;
+    padding-bottom: 60px;
+  }
+
+  #workflow {
+    padding-top: 60px;
+  }
+
+  #pricing {
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+
+  .tagline-section {
+    padding-top: 48px;
+    padding-bottom: 60px;
+  }
+
+  .workflow-grid {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding-top: 40px;
+  }
+
+  .feature-cards-section {
+    padding-top: 52px;
+    padding-bottom: 48px;
+  }
+
+  #workflow {
+    padding-top: 48px;
+  }
+
+  #pricing {
+    padding-top: 48px;
+    padding-bottom: 52px;
+  }
+
+  .tagline-section {
+    padding-top: 40px;
+    padding-bottom: 52px;
+  }
+}

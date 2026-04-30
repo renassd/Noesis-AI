@@ -7,6 +7,7 @@ import "katex/dist/katex.min.css";
 import "./theme/theme.css";
 import "./dark-mode.css";
 import "./dark-mode-workflow-patch.css";
+import "./landing-unbox.css";
 import { LangProvider } from "./i18n";
 import { ThemeProvider } from "./theme/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
