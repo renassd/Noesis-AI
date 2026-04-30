@@ -6,6 +6,52 @@
    ═══════════════════════════════════════════════════════════════ */
 
 
+/* ── 0. PRICING SECTION — theme-proof colors ───────────────────── */
+
+/* The compare-label pills (FREE, PRO MONTHLY) use --surface-blue
+   which becomes pink in the rose/sepia/forest/ocean themes.
+   Override to a hardcoded neutral that works in every scheme. */
+.compare-card:not(.featured) .compare-label {
+  background: #eef2ff;
+  color: #2e4a9e;
+  border: 1px solid rgba(46, 99, 222, 0.16);
+}
+
+/* Pricing bullets: li::before uses --blue-700 (becomes pink in rose theme).
+   Scope to pricing section and hardcode Neuvra brand blue. */
+#pricing .plan-features li::before {
+  background: #2e63de;
+}
+
+/* Section title + subtitle: pin to near-black so they don't become pink */
+#pricing .section-header h2 {
+  color: #0d1b36;
+}
+
+#pricing .section-header p {
+  color: #5a6880;
+}
+
+/* Dark mode: pricing labels stay dark-blue themed, not theme-variable */
+html.dark .compare-card:not(.featured) .compare-label {
+  background: rgba(91, 142, 245, 0.14);
+  color: #89b8ff;
+  border-color: rgba(91, 142, 245, 0.2);
+}
+
+html.dark #pricing .plan-features li::before {
+  background: #5b8ef5;
+}
+
+html.dark #pricing .section-header h2 {
+  color: #d6e0f5;
+}
+
+html.dark #pricing .section-header p {
+  color: #7a90b4;
+}
+
+
 /* ── 1. SECTION SEPARATORS — breathe with space, not lines ─────── */
 
 /* Hero: more top air */
