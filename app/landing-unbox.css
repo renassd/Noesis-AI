@@ -52,6 +52,100 @@ html.dark #pricing .section-header p {
 }
 
 
+/* ── 0b. PRICING CARD LAYOUT FIX ───────────────────────────────── */
+
+/* ROOT CAUSE: align-items:center made cards center-align instead of
+   stretch to equal heights. flex:1 on plan-features and margin-top:auto
+   on plan-cta only work correctly when cards fill the full row height. */
+
+.pricing-grid {
+  align-items: stretch;   /* was: center — now all cards fill row height */
+  gap: 28px;              /* was: 20px — more breathing room between cards */
+}
+
+/* Each card fills its grid cell and arranges content top-to-bottom */
+.compare-card {
+  padding: 32px 28px 28px;  /* was: 30px 26px 26px — more generous */
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Label: slightly more bottom margin */
+.compare-card .compare-label {
+  margin-bottom: 20px;    /* was: 16px */
+}
+
+/* Price block: a bit more air below */
+.price-block {
+  margin-bottom: 8px;     /* was: 6px */
+}
+
+/* Description: balanced spacing */
+.plan-desc {
+  margin: 14px 0 22px;   /* was: 12px 0 18px */
+}
+
+/* Feature list: grows to fill remaining space, pushing button down */
+.plan-features {
+  flex: 1;
+  gap: 10px;             /* was: 8px */
+  margin-bottom: 24px;   /* was: 22px */
+}
+
+/* Bullet items: slightly looser */
+.plan-features li {
+  line-height: 1.65;
+}
+
+/* Featured card: drop scale() — it causes visual imbalance when cards
+   already stretch to equal heights. Keep only the lift effect. */
+.compare-card.featured {
+  transform: translateY(-8px);  /* was: scale(1.04) translateY(-6px) */
+}
+
+.compare-card.featured:hover {
+  transform: translateY(-13px);  /* was: scale(1.04) translateY(-10px) */
+}
+
+/* Dark mode: card backgrounds for consistent depth */
+html.dark .compare-card:not(.featured) {
+  background: rgba(14, 20, 38, 0.85);
+  border-color: rgba(91, 142, 245, 0.14);
+}
+
+/* Responsive: stack cards vertically on tablet/mobile */
+@media (max-width: 860px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  /* Reset featured lift on mobile — no room for it */
+  .compare-card.featured {
+    transform: none;
+  }
+
+  .compare-card.featured:hover {
+    transform: translateY(-4px);
+  }
+
+  .compare-card {
+    padding: 28px 24px 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .compare-card {
+    padding: 24px 20px 20px;
+  }
+
+  .pricing-grid {
+    gap: 16px;
+  }
+}
+
+
 /* ── 1. SECTION SEPARATORS — breathe with space, not lines ─────── */
 
 /* Hero: more top air */
