@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-config";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { useLang } from "./i18n";
 import { detectLang, langInstruction } from "./lib/detectLang";
@@ -48,6 +49,7 @@ const AMC = {
     reading: (name: string) => `Reading ${name}…`,
     extractError: "Extraction failed.",
     readError: "Could not read file.",
+    fileTooLarge: `File exceeds the ${MAX_UPLOAD_MB} MB limit.`,
     // Review
     dupeWarning: (n: number) => `⚠ ${n} ${n === 1 ? "card" : "cards"} already exist in this deck and will be skipped.`,
     duplicate: "duplicate",
@@ -97,6 +99,7 @@ const AMC = {
     reading: (name: string) => `Leyendo ${name}…`,
     extractError: "Error al extraer el texto.",
     readError: "No se pudo leer el archivo.",
+    fileTooLarge: `El archivo supera el límite de ${MAX_UPLOAD_MB} MB.`,
     // Review
     dupeWarning: (n: number) => `⚠ ${n} ${n === 1 ? "tarjeta ya existe" : "tarjetas ya existen"} en este mazo y serán omitidas.`,
     duplicate: "duplicada",
@@ -449,6 +452,11 @@ function PdfInput({ t, deck, onNext }: { t: T; deck: Deck; onNext: (cards: Draft
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
+    // Client-side guard — same limit as the server, surfaces a clear error immediately
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError(t.fileTooLarge);
+      return;
+    }
     setExtracting(true);
     setError("");
     setFileName(file.name);

@@ -1,6 +1,7 @@
 "use client";
 
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-config";
 import { useEffect, useRef, useState } from "react";
 
 // -- Types -------------------------------------------------------------------
@@ -48,6 +49,7 @@ const COPY = {
     connecting:    "Connecting to Drive...",
     driveError:    "Drive error",
     uploadError:   "Upload failed",
+    fileTooLarge:  `File exceeds the ${MAX_UPLOAD_MB} MB limit.`,
     noFiles:       "No recent files found",
     close:         "Close",
     retry:         "Retry",
@@ -68,6 +70,7 @@ const COPY = {
     connecting:    "Conectando con Drive...",
     driveError:    "Error de Drive",
     uploadError:   "Error al subir",
+    fileTooLarge:  `El archivo supera el límite de ${MAX_UPLOAD_MB} MB.`,
     noFiles:       "No se encontraron archivos recientes",
     close:         "Cerrar",
     retry:         "Reintentar",
@@ -145,6 +148,15 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+
+    // Client-side size guard — keeps the UX snappy and avoids uploading large files
+    // only to get a 413 back from the server. The server enforces the same limit.
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setUploadStatus("error");
+      setUploadMessage(t.fileTooLarge);
+      setTimeout(() => { setUploadStatus("idle"); setUploadMessage(null); }, 5000);
+      return;
+    }
 
     const isPlainText = /^text\//i.test(file.type) ||
       /\.(txt|md|csv|tsv)$/i.test(file.name);

@@ -15,12 +15,21 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: process.cwd(),
   serverExternalPackages: [
     "canvas",
     "pdf-parse",
     "tesseract.js",
     "mammoth",
   ],
+  // Raise the body-size cap for Server Actions to match the 50 MB upload limit.
+  // Regular API route handlers (app/api/**) are not bound by this — they receive
+  // the raw Request stream — but it's set here for consistency.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "50mb",
+    },
+  },
   async headers() {
     return [
       {

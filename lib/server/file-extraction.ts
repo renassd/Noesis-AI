@@ -1,10 +1,11 @@
 import { mkdir } from "fs/promises";
 import { createRequire } from "module";
 import path from "path";
+import { MAX_UPLOAD_BYTES } from "@/lib/upload-config";
+
+export { MAX_UPLOAD_BYTES };
 
 const runtimeRequire = createRequire(import.meta.url);
-
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_EXTRACTED_CHARS = 50_000;
 const MAX_OCR_PAGES = 10;
 const OCR_LANGS = process.env.TESSERACT_LANGS ?? "eng+spa";

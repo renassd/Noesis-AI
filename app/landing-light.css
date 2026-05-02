@@ -1,0 +1,523 @@
+/* ══════════════════════════════════════════════════════════════
+   LANDING + WHO WE ARE — LIGHT MODE OVERRIDES
+   Activates when <html class="light"> (ColorModeToggle).
+   Dark baseline in landing-stitch.css is completely untouched.
+   Import AFTER landing-stitch.css in layout.tsx.
+
+   INLINE STYLE OVERRIDES use !important — the only way to beat
+   hardcoded style="color:#fff" attributes in JSX.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   1. DESIGN TOKENS
+   ───────────────────────────────────────────────────────────── */
+html.light .landing-page,
+html.light .wwa-page {
+  --lp-bg:               #F8FAFC;
+  --lp-surface:          rgba(255, 255, 255, 0.92);
+  --lp-surface-low:      #FFFFFF;
+  --lp-surface-mid:      #F1F5F9;
+  --lp-surface-high:     #E2E8F0;
+  --lp-surface-highest:  #CBD5E1;
+
+  --lp-primary:          #7C3AED;
+  --lp-primary-ctr:      #6D28D9;
+  --lp-secondary:        #2563EB;
+  --lp-secondary-ctr:    #1D4ED8;
+  --lp-tertiary:         #0891B2;
+  --lp-tertiary-ctr:     #0E7490;
+
+  --lp-on-surface:       #0F172A;
+  --lp-muted:            #64748B;
+  --lp-outline:          rgba(15, 23, 42, 0.08);
+
+  --lp-grad-text:        linear-gradient(90deg, #7C3AED, #0891B2);
+  --lp-grad-cta:         linear-gradient(135deg, #7C3AED, #3B82F6);
+  --lp-grad-hero-bg:     radial-gradient(ellipse at 50% -10%,
+                           rgba(124,58,237,0.06) 0%,
+                           rgba(59,130,246,0.03) 40%,
+                           transparent 70%);
+
+  --lp-glow-primary:     0 0 20px rgba(124,58,237,0.10);
+  --lp-glow-cta:         0 10px 28px rgba(124,58,237,0.16);
+  --lp-shadow-card:      0 4px 20px rgba(15,23,42,0.06);
+
+  background: var(--lp-bg);
+  color: var(--lp-on-surface);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. TYPOGRAPHY — headings & hardcoded #fff text via !important
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-h1,
+html.light .lp-h2,
+html.light .lp-h3,
+html.light .landing-page h1,
+html.light .landing-page h2,
+html.light .landing-page h3 {
+  color: #0F172A;
+}
+
+/* Stat card numbers — inline style="color:#fff" needs !important */
+html.light .lp-metric-num { color: #0F172A !important; }
+
+/* Plan price — inline style on .lp-plan-price */
+html.light .lp-plan-price { color: #0F172A !important; }
+
+/* Testimonial quote — inline style="color:#fff" */
+html.light .lp-testimonial-card blockquote p { color: #0F172A !important; }
+
+/* All p tags inside testimonial cards — covers quote, name and role.
+   Role uses var(--lp-muted) already set to #64748B, but !important
+   on specific items is cleaner than fighting cascade order. */
+html.light .lp-testimonial-card blockquote p { color: #0F172A !important; }
+/* Author name: first p inside the flex author row */
+html.light .lp-testimonial-card > div > div > p:first-of-type { color: #0F172A !important; }
+/* Fallback: any p with inline font-weight (React renders as kebab-case in DOM) */
+html.light .lp-testimonial-card p[style*="font-weight"] { color: #0F172A !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   3. TOPBAR
+   ───────────────────────────────────────────────────────────── */
+html.light .landing-topbar {
+  background: rgba(248, 250, 252, 0.90);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 12px rgba(15, 23, 42, 0.06);
+}
+html.light .landing-topbar.scrolled {
+  background: rgba(248, 250, 252, 0.97);
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.08);
+}
+
+/* Nav links */
+html.light .lp-nav-link           { color: #475569; }
+html.light .lp-nav-link:hover     { color: #0F172A; }
+
+/* Auth elements */
+html.light .topbar-user-email { color: #475569; }
+html.light .topbar-signout    { color: #7C3AED; }
+
+/* ─────────────────────────────────────────────────────────────
+   4. BUTTONS
+   ───────────────────────────────────────────────────────────── */
+/* Primary button — lp-grad-cta uses a CSS var scoped to .landing-page,
+   so buttons OUTSIDE that scope (e.g. in <header>) get no gradient.
+   Hardcode it here so it works everywhere in light mode. */
+html.light .lp-btn--primary {
+  background: linear-gradient(135deg, #7C3AED, #3B82F6);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(124,58,237,0.18);
+}
+html.light .lp-btn--primary:hover {
+  box-shadow: 0 14px 36px rgba(124,58,237,0.24);
+}
+html.light .lp-btn--ghost {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  color: #0F172A;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html.light .lp-btn--ghost:hover {
+  background: #F8FAFC;
+  border-color: rgba(124,58,237,0.28);
+  color: #0F172A;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   5. EYEBROW PILL
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-eyebrow {
+  background: rgba(124,58,237,0.07);
+  border-color: rgba(124,58,237,0.18);
+  color: #6D28D9;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   6. GLASS CARDS (shared base)
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-glass {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   7. HERO FLOW INDICATOR
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-flow-icon {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+html.light .lp-flow-icon--active {
+  background: var(--lp-primary-ctr);
+  border: none;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.30);
+}
+html.light .lp-flow-label { color: #64748B; }
+
+/* ─────────────────────────────────────────────────────────────
+   8. SECTION BACKGROUNDS
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-section--dim     { background: #F1F5F9; }
+html.light .wwa-section--dim    { background: #F1F5F9; }
+html.light .wwa-section--darkest{ background: #E8EDF5; }
+
+/* ─────────────────────────────────────────────────────────────
+   9. METRICS
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-metric-card { background: #FFFFFF; }
+
+/* ─────────────────────────────────────────────────────────────
+   10. HERO MOCKUP — document panel
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-mock-doc {
+  background: #FFFFFF;
+  border-color: rgba(15, 23, 42, 0.09);
+}
+html.light .lp-mock-doc-header  { border-bottom-color: rgba(15, 23, 42, 0.06); }
+html.light .lp-mock-doc-name    { color: #475569; }
+html.light .lp-mock-doc-page    { color: #94A3B8; }
+html.light .lp-mock-line        { background: rgba(15, 23, 42, 0.07); }
+html.light .lp-mock-highlight   {
+  background: rgba(124,58,237,0.09);
+  border-color: rgba(124,58,237,0.18);
+}
+html.light .lp-mock-processing-badge {
+  background: rgba(124,58,237,0.06);
+  border-color: rgba(124,58,237,0.16);
+  color: #6D28D9;
+}
+html.light .lp-mock-scan-bar {
+  background: linear-gradient(to bottom,
+    transparent 0%, rgba(124,58,237,0.07) 40%,
+    rgba(124,58,237,0.04) 60%, transparent 100%);
+}
+html.light .lp-mock-ai-col::before,
+html.light .lp-mock-ai-col::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(124,58,237,0.28) 0px, rgba(124,58,237,0.28) 4px,
+    transparent 4px, transparent 8px
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   11. HERO MOCKUP — flashcard stack
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-mock-fc--back3 {
+  background: #E8EEF8; border-color: rgba(15,23,42,0.06);
+}
+html.light .lp-mock-fc--back2 {
+  background: #EFF3FB; border-color: rgba(15,23,42,0.07);
+}
+html.light .lp-mock-fc--back1 {
+  background: #F5F8FD; border-color: rgba(15,23,42,0.08);
+}
+html.light .lp-mock-fc--front {
+  background: #FFFFFF;
+  border-color: rgba(124,58,237,0.20);
+  box-shadow: 0 10px 32px rgba(15,23,42,0.10), 0 0 0 1px rgba(124,58,237,0.08);
+}
+html.light .lp-mock-fc-q       { color: #0F172A; }
+html.light .lp-mock-fc-source  { color: #94A3B8; }
+html.light .lp-mock-fc-eyebrow { color: #7C3AED; }
+
+html.light .lp-mock-deck-counter {
+  background: rgba(124,58,237,0.05);
+  border-color: rgba(124,58,237,0.14);
+}
+html.light .lp-mock-deck-label { color: #64748B; }
+html.light .lp-mock-deck-count { color: #6D28D9; }
+
+html.light .lp-mock-status-bar {
+  background: #FFFFFF;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+html.light .lp-mock-status-text { color: #64748B; }
+
+html.light .lp-mockup-glow {
+  background: radial-gradient(ellipse at 50% 50%,
+    rgba(124,58,237,0.07) 0%, rgba(59,130,246,0.03) 40%, transparent 70%);
+  filter: blur(32px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   12. TRUST BELT
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-trust-belt::before,
+html.light .lp-trust-belt::after {
+  background: linear-gradient(to right,
+    transparent, rgba(15,23,42,0.09), transparent);
+}
+html.light .lp-trust-belt-label  { color: #94A3B8; }
+html.light .lp-trust-logo-item   { color: #0F172A; opacity: 0.55; }
+html.light .lp-trust-logo-item:hover { opacity: 0.82; }
+html.light .lp-trust-logo-name   { color: #0F172A; }
+html.light .lp-trust-logo-sub    { color: #64748B; }
+html.light .lp-trust-sep         { background: rgba(15,23,42,0.10); }
+
+/* ─────────────────────────────────────────────────────────────
+   13. PROBLEM SECTION
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-problem-pain-item {
+  background: #F8FAFC;
+  border-color: rgba(15, 23, 42, 0.07);
+}
+html.light .lp-problem-pain-item:hover { border-color: rgba(124,58,237,0.20); }
+html.light .lp-problem-pain-icon       { background: rgba(239,68,68,0.08); }
+/* Base CSS has color:rgba(255,255,255,0.75) — invisible on light bg */
+html.light .lp-problem-pain-text strong { color: #0F172A; }
+
+html.light .lp-problem-solution {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+html.light .lp-problem-solution::before {
+  background: radial-gradient(ellipse at top right,
+    rgba(124,58,237,0.05), transparent 60%);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   14. JOURNEY STEPS
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-step-icon {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+/* Step use-case tags (lp-tags li) */
+html.light .lp-tags li {
+  background: #F1F5F9;
+  color: #475569;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+/* Step feature tags (lp-step-feat-tag) — separate class, same fix */
+html.light .lp-step-feat-tag {
+  background: #F1F5F9;
+  color: #475569;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   15. SYSTEM BENTO — chat snippet & doc preview
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-chat-snippet {
+  background: #F8FAFC;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+html.light .lp-chat-text {
+  color: #475569;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+}
+html.light .lp-chat-text--ai {
+  color: #0F172A;
+  background: rgba(124,58,237,0.06);
+  border-color: rgba(124,58,237,0.16);
+}
+html.light .lp-chat-avatar--user {
+  background: rgba(124,58,237,0.10);
+  color: #6D28D9;
+}
+
+html.light .lp-doc-preview {
+  background: #F8FAFC;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+html.light .lp-doc-bullet { color: #475569; }
+
+/* Flashcard preview inside cards */
+html.light .lp-fc-card {
+  border-color: rgba(15, 23, 42, 0.09);
+}
+html.light .lp-fc-card--q {
+  background: #F8FAFC;
+  color: #475569;
+}
+html.light .lp-fc-card--a {
+  background: rgba(124,58,237,0.07);
+  border-color: rgba(124,58,237,0.18);
+}
+
+/* Memory bar */
+html.light .lp-mem-bar-track { background: rgba(15, 23, 42, 0.08); }
+
+/* System bento accent card */
+html.light .lp-sys-card--accent {
+  background: linear-gradient(135deg,
+    rgba(124,58,237,0.06), rgba(59,130,246,0.05));
+  border-color: rgba(124,58,237,0.12);
+}
+html.light .lp-sys-glow {
+  background: radial-gradient(circle,
+    rgba(124,58,237,0.06), transparent 70%);
+}
+
+/* Knowledge map chips */
+html.light .lp-km-node {
+  color: #475569;
+  background: #F1F5F9;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+html.light .lp-avatar { border-color: var(--lp-bg); }
+
+/* ─────────────────────────────────────────────────────────────
+   16. USE CASE CARDS
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-usecase-card:hover { border-color: rgba(124,58,237,0.22); }
+html.light .lp-usecase-icon--violet { background: rgba(124,58,237,0.08); color: #6D28D9; }
+html.light .lp-usecase-icon--blue   { background: rgba(37,99,235,0.08);  color: #2563EB; }
+html.light .lp-usecase-icon--cyan   { background: rgba(8,145,178,0.08);  color: #0891B2; }
+
+/* ─────────────────────────────────────────────────────────────
+   17. PRICING CARDS
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-plan-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+html.light .lp-plan-card--featured {
+  box-shadow:
+    0 0 0 1.5px rgba(124,58,237,0.28),
+    0 8px 32px rgba(124,58,237,0.10);
+  border-color: rgba(124,58,237,0.18);
+}
+html.light .lp-plan-card--featured .lp-plan-features li { color: #475569; }
+html.light .lp-plan-badge { color: #FFFFFF; } /* badge stays white on purple bg */
+
+/* ─────────────────────────────────────────────────────────────
+   18. TESTIMONIALS
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-testimonial-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+/* Testimonial navigation buttons — inline style="background:transparent" */
+html.light button.lp-glass {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+}
+/* Prev arrow has inline style="color:#fff" — needs !important */
+html.light button.lp-glass .material-symbols-outlined { color: #475569 !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   19. TAGLINE / CTA CARD
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-tagline-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 6px 28px rgba(15, 23, 42, 0.06);
+}
+html.light .lp-tagline-glow {
+  background: radial-gradient(circle,
+    rgba(124,58,237,0.06), transparent 70%);
+}
+html.light .lp-tagline-float-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   20. HERO SNIPPETS (floating callout cards)
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-hero-snippet {
+  background: #FFFFFF;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+html.light .lp-hero-snippet-body { color: #0F172A; }
+
+/* ─────────────────────────────────────────────────────────────
+   21. CLOSING SECTION
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-closing-quote { color: #0F172A; }
+html.light .lp-closing-sub   { color: #64748B; }
+html.light .lp-closing-divider { background: var(--lp-grad-cta); }
+
+/* ─────────────────────────────────────────────────────────────
+   22. FOOTER
+   ───────────────────────────────────────────────────────────── */
+html.light .lp-footer {
+  background: #EEF2F7;
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   23. WHO WE ARE — MANIFESTO
+   ───────────────────────────────────────────────────────────── */
+html.light .wwa-manifesto::before {
+  background: radial-gradient(ellipse at center,
+    rgba(124,58,237,0.04) 0%, transparent 70%);
+}
+html.light .wwa-manifesto-eyebrow       { color: #64748B; }
+html.light .wwa-manifesto-eyebrow::before { background: #7C3AED; }
+html.light .wwa-manifesto-es            { color: #0F172A; }
+html.light .wwa-manifesto-rule {
+  background: linear-gradient(to right,
+    transparent, rgba(15,23,42,0.09), transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   24. WHO WE ARE — GLASS + BENTO CARDS
+   ───────────────────────────────────────────────────────────── */
+html.light .wwa-glass {
+  background: #FFFFFF;
+  border-color: rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+html.light .wwa-glass:hover { border-color: rgba(124,58,237,0.18); }
+
+html.light .wwa-bcard {
+  background: #FFFFFF;
+  border-color: rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+html.light .wwa-bcard:hover  { border-color: rgba(124,58,237,0.18); }
+html.light .wwa-bcard--accent {
+  background: linear-gradient(135deg,
+    rgba(124,58,237,0.06), rgba(59,130,246,0.05));
+  border-color: rgba(124,58,237,0.13);
+}
+html.light .wwa-feat-tag {
+  background: #F1F5F9;
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #475569;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   25. WHO WE ARE — TIMELINE
+   ───────────────────────────────────────────────────────────── */
+html.light .wwa-timeline::before {
+  background: linear-gradient(to bottom,
+    rgba(124,58,237,0.25), rgba(8,145,178,0.18), transparent);
+}
+html.light .wwa-timeline-dot { background: var(--lp-bg) !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   26. SMOOTH COLOUR TRANSITION on toggle
+   ───────────────────────────────────────────────────────────── */
+html.light .landing-page,
+html.light .wwa-page,
+html.light .landing-topbar {
+  transition:
+    background-color 0.22s ease,
+    border-color     0.22s ease,
+    color            0.18s ease,
+    box-shadow       0.22s ease;
+}
+/* Never transition transforms/filters through this rule */
+html.light .lp-mock-fc,
+html.light .lp-word,
+html.light .lp-reveal,
+html.light .lp-img-reveal {
+  transition:
+    opacity   0.7s var(--lp-ease),
+    filter    0.7s var(--lp-ease),
+    transform 0.7s var(--lp-ease);
+}
