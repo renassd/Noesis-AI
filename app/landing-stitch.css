@@ -64,6 +64,13 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Suppress the global li::before blue dot injected by globals.css */
+/* in all Stitch landing and Who We Are sections */
+.landing-page li::before,
+.wwa-page li::before {
+  display: none;
+}
+
 /* ── TOPBAR overrides for landing ──────────────────────────── */
 .landing-topbar {
   position: fixed;
@@ -536,7 +543,7 @@
 .lp-trust-logo-item {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 0;
   padding: 0 56px;
   opacity: 0.40;
   color: #fff;
@@ -553,32 +560,38 @@
   flex-shrink: 0;
 }
 
-/* Crest / shield icon */
-.lp-trust-crest {
-  width: 22px;
-  height: 28px;
-  flex-shrink: 0;
+/* Wordmark container */
+.lp-trust-wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
 }
-
-/* Text block next to crest */
-.lp-trust-logo-text { text-align: left; }
-
-.lp-trust-logo-name {
-  font-family: 'Georgia', 'Times New Roman', serif;
-  font-size: 1.08rem;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  color: #fff;
+.lp-trust-wordmark-name {
+  font-family: var(--lp-font-head);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: currentColor;
   line-height: 1;
-}
-.lp-trust-logo-sub {
-  font-family: var(--lp-font-body);
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.52);
-  margin-top: 5px;
+  display: block;
+}
+.lp-trust-wordmark-name--serif {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  font-size: 1.45rem;
+}
+.lp-trust-wordmark-sub {
+  font-family: var(--lp-font-body);
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: currentColor;
+  opacity: 0.50;
   display: block;
 }
 
@@ -845,6 +858,13 @@
   flex-direction: column;
   gap: 14px;
   flex: 1;
+}
+.lp-plan-features li,
+.lp-problem-pain-list li,
+.lp-tags li,
+.lp-step-features li,
+.lp-tagline-features li {
+  padding-left: 0;
 }
 .lp-plan-features li {
   display: flex;

@@ -252,11 +252,15 @@ html.light .lp-trust-belt::after {
     transparent, rgba(15,23,42,0.09), transparent);
 }
 html.light .lp-trust-belt-label  { color: #94A3B8; }
-html.light .lp-trust-logo-item   { color: #0F172A; opacity: 0.55; }
+html.light .lp-trust-logo-item   { color: #0F172A; opacity: 0.55; gap: 0; }
 html.light .lp-trust-logo-item:hover { opacity: 0.82; }
 html.light .lp-trust-logo-name   { color: #0F172A; }
 html.light .lp-trust-logo-sub    { color: #64748B; }
 html.light .lp-trust-sep         { background: rgba(15,23,42,0.10); }
+
+/* Trust wordmark classes work via currentColor — no extra light overrides needed */
+/* But ensure the logo item gap is consistent */
+html.light .lp-trust-logo-item { gap: 0; }
 
 /* ─────────────────────────────────────────────────────────────
    13. PROBLEM SECTION

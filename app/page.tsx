@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import ColorModeToggle from "./ColorModeToggle";
@@ -215,6 +216,17 @@ export default function HomePage() {
   useScrollReveal();
   useTopbarScroll();
 
+  const router = useRouter();
+
+  /** CTA handler — redirects authenticated users straight to the app */
+  function handleCta() {
+    if (auth.signedIn) {
+      router.push("/estudio");
+    } else {
+      openModal();
+    }
+  }
+
   /* Material Symbols font loaded via Google Fonts CDN for icon rendering */
   useEffect(() => {
     if (document.querySelector("#material-symbols-lp")) return;
@@ -328,7 +340,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     className="lp-btn lp-btn--primary"
-                    onClick={openModal}
+                    onClick={handleCta}
                     aria-label={en ? "Start learning with Neuvra" : "Empezar a aprender con Neuvra"}
                   >
                     {l.ctaPrimary}
@@ -395,19 +407,9 @@ export default function HomePage() {
 
                 {/* ── Harvard University ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="Harvard University">
-                  {/* Simplified heraldic shield — 3 open-book bars with spine (Harvard motif) */}
-                  <svg className="lp-trust-crest" viewBox="0 0 34 44" fill="none" aria-hidden="true">
-                    <path d="M2 2H32V28Q32 40 17 43Q2 40 2 28V2Z"
-                      stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-                    <line x1="9"  y1="9"  x2="25" y2="9"  stroke="currentColor" strokeWidth="1.2"/>
-                    <line x1="9"  y1="14" x2="25" y2="14" stroke="currentColor" strokeWidth="1"/>
-                    <line x1="9"  y1="19" x2="25" y2="19" stroke="currentColor" strokeWidth="1"/>
-                    <line x1="9"  y1="24" x2="25" y2="24" stroke="currentColor" strokeWidth="1"/>
-                    <line x1="17" y1="14" x2="17" y2="24" stroke="currentColor" strokeWidth="1"/>
-                  </svg>
-                  <div className="lp-trust-logo-text">
-                    <span className="lp-trust-logo-name">Harvard</span>
-                    <span className="lp-trust-logo-sub">University</span>
+                  <div className="lp-trust-wordmark">
+                    <span className="lp-trust-wordmark-name lp-trust-wordmark-name--serif">HARVARD</span>
+                    <span className="lp-trust-wordmark-sub">UNIVERSITY</span>
                   </div>
                 </div>
 
@@ -415,18 +417,9 @@ export default function HomePage() {
 
                 {/* ── University of Pennsylvania ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="University of Pennsylvania">
-                  {/* Simplified quartered shield (Penn's four-quarter heraldic motif) */}
-                  <svg className="lp-trust-crest" viewBox="0 0 34 44" fill="none" aria-hidden="true">
-                    <path d="M2 2H32V28Q32 40 17 43Q2 40 2 28V2Z"
-                      stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-                    <line x1="17" y1="5"  x2="17" y2="34" stroke="currentColor" strokeWidth="1"/>
-                    <line x1="5"  y1="19" x2="29" y2="19" stroke="currentColor" strokeWidth="1"/>
-                    <rect x="8"  y="8"  width="6" height="6" fill="currentColor" opacity="0.55"/>
-                    <rect x="20" y="22" width="6" height="6" fill="currentColor" opacity="0.55"/>
-                  </svg>
-                  <div className="lp-trust-logo-text">
-                    <span className="lp-trust-logo-name">Penn</span>
-                    <span className="lp-trust-logo-sub">University of Pennsylvania</span>
+                  <div className="lp-trust-wordmark">
+                    <span className="lp-trust-wordmark-name">UPENN</span>
+                    <span className="lp-trust-wordmark-sub">UNIVERSITY OF PENNSYLVANIA</span>
                   </div>
                 </div>
 
@@ -912,7 +905,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   className="lp-btn lp-btn--ghost"
-                  onClick={openModal}
+                  onClick={handleCta}
                   style={{ flexShrink: 0, padding: "12px 22px", fontSize: "0.88rem" }}
                   aria-label={en ? "Open Memory Engine" : "Abrir Motor de Memoria"}
                 >
@@ -1068,7 +1061,7 @@ export default function HomePage() {
                       <button
                         type="button"
                         className={`lp-btn ${featured ? "lp-btn--primary" : "lp-btn--ghost"}`}
-                        onClick={openModal}
+                        onClick={handleCta}
                         style={{ width: "100%", justifyContent: "center" }}
                         aria-label={cta}
                       >
@@ -1185,7 +1178,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   className="lp-btn lp-btn--primary"
-                  onClick={openModal}
+                  onClick={handleCta}
                   aria-label={en ? "Start your learning journey with Neuvra" : "Empezar tu viaje de aprendizaje con Neuvra"}
                 >
                   {en ? "Start learning — it's free" : "Empezar a aprender — es gratis"}
@@ -1228,7 +1221,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     className="lp-btn lp-btn--primary"
-                    onClick={openModal}
+                    onClick={handleCta}
                     aria-label={en ? "Start learning with Neuvra" : "Empezar a aprender con Neuvra"}
                   >
                     {l.ctaPrimary}
