@@ -543,14 +543,14 @@
 .lp-trust-logo-item {
   display: flex;
   align-items: center;
-  gap: 0;
-  padding: 0 56px;
-  opacity: 0.40;
+  gap: 14px;
+  padding: 0 48px;
+  opacity: 0.45;
   color: #fff;
   transition: opacity 0.28s var(--lp-ease);
   cursor: default;
 }
-.lp-trust-logo-item:hover { opacity: 0.70; }
+.lp-trust-logo-item:hover { opacity: 0.75; }
 
 /* Thin vertical rule between institutions */
 .lp-trust-sep {
@@ -560,38 +560,35 @@
   flex-shrink: 0;
 }
 
-/* Wordmark container */
-.lp-trust-wordmark {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  text-align: center;
+/* Shield / crest icon */
+.lp-trust-crest {
+  width: 28px;
+  height: 36px;
+  flex-shrink: 0;
 }
-.lp-trust-wordmark-name {
-  font-family: var(--lp-font-head);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+
+/* Text block next to crest */
+.lp-trust-logo-text { text-align: left; }
+
+.lp-trust-logo-name {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: 0.10em;
   color: currentColor;
   line-height: 1;
   text-transform: uppercase;
   display: block;
 }
-.lp-trust-wordmark-name--serif {
-  font-family: 'Georgia', 'Times New Roman', serif;
-  font-weight: 400;
-  letter-spacing: 0.22em;
-  font-size: 1.45rem;
-}
-.lp-trust-wordmark-sub {
+.lp-trust-logo-sub {
   font-family: var(--lp-font-body);
-  font-size: 0.54rem;
+  font-size: 0.58rem;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: currentColor;
-  opacity: 0.50;
+  opacity: 0.55;
+  margin-top: 4px;
   display: block;
 }
 

@@ -407,9 +407,47 @@ export default function HomePage() {
 
                 {/* ── Harvard University ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="Harvard University">
-                  <div className="lp-trust-wordmark">
-                    <span className="lp-trust-wordmark-name lp-trust-wordmark-name--serif">HARVARD</span>
-                    <span className="lp-trust-wordmark-sub">UNIVERSITY</span>
+                  {/*
+                    Harvard shield: crimson field, chief divided into VE | RI (two open books),
+                    lower body with TAS (third book). Faithful monochrome recreation.
+                  */}
+                  <svg className="lp-trust-crest" viewBox="0 0 42 54" fill="none" aria-hidden="true">
+                    {/* Shield outline */}
+                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z"
+                          stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"
+                          fill="currentColor" fillOpacity="0.08"/>
+                    {/* Chief divider (horizontal at ~35% height) */}
+                    <line x1="2" y1="19" x2="40" y2="19" stroke="currentColor" strokeWidth="1.2"/>
+                    {/* Vertical divider in chief — creates VE | RI sections */}
+                    <line x1="21" y1="2" x2="21" y2="19" stroke="currentColor" strokeWidth="1"/>
+                    {/* VE book (top-left) — open book with two pages */}
+                    <rect x="4" y="3" width="15" height="14" rx="0.5"
+                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
+                    <line x1="11.5" y1="3" x2="11.5" y2="17" stroke="currentColor" strokeWidth="0.5"/>
+                    <line x1="5" y1="7"  x2="11"  y2="7"  stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="5" y1="9"  x2="11"  y2="9"  stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="12" y1="7" x2="18"  y2="7"  stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="12" y1="9" x2="18"  y2="9"  stroke="currentColor" strokeWidth="0.4"/>
+                    {/* RI book (top-right) */}
+                    <rect x="23" y="3" width="15" height="14" rx="0.5"
+                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
+                    <line x1="30.5" y1="3" x2="30.5" y2="17" stroke="currentColor" strokeWidth="0.5"/>
+                    <line x1="24" y1="7" x2="30"  y2="7"  stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="24" y1="9" x2="30"  y2="9"  stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="31" y1="7" x2="37"  y2="7"  stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="31" y1="9" x2="37"  y2="9"  stroke="currentColor" strokeWidth="0.4"/>
+                    {/* TAS book (body of shield — open book lying flat) */}
+                    <rect x="7" y="24" width="28" height="16" rx="0.5"
+                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
+                    <line x1="21" y1="24" x2="21" y2="40" stroke="currentColor" strokeWidth="0.5"/>
+                    <line x1="8"  y1="28" x2="20" y2="28" stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="8"  y1="30" x2="20" y2="30" stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="22" y1="28" x2="34" y2="28" stroke="currentColor" strokeWidth="0.4"/>
+                    <line x1="22" y1="30" x2="34" y2="30" stroke="currentColor" strokeWidth="0.4"/>
+                  </svg>
+                  <div className="lp-trust-logo-text">
+                    <span className="lp-trust-logo-name">HARVARD</span>
+                    <span className="lp-trust-logo-sub">UNIVERSITY</span>
                   </div>
                 </div>
 
@@ -417,9 +455,42 @@ export default function HomePage() {
 
                 {/* ── University of Pennsylvania ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="University of Pennsylvania">
-                  <div className="lp-trust-wordmark">
-                    <span className="lp-trust-wordmark-name">UPENN</span>
-                    <span className="lp-trust-wordmark-sub">UNIVERSITY OF PENNSYLVANIA</span>
+                  {/*
+                    Penn shield: red chief with two open books, white field with
+                    blue chevron (inverted V) bearing three white roundels.
+                    The chevron+circles is Penn's most distinctive heraldic element.
+                  */}
+                  <svg className="lp-trust-crest" viewBox="0 0 42 54" fill="none" aria-hidden="true">
+                    {/* Shield outline */}
+                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z"
+                          stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                    {/* Chief (top bar) — slightly filled */}
+                    <path d="M2 2H40V17H2Z"
+                          fill="currentColor" fillOpacity="0.18" stroke="none"/>
+                    <line x1="2" y1="17" x2="40" y2="17" stroke="currentColor" strokeWidth="1.2"/>
+                    {/* Book left in chief */}
+                    <rect x="4" y="4" width="12" height="11" rx="0.5"
+                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
+                    <line x1="10" y1="4" x2="10" y2="15" stroke="currentColor" strokeWidth="0.5"/>
+                    {/* Book right in chief */}
+                    <rect x="26" y="4" width="12" height="11" rx="0.5"
+                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
+                    <line x1="32" y1="4" x2="32" y2="15" stroke="currentColor" strokeWidth="0.5"/>
+                    {/*
+                      Blue chevron with 3 white roundels (evenodd cuts circles out of fill):
+                      V goes from (2,18) → (21,44) → (40,18), with inner edge inset 6px.
+                      Three circles at upper-left arm, bottom tip, upper-right arm.
+                    */}
+                    <path
+                      d="M2 18L21 44L40 18L34 18L21 38L8 18Z
+                         M8 21 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0
+                         M17 37 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0
+                         M26 21 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0"
+                      fill="currentColor" fillRule="evenodd" fillOpacity="0.88"/>
+                  </svg>
+                  <div className="lp-trust-logo-text">
+                    <span className="lp-trust-logo-name">UPENN</span>
+                    <span className="lp-trust-logo-sub">UNIVERSITY OF PENNSYLVANIA</span>
                   </div>
                 </div>
 
