@@ -408,42 +408,30 @@ export default function HomePage() {
                 {/* ── Harvard University ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="Harvard University">
                   {/*
-                    Harvard shield: crimson field, chief divided into VE | RI (two open books),
-                    lower body with TAS (third book). Faithful monochrome recreation.
+                    Harvard shield: authentic crimson field, VE | RI chief (two open books),
+                    TAS body (third open book). VERITAS motto text visible inside books.
                   */}
                   <svg className="lp-trust-crest" viewBox="0 0 42 54" fill="none" aria-hidden="true">
-                    {/* Shield outline */}
-                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z"
-                          stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"
-                          fill="currentColor" fillOpacity="0.08"/>
-                    {/* Chief divider (horizontal at ~35% height) */}
-                    <line x1="2" y1="19" x2="40" y2="19" stroke="currentColor" strokeWidth="1.2"/>
-                    {/* Vertical divider in chief — creates VE | RI sections */}
-                    <line x1="21" y1="2" x2="21" y2="19" stroke="currentColor" strokeWidth="1"/>
-                    {/* VE book (top-left) — open book with two pages */}
-                    <rect x="4" y="3" width="15" height="14" rx="0.5"
-                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
-                    <line x1="11.5" y1="3" x2="11.5" y2="17" stroke="currentColor" strokeWidth="0.5"/>
-                    <line x1="5" y1="7"  x2="11"  y2="7"  stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="5" y1="9"  x2="11"  y2="9"  stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="12" y1="7" x2="18"  y2="7"  stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="12" y1="9" x2="18"  y2="9"  stroke="currentColor" strokeWidth="0.4"/>
-                    {/* RI book (top-right) */}
-                    <rect x="23" y="3" width="15" height="14" rx="0.5"
-                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
-                    <line x1="30.5" y1="3" x2="30.5" y2="17" stroke="currentColor" strokeWidth="0.5"/>
-                    <line x1="24" y1="7" x2="30"  y2="7"  stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="24" y1="9" x2="30"  y2="9"  stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="31" y1="7" x2="37"  y2="7"  stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="31" y1="9" x2="37"  y2="9"  stroke="currentColor" strokeWidth="0.4"/>
-                    {/* TAS book (body of shield — open book lying flat) */}
-                    <rect x="7" y="24" width="28" height="16" rx="0.5"
-                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
-                    <line x1="21" y1="24" x2="21" y2="40" stroke="currentColor" strokeWidth="0.5"/>
-                    <line x1="8"  y1="28" x2="20" y2="28" stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="8"  y1="30" x2="20" y2="30" stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="22" y1="28" x2="34" y2="28" stroke="currentColor" strokeWidth="0.4"/>
-                    <line x1="22" y1="30" x2="34" y2="30" stroke="currentColor" strokeWidth="0.4"/>
+                    {/* Crimson shield body */}
+                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z" fill="#A41034"/>
+                    {/* Shield border */}
+                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z" fill="none" stroke="#7B0D24" strokeWidth="1.2"/>
+                    {/* Chief horizontal divider */}
+                    <line x1="2" y1="19" x2="40" y2="19" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+                    {/* Chief vertical — VE | RI */}
+                    <line x1="21" y1="2" x2="21" y2="19" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8"/>
+                    {/* VE open book (top-left) */}
+                    <rect x="4.5" y="3.5" width="14" height="13" rx="0.5" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="0.9"/>
+                    <line x1="11.5" y1="3.5" x2="11.5" y2="16.5" stroke="rgba(255,255,255,0.88)" strokeWidth="0.5"/>
+                    <text x="11.5" y="13.5" fontSize="6" fontFamily="Georgia,serif" fill="white" textAnchor="middle" fontWeight="700">VE</text>
+                    {/* RI open book (top-right) */}
+                    <rect x="23.5" y="3.5" width="14" height="13" rx="0.5" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="0.9"/>
+                    <line x1="30.5" y1="3.5" x2="30.5" y2="16.5" stroke="rgba(255,255,255,0.88)" strokeWidth="0.5"/>
+                    <text x="30.5" y="13.5" fontSize="6" fontFamily="Georgia,serif" fill="white" textAnchor="middle" fontWeight="700">RI</text>
+                    {/* TAS open book (shield body) */}
+                    <rect x="7" y="23" width="28" height="16" rx="0.5" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="0.9"/>
+                    <line x1="21" y1="23" x2="21" y2="39" stroke="rgba(255,255,255,0.88)" strokeWidth="0.5"/>
+                    <text x="21" y="34" fontSize="6" fontFamily="Georgia,serif" fill="white" textAnchor="middle" fontWeight="700">TAS</text>
                   </svg>
                   <div className="lp-trust-logo-text">
                     <span className="lp-trust-logo-name">HARVARD</span>
@@ -456,37 +444,32 @@ export default function HomePage() {
                 {/* ── University of Pennsylvania ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="University of Pennsylvania">
                   {/*
-                    Penn shield: red chief with two open books, white field with
-                    blue chevron (inverted V) bearing three white roundels.
-                    The chevron+circles is Penn's most distinctive heraldic element.
+                    Penn shield: authentic red chief with two open books (white outlines),
+                    silver field with blue chevron (inverted V) and three white roundels.
+                    The red+blue+white color scheme is Penn's distinctive heraldic identity.
                   */}
                   <svg className="lp-trust-crest" viewBox="0 0 42 54" fill="none" aria-hidden="true">
+                    {/* Silver/white shield body */}
+                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z" fill="#F0EDE8"/>
+                    {/* Red chief (top ~35%) */}
+                    <path d="M2.6 2.6H39.4V18.5H2.6Z" fill="#990000"/>
+                    {/* Chief bottom border */}
+                    <line x1="2" y1="19" x2="40" y2="19" stroke="#6B0000" strokeWidth="1"/>
                     {/* Shield outline */}
-                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z"
-                          stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                    {/* Chief (top bar) — slightly filled */}
-                    <path d="M2 2H40V17H2Z"
-                          fill="currentColor" fillOpacity="0.18" stroke="none"/>
-                    <line x1="2" y1="17" x2="40" y2="17" stroke="currentColor" strokeWidth="1.2"/>
-                    {/* Book left in chief */}
-                    <rect x="4" y="4" width="12" height="11" rx="0.5"
-                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
-                    <line x1="10" y1="4" x2="10" y2="15" stroke="currentColor" strokeWidth="0.5"/>
-                    {/* Book right in chief */}
-                    <rect x="26" y="4" width="12" height="11" rx="0.5"
-                          fill="none" stroke="currentColor" strokeWidth="0.8"/>
-                    <line x1="32" y1="4" x2="32" y2="15" stroke="currentColor" strokeWidth="0.5"/>
-                    {/*
-                      Blue chevron with 3 white roundels (evenodd cuts circles out of fill):
-                      V goes from (2,18) → (21,44) → (40,18), with inner edge inset 6px.
-                      Three circles at upper-left arm, bottom tip, upper-right arm.
-                    */}
+                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z" fill="none" stroke="#B8A898" strokeWidth="1.2"/>
+                    {/* Left open book in red chief */}
+                    <rect x="5" y="4" width="11" height="12" rx="0.4" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="0.9"/>
+                    <line x1="10.5" y1="4" x2="10.5" y2="16" stroke="rgba(255,255,255,0.9)" strokeWidth="0.5"/>
+                    {/* Right open book in red chief */}
+                    <rect x="26" y="4" width="11" height="12" rx="0.4" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="0.9"/>
+                    <line x1="31.5" y1="4" x2="31.5" y2="16" stroke="rgba(255,255,255,0.9)" strokeWidth="0.5"/>
+                    {/* Blue chevron with 3 white roundels cut out (evenodd) */}
                     <path
-                      d="M2 18L21 44L40 18L34 18L21 38L8 18Z
-                         M8 21 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0
-                         M17 37 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0
-                         M26 21 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0"
-                      fill="currentColor" fillRule="evenodd" fillOpacity="0.88"/>
+                      d="M2 20L21 46L40 20L34 20L21 40L8 20Z
+                         M8.5 23.5 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0
+                         M17.1 39 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0
+                         M25.9 23.5 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0"
+                      fill="#011F5B" fillRule="evenodd"/>
                   </svg>
                   <div className="lp-trust-logo-text">
                     <span className="lp-trust-logo-name">UPENN</span>
