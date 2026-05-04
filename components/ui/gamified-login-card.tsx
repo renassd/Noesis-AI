@@ -1,7 +1,6 @@
 "use client";
 
 import { useLang } from "@/app/i18n";
-import type { CSSProperties } from "react";
 
 type AuthMode = "signin" | "signup";
 
@@ -42,21 +41,11 @@ export default function GamifiedLoginCard({
         title: authText.signupTitle,
         description: authText.signupDescription,
         cta: authText.signupCta,
-        progress: authText.progressSignup,
-        progressTitle: authText.progressSignupTitle,
-        progressBody: authText.progressSignupBody,
-        showMeter: true,
-        meterValue: 0,
       }
     : {
         title: authText.signinTitle,
         description: authText.signinDescription,
         cta: authText.signinCta,
-        progress: authText.progressSignin,
-        progressTitle: authText.progressSigninTitle,
-        progressBody: authText.progressSigninBody,
-        showMeter: true,
-        meterValue: 50,
       };
 
   return (
@@ -65,25 +54,6 @@ export default function GamifiedLoginCard({
         <span className="eyebrow">{authText.brand}</span>
         <h3>{copy.title}</h3>
         <p>{copy.description}</p>
-      </div>
-
-      <div className="glc-hero">
-        <div className="glc-hero-main">
-          <span className="glc-kicker">{copy.progress}</span>
-          <strong>{copy.progressTitle}</strong>
-          <p>{copy.progressBody}</p>
-        </div>
-        {copy.showMeter ? (
-          <div className="glc-meter" aria-hidden="true">
-            <div
-              className="glc-meter-ring"
-              style={{ "--meter-progress": `${copy.meterValue}%` } as CSSProperties}
-            >
-              <span>{copy.meterValue}%</span>
-            </div>
-            <small>{authText.setup}</small>
-          </div>
-        ) : null}
       </div>
 
       <div className="auth-switch">
