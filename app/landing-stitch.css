@@ -560,16 +560,22 @@
   flex-shrink: 0;
 }
 
-/* University logo image — natural width, fixed height */
+/* University logo image — natural width, fixed height, no filter */
 .lp-trust-img {
   height: 64px;
   width: auto;
   display: block;
   flex-shrink: 0;
   object-fit: contain;
-  /* Dark mode: convert opaque white-background logos to white silhouette */
-  filter: brightness(0) invert(1);
 }
+
+/* Dark/light asset swap — default: light mode visible */
+.lp-trust-dark-only { display: none; }
+.lp-trust-light-only { display: block; }
+
+/* Dark mode: swap to dark assets */
+html:not(.light) .lp-trust-dark-only  { display: block; }
+html:not(.light) .lp-trust-light-only { display: none; }
 
 /* Text block next to crest/logo */
 .lp-trust-logo-text { text-align: left; }

@@ -257,8 +257,6 @@ html.light .lp-trust-logo-item:hover { opacity: 1; }
 html.light .lp-trust-logo-name   { color: #0F172A; }
 html.light .lp-trust-logo-sub    { color: #64748B; }
 html.light .lp-trust-sep         { background: rgba(15,23,42,0.10); }
-/* Light mode: show logos in natural color (undo dark-mode white silhouette filter) */
-html.light .lp-trust-img         { filter: none; }
 
 /* ─────────────────────────────────────────────────────────────
    13. PROBLEM SECTION

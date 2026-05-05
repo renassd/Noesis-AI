@@ -410,10 +410,16 @@ export default function HomePage() {
                   <Image
                     src="/logos/harvard.png"
                     alt="Harvard University"
-                    width={735}
-                    height={234}
+                    width={735} height={234}
                     style={{ height: 64, width: "auto" }}
-                    className="lp-trust-img"
+                    className="lp-trust-img lp-trust-light-only"
+                  />
+                  <Image
+                    src="/logos/harvard-dark.png"
+                    alt="Harvard University"
+                    width={735} height={234}
+                    style={{ height: 64, width: "auto" }}
+                    className="lp-trust-img lp-trust-dark-only"
                   />
                 </div>
 
@@ -421,14 +427,19 @@ export default function HomePage() {
 
                 {/* ── University of Pennsylvania ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="University of Pennsylvania">
-                  {/* Shield PNG (transparent bg) + text labels */}
                   <Image
                     src="/logos/upenn.png"
                     alt="University of Pennsylvania shield"
-                    width={500}
-                    height={432}
+                    width={500} height={432}
                     style={{ height: 64, width: "auto" }}
-                    className="lp-trust-img"
+                    className="lp-trust-img lp-trust-light-only"
+                  />
+                  <Image
+                    src="/logos/upenn-dark.png"
+                    alt="University of Pennsylvania shield"
+                    width={500} height={432}
+                    style={{ height: 64, width: "auto" }}
+                    className="lp-trust-img lp-trust-dark-only"
                   />
                   <div className="lp-trust-logo-text">
                     <span className="lp-trust-logo-name">UPENN</span>
