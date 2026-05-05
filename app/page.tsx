@@ -410,8 +410,8 @@ export default function HomePage() {
                   <Image
                     src="/logos/harvard.jpg"
                     alt="Harvard University"
-                    width={866}
-                    height={650}
+                    width={735}
+                    height={234}
                     style={{ height: 64, width: "auto" }}
                     className="lp-trust-img"
                   />
