@@ -555,14 +555,14 @@
 /* Thin vertical rule between institutions */
 .lp-trust-sep {
   width: 1px;
-  height: 52px;
+  height: 68px;
   background: rgba(255,255,255,0.09);
   flex-shrink: 0;
 }
 
 /* University logo image — natural width, fixed height */
 .lp-trust-img {
-  height: 52px;
+  height: 64px;
   width: auto;
   display: block;
   flex-shrink: 0;

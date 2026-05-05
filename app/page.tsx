@@ -412,7 +412,7 @@ export default function HomePage() {
                     alt="Harvard University"
                     width={866}
                     height={650}
-                    style={{ height: 52, width: "auto" }}
+                    style={{ height: 64, width: "auto" }}
                     className="lp-trust-img"
                   />
                 </div>
@@ -427,7 +427,7 @@ export default function HomePage() {
                     alt="University of Pennsylvania shield"
                     width={500}
                     height={432}
-                    style={{ height: 52, width: "auto" }}
+                    style={{ height: 64, width: "auto" }}
                     className="lp-trust-img"
                   />
                   <div className="lp-trust-logo-text">
