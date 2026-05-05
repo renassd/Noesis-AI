@@ -408,7 +408,7 @@ export default function HomePage() {
                 {/* ── Harvard University ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="Harvard University">
                   <Image
-                    src="/logos/harvard.jpg"
+                    src="/logos/harvard.png"
                     alt="Harvard University"
                     width={735}
                     height={234}
