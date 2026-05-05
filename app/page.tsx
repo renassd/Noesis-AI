@@ -407,12 +407,11 @@ export default function HomePage() {
 
                 {/* ── Harvard University ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="Harvard University">
-                  {/* Full lockup PNG — includes shield + "HARVARD UNIVERSITY" text */}
                   <Image
-                    src="/logos/harvard.png"
+                    src="/logos/harvard.jpg"
                     alt="Harvard University"
-                    width={400}
-                    height={180}
+                    width={866}
+                    height={650}
                     style={{ height: 52, width: "auto" }}
                     className="lp-trust-img"
                   />
