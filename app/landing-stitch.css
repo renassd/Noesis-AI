@@ -556,14 +556,14 @@
 /* Thin vertical rule between institutions */
 .lp-trust-sep {
   width: 1px;
-  height: 68px;
+  height: 76px;
   background: rgba(255,255,255,0.09);
   flex-shrink: 0;
 }
 
 /* University logo image — full opacity, no filter, no blend mode */
 .lp-trust-img {
-  height: 64px;
+  height: 72px;
   width: auto;
   display: block;
   flex-shrink: 0;
@@ -573,13 +573,20 @@
   opacity: 1 !important;
 }
 
-/* Dark/light asset swap — default: light mode visible */
-.lp-trust-dark-only { display: none; }
+/* Dark/light asset swap for Penn */
+.lp-trust-dark-only  { display: none; }
 .lp-trust-light-only { display: block; }
-
-/* Dark mode: swap to dark assets */
 html:not(.light) .lp-trust-dark-only  { display: block; }
 html:not(.light) .lp-trust-light-only { display: none; }
+
+/* Harvard: show original logo on a white surface in dark mode so
+   the authentic dark text stays readable — zero pixel processing */
+html:not(.light) .lp-trust-img--harvard {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  padding: 8px 16px;
+  box-sizing: content-box;
+}
 
 /* Text block next to logo */
 .lp-trust-logo-text { text-align: left; }
@@ -606,11 +613,11 @@ html:not(.light) .lp-trust-light-only { display: none; }
   display: block;
 }
 
-/* Responsive — stack vertically on narrow viewports */
-@media (max-width: 580px) {
+/* Responsive — stack vertically only on very narrow viewports */
+@media (max-width: 460px) {
   .lp-trust-logos      { flex-direction: column; gap: 32px; }
   .lp-trust-sep        { width: 40px; height: 1px; }
-  .lp-trust-logo-item  { padding: 0; }
+  .lp-trust-logo-item  { padding: 0 20px; }
 }
 
 /* ── METRICS ────────────────────────────────────────────────── */

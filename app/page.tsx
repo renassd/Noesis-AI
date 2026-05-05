@@ -411,15 +411,8 @@ export default function HomePage() {
                     src="/logos/harvard.png"
                     alt="Harvard University"
                     width={735} height={234}
-                    style={{ height: 64, width: "auto" }}
-                    className="lp-trust-img lp-trust-light-only"
-                  />
-                  <Image
-                    src="/logos/harvard-dark.png"
-                    alt="Harvard University"
-                    width={735} height={234}
-                    style={{ height: 64, width: "auto" }}
-                    className="lp-trust-img lp-trust-dark-only"
+                    style={{ height: 72, width: "auto" }}
+                    className="lp-trust-img lp-trust-img--harvard"
                   />
                 </div>
 
@@ -431,14 +424,14 @@ export default function HomePage() {
                     src="/logos/upenn.png"
                     alt="University of Pennsylvania shield"
                     width={500} height={432}
-                    style={{ height: 64, width: "auto" }}
+                    style={{ height: 72, width: "auto" }}
                     className="lp-trust-img lp-trust-light-only"
                   />
                   <Image
                     src="/logos/upenn-dark.png"
                     alt="University of Pennsylvania shield"
                     width={500} height={432}
-                    style={{ height: 64, width: "auto" }}
+                    style={{ height: 72, width: "auto" }}
                     className="lp-trust-img lp-trust-dark-only"
                   />
                   <div className="lp-trust-logo-text">
