@@ -560,14 +560,18 @@
   flex-shrink: 0;
 }
 
-/* Shield / crest icon */
-.lp-trust-crest {
-  width: 36px;
-  height: 46px;
+/* University logo image — natural width, fixed height */
+.lp-trust-img {
+  height: 52px;
+  width: auto;
+  display: block;
   flex-shrink: 0;
+  object-fit: contain;
+  /* Dark mode: convert opaque white-background logos to white silhouette */
+  filter: brightness(0) invert(1);
 }
 
-/* Text block next to crest */
+/* Text block next to crest/logo */
 .lp-trust-logo-text { text-align: left; }
 
 .lp-trust-logo-name {

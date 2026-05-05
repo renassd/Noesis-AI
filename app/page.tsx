@@ -407,70 +407,30 @@ export default function HomePage() {
 
                 {/* ── Harvard University ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="Harvard University">
-                  {/*
-                    Harvard shield: authentic crimson field, VE | RI chief (two open books),
-                    TAS body (third open book). VERITAS motto text visible inside books.
-                  */}
-                  <svg className="lp-trust-crest" viewBox="0 0 42 54" fill="none" aria-hidden="true">
-                    {/* Crimson shield body */}
-                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z" fill="#A41034"/>
-                    {/* Shield border */}
-                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z" fill="none" stroke="#7B0D24" strokeWidth="1.2"/>
-                    {/* Chief horizontal divider */}
-                    <line x1="2" y1="19" x2="40" y2="19" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
-                    {/* Chief vertical — VE | RI */}
-                    <line x1="21" y1="2" x2="21" y2="19" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8"/>
-                    {/* VE open book (top-left) */}
-                    <rect x="4.5" y="3.5" width="14" height="13" rx="0.5" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="0.9"/>
-                    <line x1="11.5" y1="3.5" x2="11.5" y2="16.5" stroke="rgba(255,255,255,0.88)" strokeWidth="0.5"/>
-                    <text x="11.5" y="13.5" fontSize="6" fontFamily="Georgia,serif" fill="white" textAnchor="middle" fontWeight="700">VE</text>
-                    {/* RI open book (top-right) */}
-                    <rect x="23.5" y="3.5" width="14" height="13" rx="0.5" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="0.9"/>
-                    <line x1="30.5" y1="3.5" x2="30.5" y2="16.5" stroke="rgba(255,255,255,0.88)" strokeWidth="0.5"/>
-                    <text x="30.5" y="13.5" fontSize="6" fontFamily="Georgia,serif" fill="white" textAnchor="middle" fontWeight="700">RI</text>
-                    {/* TAS open book (shield body) */}
-                    <rect x="7" y="23" width="28" height="16" rx="0.5" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="0.9"/>
-                    <line x1="21" y1="23" x2="21" y2="39" stroke="rgba(255,255,255,0.88)" strokeWidth="0.5"/>
-                    <text x="21" y="34" fontSize="6" fontFamily="Georgia,serif" fill="white" textAnchor="middle" fontWeight="700">TAS</text>
-                  </svg>
-                  <div className="lp-trust-logo-text">
-                    <span className="lp-trust-logo-name">HARVARD</span>
-                    <span className="lp-trust-logo-sub">UNIVERSITY</span>
-                  </div>
+                  {/* Full lockup PNG — includes shield + "HARVARD UNIVERSITY" text */}
+                  <Image
+                    src="/logos/harvard.png"
+                    alt="Harvard University"
+                    width={400}
+                    height={180}
+                    style={{ height: 52, width: "auto" }}
+                    className="lp-trust-img"
+                  />
                 </div>
 
                 <div className="lp-trust-sep" aria-hidden="true" />
 
                 {/* ── University of Pennsylvania ── */}
                 <div className="lp-trust-logo-item" role="listitem" aria-label="University of Pennsylvania">
-                  {/*
-                    Penn shield: authentic red chief with two open books (white outlines),
-                    silver field with blue chevron (inverted V) and three white roundels.
-                    The red+blue+white color scheme is Penn's distinctive heraldic identity.
-                  */}
-                  <svg className="lp-trust-crest" viewBox="0 0 42 54" fill="none" aria-hidden="true">
-                    {/* Silver/white shield body */}
-                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z" fill="#F0EDE8"/>
-                    {/* Red chief (top ~35%) */}
-                    <path d="M2.6 2.6H39.4V18.5H2.6Z" fill="#990000"/>
-                    {/* Chief bottom border */}
-                    <line x1="2" y1="19" x2="40" y2="19" stroke="#6B0000" strokeWidth="1"/>
-                    {/* Shield outline */}
-                    <path d="M2 2H40V34Q40 49 21 53Q2 49 2 34V2Z" fill="none" stroke="#B8A898" strokeWidth="1.2"/>
-                    {/* Left open book in red chief */}
-                    <rect x="5" y="4" width="11" height="12" rx="0.4" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="0.9"/>
-                    <line x1="10.5" y1="4" x2="10.5" y2="16" stroke="rgba(255,255,255,0.9)" strokeWidth="0.5"/>
-                    {/* Right open book in red chief */}
-                    <rect x="26" y="4" width="11" height="12" rx="0.4" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="0.9"/>
-                    <line x1="31.5" y1="4" x2="31.5" y2="16" stroke="rgba(255,255,255,0.9)" strokeWidth="0.5"/>
-                    {/* Blue chevron with 3 white roundels cut out (evenodd) */}
-                    <path
-                      d="M2 20L21 46L40 20L34 20L21 40L8 20Z
-                         M8.5 23.5 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0
-                         M17.1 39 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0
-                         M25.9 23.5 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0"
-                      fill="#011F5B" fillRule="evenodd"/>
-                  </svg>
+                  {/* Shield PNG (transparent bg) + text labels */}
+                  <Image
+                    src="/logos/upenn.png"
+                    alt="University of Pennsylvania shield"
+                    width={500}
+                    height={432}
+                    style={{ height: 52, width: "auto" }}
+                    className="lp-trust-img"
+                  />
                   <div className="lp-trust-logo-text">
                     <span className="lp-trust-logo-name">UPENN</span>
                     <span className="lp-trust-logo-sub">UNIVERSITY OF PENNSYLVANIA</span>
