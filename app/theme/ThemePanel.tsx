@@ -258,15 +258,15 @@ export default function ThemePanel({ open, onClose }: { open: boolean; onClose: 
     <>
       <div className="tp-backdrop" onClick={onClose} />
       <aside className="tp-drawer" aria-label={t.drawerAria}>
+        {/* Absolutely-positioned close button — independent of all layout/scroll/safe-area */}
+        <button className="tp-close-pin" onClick={onClose} aria-label={t.close} type="button">✕</button>
+
         <div className="tp-header">
           <div>
             <h3 className="tp-title">{t.title}</h3>
             <p className="tp-sub">{t.subtitle}</p>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="tp-reset" onClick={reset} title={t.resetAll} type="button">{t.reset}</button>
-            <button className="tp-close" onClick={onClose} aria-label={t.close} type="button">X</button>
-          </div>
+          <button className="tp-reset" onClick={reset} title={t.resetAll} type="button">{t.reset}</button>
         </div>
 
         <div className="tp-body">

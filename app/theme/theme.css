@@ -76,33 +76,45 @@
 }
 @keyframes tp-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-/* Header: never shrinks, never scrolls away — always visible at the top.
-   padding-top absorbs the device safe area (notch/status bar) so the
-   title and X button are always below the device chrome. */
+/* ── Pinned close button ──────────────────────────────────────────────────
+   Absolutely positioned inside the drawer — completely independent of flex
+   layout, scroll position and safe-area insets. Always in the top-right
+   corner, always clickable, never clipped by overflow or layout shifts.  */
+.tp-close-pin {
+  position: absolute;
+  top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+  right: 14px;
+  z-index: 200;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-size: 16px; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  flex-shrink: 0;
+}
+.tp-close-pin:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+/* Header: title + subtitle + reset button; right padding reserves space for
+   the pinned close button so they don't overlap. */
 .tp-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   gap: 12px;
-  padding: max(22px, calc(env(safe-area-inset-top, 0px) + 14px)) 22px 18px;
+  padding: max(22px, calc(env(safe-area-inset-top, 0px) + 14px)) 60px 18px 22px;
   border-bottom: 1px solid var(--line);
-  flex-shrink: 0; /* header never collapses */
+  flex-shrink: 0;
   background: var(--surface);
-  z-index: 2;
 }
 .tp-title { font-family: var(--font-display); font-size: 1.25rem; color: var(--ink); margin: 0; }
 .tp-sub { font-size: 12px; color: var(--muted); margin: 3px 0 0; }
 .tp-reset, .tp-accent-reset {
   padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted);
-  font: 500 12px var(--font-body); cursor: pointer; transition: all 0.18s;
+  font: 500 12px var(--font-body); cursor: pointer; transition: all 0.18s; white-space: nowrap;
 }
 .tp-reset:hover { border-color: var(--red); color: var(--red); }
-.tp-close {
-  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line);
-  background: var(--surface-alt); color: var(--ink);
-  font-size: 14px; font-weight: 600;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.18s; flex-shrink: 0;
-}
-.tp-close:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
 .tp-body {
   flex: 1;
   min-height: 0; /* required for flex child to scroll properly */
@@ -214,9 +226,12 @@ body[data-theme="dark"], body[data-theme="forest"], body[data-theme="ocean"] { b
 
 @media (max-width: 560px), (max-height: 820px) {
   .tp-header {
-    gap: 10px;
-    /* safe area is in the padding-top via max(); reduce side/bottom padding */
-    padding: max(16px, calc(env(safe-area-inset-top, 0px) + 12px)) 16px 12px;
+    gap: 8px;
+    padding: max(16px, calc(env(safe-area-inset-top, 0px) + 12px)) 56px 12px 16px;
+  }
+  .tp-close-pin {
+    top: max(10px, calc(env(safe-area-inset-top, 0px) + 6px));
+    right: 12px;
   }
 
   .tp-body {
