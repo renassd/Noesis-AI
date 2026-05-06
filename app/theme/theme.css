@@ -67,17 +67,34 @@
 @keyframes tp-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .tp-drawer {
   position: fixed; top: 0; right: 0; z-index: 80; width: min(400px, 96vw);
-  /* dvh adjusts when browser UI appears/disappears; consistent max avoids clipping */
   height: 100dvh; max-height: 100dvh;
   background: var(--surface);
-  border-left: 1px solid var(--line); box-shadow: -8px 0 40px rgba(0,0,0,0.16); display: flex; flex-direction: column;
-  animation: tp-slide-in 0.24s cubic-bezier(0.22,1,0.36,1); overflow: hidden;
-  /* Push content below notch / status bar on iOS & Android */
+  border-left: 1px solid var(--line); box-shadow: -8px 0 40px rgba(0,0,0,0.16);
+  /* overflow-y: auto makes the drawer the scroll container so sticky works;
+     overflow-x: hidden clips the slide-in animation without breaking stickiness */
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column;
+  animation: tp-slide-in 0.24s cubic-bezier(0.22,1,0.36,1);
+  /* Safe area: push content below notch on iOS/Android */
   padding-top: env(safe-area-inset-top, 0px);
   box-sizing: border-box;
 }
 @keyframes tp-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
-.tp-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 22px 22px 18px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+
+/* Header is sticky so the X button is always visible no matter how far
+   the user has scrolled. background: var(--surface) covers scrolled content. */
+.tp-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; padding: 22px 22px 18px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface);
+}
 .tp-title { font-family: var(--font-display); font-size: 1.25rem; color: var(--ink); margin: 0; }
 .tp-sub { font-size: 12px; color: var(--muted); margin: 3px 0 0; }
 .tp-reset, .tp-accent-reset {
@@ -92,16 +109,17 @@
 .tp-close:hover { background: var(--red-bg); color: var(--red); }
 .tp-body {
   flex: 1;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  /* Drawer is now the scroll container — body just lays out content */
+  overflow-y: visible;
   scroll-padding-bottom: 40px;
   padding: 18px 22px max(40px, calc(env(safe-area-inset-bottom, 0px) + 28px));
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
-.tp-body::-webkit-scrollbar { width: 6px; }
-.tp-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+/* Scrollbar on the drawer itself */
+.tp-drawer::-webkit-scrollbar { width: 6px; }
+.tp-drawer::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
 .tp-section { display: flex; flex-direction: column; gap: 10px; }
 .tp-section-row { flex-direction: row; justify-content: space-between; align-items: center; }
 .tp-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
