@@ -70,30 +70,23 @@
   height: 100dvh; max-height: 100dvh;
   background: var(--surface);
   border-left: 1px solid var(--line); box-shadow: -8px 0 40px rgba(0,0,0,0.16);
-  /* overflow-y: auto makes the drawer the scroll container so sticky works;
-     overflow-x: hidden clips the slide-in animation without breaking stickiness */
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   display: flex; flex-direction: column;
   animation: tp-slide-in 0.24s cubic-bezier(0.22,1,0.36,1);
-  /* Safe area: push content below notch on iOS/Android */
-  padding-top: env(safe-area-inset-top, 0px);
-  box-sizing: border-box;
+  overflow: hidden; /* clips slide-in animation */
 }
 @keyframes tp-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-/* Header is sticky so the X button is always visible no matter how far
-   the user has scrolled. background: var(--surface) covers scrolled content. */
+/* Header: never shrinks, never scrolls away — always visible at the top.
+   padding-top absorbs the device safe area (notch/status bar) so the
+   title and X button are always below the device chrome. */
 .tp-header {
   display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 12px; padding: 22px 22px 18px;
+  gap: 12px;
+  padding: max(22px, calc(env(safe-area-inset-top, 0px) + 14px)) 22px 18px;
   border-bottom: 1px solid var(--line);
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  flex-shrink: 0; /* header never collapses */
   background: var(--surface);
+  z-index: 2;
 }
 .tp-title { font-family: var(--font-display); font-size: 1.25rem; color: var(--ink); margin: 0; }
 .tp-sub { font-size: 12px; color: var(--muted); margin: 3px 0 0; }
@@ -103,23 +96,26 @@
 }
 .tp-reset:hover { border-color: var(--red); color: var(--red); }
 .tp-close {
-  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-alt); color: var(--muted);
-  font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.18s; flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--surface-alt); color: var(--ink);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s; flex-shrink: 0;
 }
-.tp-close:hover { background: var(--red-bg); color: var(--red); }
+.tp-close:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
 .tp-body {
   flex: 1;
-  /* Drawer is now the scroll container — body just lays out content */
-  overflow-y: visible;
+  min-height: 0; /* required for flex child to scroll properly */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   scroll-padding-bottom: 40px;
   padding: 18px 22px max(40px, calc(env(safe-area-inset-bottom, 0px) + 28px));
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
-/* Scrollbar on the drawer itself */
-.tp-drawer::-webkit-scrollbar { width: 6px; }
-.tp-drawer::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+.tp-body::-webkit-scrollbar { width: 6px; }
+.tp-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
 .tp-section { display: flex; flex-direction: column; gap: 10px; }
 .tp-section-row { flex-direction: row; justify-content: space-between; align-items: center; }
 .tp-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
@@ -219,9 +215,8 @@ body[data-theme="dark"], body[data-theme="forest"], body[data-theme="ocean"] { b
 @media (max-width: 560px), (max-height: 820px) {
   .tp-header {
     gap: 10px;
-    /* safe-area-inset-top is already absorbed by .tp-drawer padding-top;
-       keep header padding minimal so the X button stays clearly visible */
-    padding: 14px 16px 12px;
+    /* safe area is in the padding-top via max(); reduce side/bottom padding */
+    padding: max(16px, calc(env(safe-area-inset-top, 0px) + 12px)) 16px 12px;
   }
 
   .tp-body {
