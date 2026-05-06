@@ -545,6 +545,13 @@ export default function ResearchMode() {
     };
     const updated = [...currentMsgs, userMsg];
 
+    // Trim history before sending: keep the last 16 messages so the API's
+    // 20-message limit is never hit, even as conversations grow long.
+    const MAX_SEND_MSGS = 16;
+    const messagesForApi = updated.length > MAX_SEND_MSGS
+      ? updated.slice(updated.length - MAX_SEND_MSGS)
+      : updated;
+
     setLoading(true);
     setError("");
 
@@ -555,7 +562,7 @@ export default function ResearchMode() {
         body: JSON.stringify({
           max_tokens: 1200,
           system: systemPrompt,
-          messages: updated,
+          messages: messagesForApi,
           // Inject relevant memories from past sessions for this query
           useMemory: true,
           memoryQuery: trimmed || activeTool,

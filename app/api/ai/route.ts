@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (body.messages.length > 20) {
+    if (body.messages.length > 30) {
       return NextResponse.json({ error: "Demasiados mensajes en una sola solicitud." }, { status: 400 });
     }
 
