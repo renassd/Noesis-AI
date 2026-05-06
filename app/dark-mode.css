@@ -1532,10 +1532,20 @@ html.dark .tp-close {
   border-color: var(--dm-line);
   color: var(--dm-muted);
 }
-
 html.dark .tp-close:hover {
   background: var(--dm-red-bg);
   color: var(--dm-red);
+}
+html.dark .tp-close-pin {
+  background: var(--dm-card-bg);
+  border-color: var(--dm-line);
+  color: var(--dm-ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+html.dark .tp-close-pin:hover {
+  background: var(--dm-red-bg);
+  color: var(--dm-red);
+  border-color: var(--dm-red);
 }
 
 html.dark .tp-section-label {
@@ -1778,40 +1788,6 @@ html.dark .route-auth-cta:focus-visible {
     0 20px 38px rgba(0, 0, 0, 0.42);
 }
 
-html.dark .glc-hero {
-  background: linear-gradient(160deg, rgba(20, 32, 60, 0.88), rgba(14, 22, 44, 0.98));
-  border-color: var(--dm-card-border);
-}
-
-html.dark .glc-kicker {
-  color: var(--dm-blue-500);
-}
-
-html.dark .glc-hero-main strong {
-  color: var(--dm-ink);
-}
-
-html.dark .glc-hero-main p {
-  color: var(--dm-muted);
-}
-
-html.dark .glc-meter-ring {
-  background:
-    radial-gradient(circle, var(--dm-surface) 56%, transparent 57%),
-    conic-gradient(
-      var(--dm-blue-700) 0 var(--meter-progress, 78%),
-      rgba(37, 46, 66, 0.95) var(--meter-progress, 78%) 100%
-    );
-  box-shadow: inset 0 0 0 1px var(--dm-card-border);
-}
-
-html.dark .glc-meter-ring span {
-  color: var(--dm-blue-500);
-}
-
-html.dark .glc-meter small {
-  color: var(--dm-muted-2);
-}
 
 html.dark .auth-divider::before {
   border-color: var(--dm-line);

@@ -77,24 +77,24 @@
 @keyframes tp-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
 /* ── Pinned close button ──────────────────────────────────────────────────
-   Absolutely positioned inside the drawer — completely independent of flex
-   layout, scroll position and safe-area insets. Always in the top-right
-   corner, always clickable, never clipped by overflow or layout shifts.  */
+   position: FIXED so it is positioned relative to the viewport, not the
+   drawer. This means overflow:hidden and transform animations on the
+   drawer CANNOT clip or hide this button — it is always on screen. */
 .tp-close-pin {
-  position: absolute;
+  position: fixed;
   top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
   right: 14px;
-  z-index: 200;
+  z-index: 9999;
   width: 36px; height: 36px;
   border-radius: 50%;
   border: 1.5px solid var(--line);
-  background: var(--surface-alt);
+  background: var(--surface);
   color: var(--ink);
   font-size: 16px; font-weight: 700;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   transition: background 0.18s, color 0.18s, border-color 0.18s;
-  flex-shrink: 0;
 }
 .tp-close-pin:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
 
