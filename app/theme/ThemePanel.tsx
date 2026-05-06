@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLang } from "../i18n";
 import { CARD_TEMPLATES, STICKER_SETS } from "./card-templates";
@@ -253,8 +254,9 @@ export default function ThemePanel({ open, onClose }: { open: boolean; onClose: 
   }, [prefs.colorScheme, prefs.accentColor]);
 
   if (!open) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <>
       <div className="tp-backdrop" onClick={onClose} />
       <aside className="tp-drawer" aria-label={t.drawerAria}>
@@ -553,6 +555,7 @@ export default function ThemePanel({ open, onClose }: { open: boolean; onClose: 
           </section>
         </div>
       </aside>
-    </>
+    </>,
+    document.body
   );
 }
