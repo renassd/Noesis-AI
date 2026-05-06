@@ -605,7 +605,8 @@ export default function ResearchMode() {
           }),
         });
       }
-    } catch {
+    } catch (err) {
+      console.error("[ResearchMode] send failed:", err);
       setError(lang === "en" ? "Network error. Try again." : "Ocurrio un error de red. Intenta de nuevo.");
     } finally {
       setLoading(false);
@@ -834,6 +835,14 @@ export default function ResearchMode() {
               aria-label={lang === "en" ? "Research input" : "Input de investigación"}
             />
 
+            {/* Error banner — was set but never shown before */}
+            {error && (
+              <div className="ri-error-banner" role="alert">
+                <span>⚠ {error}</span>
+                <button type="button" onClick={() => setError("")} aria-label="Dismiss">×</button>
+              </div>
+            )}
+
             <div className="ri-toolbar">
               <div className="ri-toolbar-left">
                 <ImportBar
@@ -845,7 +854,7 @@ export default function ResearchMode() {
 
               <button
                 type="button"
-                className="ri-send"
+                className={`ri-send${!canSend ? " ri-send--disabled" : ""}`}
                 onClick={() => void send()}
                 disabled={!canSend}
                 aria-label={lang === "en" ? "Send" : "Enviar"}

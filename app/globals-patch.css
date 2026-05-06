@@ -5648,3 +5648,23 @@ body {
   letter-spacing: -0.01em !important;
   color: var(--ink) !important;
 }
+
+/* ── Error banner (ResearchMode send failures) ── */
+.ri-error-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 8px 12px; margin-bottom: 6px;
+  border-radius: 8px;
+  background: var(--red-bg, #fff0f0);
+  border: 1px solid var(--red, #e53e3e);
+  color: var(--red, #c53030);
+  font: 500 12px var(--font-body);
+  animation: ri-banner-in 0.2s ease;
+}
+.ri-error-banner span { flex: 1; }
+.ri-error-banner button {
+  background: none; border: none; cursor: pointer; color: inherit;
+  font-size: 18px; line-height: 1; padding: 0 2px; flex-shrink: 0; opacity: 0.7;
+}
+.ri-error-banner button:hover { opacity: 1; }
+@keyframes ri-banner-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
