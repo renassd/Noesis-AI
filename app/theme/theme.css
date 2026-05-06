@@ -66,9 +66,15 @@
 }
 @keyframes tp-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .tp-drawer {
-  position: fixed; top: 0; right: 0; z-index: 80; width: min(400px, 96vw); height: 100dvh; max-height: 100svh; background: var(--surface);
+  position: fixed; top: 0; right: 0; z-index: 80; width: min(400px, 96vw);
+  /* dvh adjusts when browser UI appears/disappears; consistent max avoids clipping */
+  height: 100dvh; max-height: 100dvh;
+  background: var(--surface);
   border-left: 1px solid var(--line); box-shadow: -8px 0 40px rgba(0,0,0,0.16); display: flex; flex-direction: column;
   animation: tp-slide-in 0.24s cubic-bezier(0.22,1,0.36,1); overflow: hidden;
+  /* Push content below notch / status bar on iOS & Android */
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing: border-box;
 }
 @keyframes tp-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 .tp-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 22px 22px 18px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
@@ -195,11 +201,13 @@ body[data-theme="dark"], body[data-theme="forest"], body[data-theme="ocean"] { b
 @media (max-width: 560px), (max-height: 820px) {
   .tp-header {
     gap: 10px;
-    padding: 18px 18px 14px;
+    /* safe-area-inset-top is already absorbed by .tp-drawer padding-top;
+       keep header padding minimal so the X button stays clearly visible */
+    padding: 14px 16px 12px;
   }
 
   .tp-body {
-    padding: 14px 18px max(72px, calc(env(safe-area-inset-bottom, 0px) + 44px));
+    padding: 14px 16px max(72px, calc(env(safe-area-inset-bottom, 0px) + 44px));
     gap: 18px;
   }
 
