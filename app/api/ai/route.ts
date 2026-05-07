@@ -160,24 +160,27 @@ function buildMockResponse(body: {
   if (isFlashcardRequest) {
     let textBlock = lastUserContent;
 
-    if (system.includes("flashcard generator")) {
-      // New flow: user message wraps content in <source>...</source> tags
+    // Try to extract the source text from the user message.
+    // New flow  : content follows "TEXT:\n" (buildFlashcardUserMessage format)
+    // Legacy    : content follows "texto:" (old Spanish keyword)
+    // Fallback  : content wrapped in <source>...</source> tags (older approach)
+    const textSplit = lastUserContent.split(/\nTEXT:\s*\n/i);
+    if (textSplit.length > 1) {
+      textBlock = textSplit[textSplit.length - 1].trim();
+    } else {
       const tagged = lastUserContent.match(/<source>([\s\S]*?)<\/source>/i);
       if (tagged) {
         textBlock = tagged[1].trim();
-        console.log("[mock] PDF_TEXT_LENGTH:", textBlock.length);
+      } else {
+        textBlock = lastUserContent.split(/\btexto:/i).pop()?.trim() || lastUserContent;
       }
-    } else {
-      // Legacy flow: content follows "TEXT:" or "texto:" separator
-      textBlock =
-        lastUserContent.split(/\bTEXT:\n?|\btexto:/i).pop()?.trim() || lastUserContent;
     }
 
+    console.log("[mock] PDF_TEXT_LENGTH:", textBlock.length);
     console.log("[mock] FLASHCARD_SOURCE_SELECTED:", textBlock.slice(0, 80));
     const flashcards = createMockFlashcards(textBlock, 8);
     console.log("[mock] FLASHCARDS_GENERATED_COUNT:", flashcards.length);
-    // Return {"flashcards":[...]} — matches the format required by the client parser.
-    // reconstructFlashcardJson will detect this as already-complete JSON and use it as-is.
+    // Return {"flashcards":[...]} — matches the required format.
     return JSON.stringify({ flashcards }, null, 2);
   }
 

@@ -326,35 +326,48 @@ function buildChatContextText(
   return { text, source };
 }
 
-// ── Flashcard response parser ─────────────────────────────────────────────────
+// ── Flashcard generation prompt ───────────────────────────────────────────────
 //
-// The pipeline uses Anthropic response-prefilling: we send
-//   { role: "assistant", content: FLASHCARD_PREFILL }
-// as the last message so the model is forced to CONTINUE from that prefix.
-// The server returns only the continuation; the client reconstructs the full JSON.
+// We use the same "all instructions + content in one user message" pattern
+// that FlashcardGenerator.tsx has been using reliably.  No system-prompt-only
+// approach, no response-prefilling — those techniques introduced fragile
+// reconstruction logic that kept failing.
 //
-// FLASHCARD_PREFILL must stay in sync with buildFlashcardSystemPrompt.
-const FLASHCARD_PREFILL = '{"flashcards":[';
+// The mock (buildMockResponse in route.ts) detects this request via:
+//   system.includes("flashcard generator")   — from the minimal system prompt
+// and extracts the source text by splitting on "TEXT:\n".
 
 /**
- * Reconstruct the full JSON string from the Anthropic continuation.
- *
- * Three cases:
- *   a) Mock path  – mock returns a complete JSON array like [{"question":...}]
- *   b) Real API   – Anthropic returns only the continuation after FLASHCARD_PREFILL
- *   c) Edge case  – model restarted and already produced complete JSON
- *
- * Strategy: try JSON.parse on the raw continuation first.  If it succeeds the
- * string is already well-formed (case a/c).  If it fails we prepend the prefill
- * and try again (case b).
+ * Builds the user message for flashcard generation.
+ * All instructions + content are embedded in a single user turn so the model
+ * cannot mistake the source text for an instruction.
  */
-function reconstructFlashcardJson(rawContinuation: string): string {
-  try {
-    JSON.parse(rawContinuation);   // succeeds → already complete
-    return rawContinuation;
-  } catch {
-    return FLASHCARD_PREFILL + rawContinuation;  // prepend prefill and retry outside
-  }
+function buildFlashcardUserMessage(
+  quantity: number,
+  contextText: string,
+  contentLang: "es" | "en" | "auto",
+): string {
+  const langNote =
+    contentLang === "es"
+      ? "Write the question and answer text in Spanish."
+      : contentLang === "en"
+      ? "Write the question and answer text in English."
+      : "Write the question and answer text in the same language as the source content.";
+
+  return `Generate exactly ${quantity} study flashcards from the TEXT section below.
+
+${langNote}
+
+STRICT INSTRUCTIONS:
+- Return ONLY valid JSON. No explanation. No markdown. No code fences. No text before or after the JSON.
+- Required format: {"flashcards":[{"question":"...","answer":"..."}]}
+- Field names MUST be the English words "question" and "answer". Never translate the keys.
+- Questions should test comprehension, not literal memorisation.
+- Answers should be concise: 1–3 sentences.
+- For formulas use LaTeX: $...$ inline, $$...$$ display.
+
+TEXT:
+${contextText.slice(0, 4000)}`;
 }
 
 /**
@@ -476,46 +489,8 @@ function filterCards(arr: unknown[]): Array<{ question: string; answer: string }
   return extractCardsFromParsed(arr);
 }
 
-/**
- * System prompt for the dedicated flashcard generation pipeline.
- *
- * Key design decisions:
- * - All output instructions go in `system`; the user message is ONLY the
- *   source content — this is the most reliable way to get pure JSON back.
- * - The language hint deliberately says "write the content in X" rather than
- *   "respond entirely in X" — the latter causes models to translate JSON field
- *   names ("pregunta"/"respuesta") which breaks our parser.
- * - Field names are locked to English ("question"/"answer") regardless of
- *   content language.
- */
-function buildFlashcardSystemPrompt(
-  quantity: number,
-  contentLang: "es" | "en" | "auto",
-): string {
-  const langNote =
-    contentLang === "es"
-      ? "Write the question and answer TEXT in Spanish."
-      : contentLang === "en"
-      ? "Write the question and answer TEXT in English."
-      : "Write the question and answer TEXT in the same language as the source content.";
-
-  // IMPORTANT: this output format must match FLASHCARD_PREFILL exactly.
-  // The response-prefilling technique forces the model to start with
-  // {"flashcards":[ so the response is guaranteed to be well-formed JSON.
-  return `You are a flashcard generator. Return ONLY valid JSON. No markdown. No explanations. No text before or after the JSON.
-
-The user will send source content inside <source> tags. Generate exactly ${quantity} flashcards from that content.
-
-REQUIRED OUTPUT FORMAT — return exactly this structure and nothing else:
-{"flashcards":[{"question":"...","answer":"..."},{"question":"...","answer":"..."}]}
-
-RULES:
-- Field names MUST be "question" and "answer" in English. Never translate the keys.
-- ${langNote}
-- Questions test comprehension, not memorisation.
-- Answers are concise (1–3 sentences).
-- For formulas: $...$ inline LaTeX, $$...$$ display.`;
-}
+// (buildFlashcardSystemPrompt removed — instructions now live in the user message
+//  via buildFlashcardUserMessage, matching the proven FlashcardGenerator.tsx approach)
 
 // ── Flashcard bubble component ────────────────────────────────────────────────
 
@@ -909,35 +884,23 @@ export default function ResearchMode() {
         setPastedImage(null);
 
         try {
-          // ── Step 1: AI generates flashcards ──────────────────────────────
-          // Use detectLang directly (NOT langInstruction) so we only set the
-          // content language — never "respond entirely in Spanish" which causes
-          // the model to translate JSON field names and break the parser.
+          // ── Step 1: Build request and call AI ────────────────────────────
           const fcLang = detectLang(contextText);
-          console.log("[ResearchMode] calling /api/ai for flashcards", {
-            contextLength: contextText.length,
-            detectedLang: fcLang,
-            contextSource,
-          });
+          const userPrompt = buildFlashcardUserMessage(8, contextText, fcLang);
 
-          // Wrap source content in <source> XML tags to isolate it from any
-          // instruction-like text that may appear in PDFs or research notes.
-          const userMessage = `<source>\n${contextText}\n</source>`;
+          console.log("FLASHCARD_SOURCE_TEXT_LENGTH:", contextText.length);
+          console.log("FLASHCARD_SOURCE_TYPE:", contextSource);
 
-          // ── Response-prefilling (Anthropic feature) ───────────────────────
-          // Ending the messages array with an assistant turn forces the model
-          // to CONTINUE from that text, preventing any preamble.
-          // FLASHCARD_PREFILL = '{"flashcards":['  (defined near the parser)
           const aiRes = await fetchWithSupabaseAuth("/api/ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               max_tokens: 2200,
-              system: buildFlashcardSystemPrompt(8, fcLang),
-              messages: [
-                { role: "user",      content: userMessage   },
-                { role: "assistant", content: FLASHCARD_PREFILL }, // prefill
-              ],
+              // Minimal system prompt — just enough for the mock to detect the
+              // flashcard pipeline.  All generation instructions are in the user
+              // message (same pattern as the proven FlashcardGenerator.tsx).
+              system: "You are a study flashcard generator. Return only valid JSON. Never add explanations or markdown.",
+              messages: [{ role: "user", content: userPrompt }],
             }),
           });
           const aiData = await aiRes.json();
@@ -954,16 +917,11 @@ export default function ResearchMode() {
             return;
           }
 
-          // ── Step 2: Reconstruct and parse ────────────────────────────────
-          // reconstructFlashcardJson tries JSON.parse on the raw continuation.
-          // If it fails (real-API path where the continuation comes after the
-          // prefill), it prepends FLASHCARD_PREFILL and returns the full JSON.
-          const rawContinuation = (aiData.text || "").trim();
-          console.log("FLASHCARD_SOURCE_TEXT_LENGTH:", contextText.length);
-          console.log("FLASHCARD_SOURCE_TYPE:", contextSource);
-          console.log("RAW_FLASHCARD_RESPONSE:", rawContinuation.slice(0, 300));
+          // ── Step 2: Parse – log the raw response BEFORE any processing ────
+          const rawText = (aiData.text || "").trim();
+          console.log("RAW_FLASHCARD_RESPONSE:", rawText.slice(0, 500));
 
-          if (!rawContinuation) {
+          if (!rawText) {
             console.log("FLASHCARD_GENERATION_ERROR", { reason: "empty_response" });
             setError(
               lang === "en"
@@ -973,20 +931,18 @@ export default function ResearchMode() {
             return;
           }
 
-          const fullJson = reconstructFlashcardJson(rawContinuation);
-          const validCards = parseFlashcardResponse(fullJson);
-
+          const validCards = parseFlashcardResponse(rawText);
           console.log("FLASHCARDS_GENERATED_COUNT", validCards.length, { first: validCards[0] ?? null });
 
           if (!validCards.length) {
             console.log("FLASHCARD_GENERATION_ERROR", {
               reason: "parse_failed",
-              fullJsonPreview: fullJson.slice(0, 400),
+              rawPreview: rawText.slice(0, 400),
             });
             setError(
               lang === "en"
-                ? "Could not parse flashcards. Check the console for RAW_FLASHCARD_RESPONSE and report."
-                : "No se pudieron generar tarjetas. Revisá la consola (RAW_FLASHCARD_RESPONSE) y reportá.",
+                ? "Could not parse flashcards. Check console log RAW_FLASHCARD_RESPONSE."
+                : "No se pudieron generar tarjetas. Revisá RAW_FLASHCARD_RESPONSE en la consola.",
             );
             return;
           }
