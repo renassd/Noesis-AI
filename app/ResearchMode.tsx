@@ -22,11 +22,19 @@ type AttachedDocument = {
   warning?: string | null;
 };
 
+type GeneratedCardsData = {
+  deckId: string;
+  deckName: string;
+  cardCount: number;
+  preview: Array<{ question: string; answer: string }>;
+};
+
 type Message = {
   role: "user" | "assistant";
   content: string;
   imageDataUrl?: string;
   attachment?: Omit<AttachedDocument, "content">;
+  generatedCards?: GeneratedCardsData;
 };
 type ToolId = "summary" | "review" | "explain" | "writing";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
@@ -236,6 +244,114 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         writing: "Pegá tu texto o describí en qué parte de tu escritura necesitás ayuda.",
       };
 }
+
+// ── Flashcard generation helpers ──────────────────────────────────────────────
+
+const FLASHCARD_TRIGGERS = [
+  "flashcard", "flash card", "flash-card",
+  "tarjeta", "tarjetas",
+  "make cards", "create cards", "generate cards", "study cards",
+  "make flashcards", "create flashcards", "generate flashcards",
+  "genera tarjetas", "crear tarjetas", "crea tarjetas",
+  "tarjetas de estudio", "quiero tarjetas", "quiero flashcards",
+  "dame tarjetas", "dame flashcards",
+];
+
+function detectFlashcardIntent(text: string): boolean {
+  const lower = text.toLowerCase();
+  return FLASHCARD_TRIGGERS.some((trigger) => lower.includes(trigger));
+}
+
+function buildChatContextText(messages: Message[], attachment: AttachedDocument | null): string {
+  const parts: string[] = [];
+  if (attachment?.content) {
+    parts.push(`[Document: ${attachment.fileName}]\n${attachment.content.slice(0, 3500)}`);
+  }
+  const assistantContent = messages
+    .filter((m) => m.role === "assistant" && !m.generatedCards && m.content.length > 80)
+    .slice(-5)
+    .map((m) => m.content)
+    .join("\n\n");
+  if (assistantContent) parts.push(assistantContent);
+  return parts.join("\n\n").slice(0, 4000);
+}
+
+function extractFlashcardJson(raw: string): Array<{ question: string; answer: string }> | null {
+  const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  function tryParse(s: string): unknown[] | null {
+    try {
+      const p = JSON.parse(s);
+      if (Array.isArray(p)) return p;
+    } catch { /* ignore */ }
+    return null;
+  }
+  let arr = tryParse(cleaned);
+  if (!arr) {
+    const start = cleaned.indexOf("[");
+    const end = cleaned.lastIndexOf("]");
+    if (start !== -1 && end > start) arr = tryParse(cleaned.slice(start, end + 1));
+  }
+  if (!arr) return null;
+  return arr.filter(
+    (c): c is { question: string; answer: string } =>
+      typeof (c as Record<string, unknown>).question === "string" &&
+      typeof (c as Record<string, unknown>).answer === "string",
+  );
+}
+
+function buildFlashcardPrompt(quantity: number, text: string, langHint: string): string {
+  return `You are a study assistant. Generate exactly ${quantity} flashcards from the text below.
+
+${langHint}
+
+STRICT INSTRUCTIONS:
+- Respond ONLY with a JSON array. No introduction, no explanation, no text before or after.
+- Do not use markdown code blocks.
+- The array must have exactly ${quantity} objects.
+- Each object must have exactly these fields: "question" and "answer".
+- Questions should test comprehension, not literal memory.
+- Answers should be concise (1-3 sentences).
+- For math or science formulas, use valid LaTeX: $...$ for inline, $$...$$ for block.
+
+EXACT FORMAT:
+[{"question":"...","answer":"..."}]
+
+TEXT:
+${text.slice(0, 4000)}`;
+}
+
+// ── Flashcard bubble component ────────────────────────────────────────────────
+
+function FlashcardBubble({ data, lang }: { data: GeneratedCardsData; lang: "es" | "en" }) {
+  return (
+    <div className="ri-fc-bubble">
+      <div className="ri-fc-bubble-header">
+        <span className="ri-fc-bubble-icon" aria-hidden="true">🃏</span>
+        <div>
+          <strong className="ri-fc-bubble-title">{data.deckName}</strong>
+          <span className="ri-fc-bubble-count">
+            {data.cardCount} {lang === "en" ? "flashcards generated" : "tarjetas generadas"}
+          </span>
+        </div>
+      </div>
+      {data.preview.length > 0 && (
+        <div className="ri-fc-preview">
+          {data.preview.map((card, i) => (
+            <div key={i} className="ri-fc-preview-card">
+              <p className="ri-fc-preview-q">{card.question}</p>
+              <p className="ri-fc-preview-a">{card.answer}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      <a href="/estudio" className="ri-fc-study-btn">
+        {lang === "en" ? "Study now →" : "Estudiar ahora →"}
+      </a>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function MarkdownMessage({ content }: { content: string }) {
   return <div className="rm-content" dangerouslySetInnerHTML={{ __html: renderMarkdownWithMath(content) }} />;
@@ -552,6 +668,134 @@ export default function ResearchMode() {
       ? updated.slice(updated.length - MAX_SEND_MSGS)
       : updated;
 
+    // ── Flashcard intent detection ────────────────────────────────────────────
+    if (detectFlashcardIntent(messageContent)) {
+      const contextText = buildChatContextText(currentMsgs, attachment);
+      if (contextText.trim()) {
+        const nextSessionId =
+          activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
+        const sessionTitle = activeSession.title.replace(
+          /^(New chat|Nuevo chat)$/,
+          lang === "en" ? "Research" : "Investigación",
+        );
+        const deckName =
+          lang === "en"
+            ? `Research: ${sessionTitle.slice(0, 40)}`
+            : `Investigación: ${sessionTitle.slice(0, 40)}`;
+
+        setLoading(true);
+        setError("");
+
+        // Add user message and clear input immediately
+        setSessionState((prev) => ({
+          activeSessionId: nextSessionId,
+          sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+            ...session,
+            id: nextSessionId,
+            messages: { ...session.messages, [activeTool]: updated },
+            input: "",
+            attachment: null,
+            savedAt: Date.now(),
+          })),
+        }));
+        setPastedImage(null);
+
+        try {
+          // 1. Generate flashcards via AI
+          const fcLangHint = langInstruction(detectLang(contextText));
+          const fcPrompt = buildFlashcardPrompt(8, contextText, fcLangHint);
+          const aiRes = await fetchWithSupabaseAuth("/api/ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              max_tokens: 2200,
+              messages: [{ role: "user", content: fcPrompt }],
+            }),
+          });
+          const aiData = await aiRes.json();
+          applyUsage(aiData.usage);
+
+          if (!aiRes.ok) {
+            setError(
+              aiData.error ||
+                (lang === "en"
+                  ? "Could not generate flashcards."
+                  : "No se pudieron generar las tarjetas."),
+            );
+            return;
+          }
+
+          // 2. Parse cards
+          const validCards = extractFlashcardJson(aiData.text || "") ?? [];
+          if (!validCards.length) {
+            setError(
+              lang === "en"
+                ? "Could not parse flashcards from the AI response."
+                : "No se pudieron parsear las tarjetas de la respuesta.",
+            );
+            return;
+          }
+
+          // 3. Save deck
+          const deckRes = await fetchWithSupabaseAuth("/api/decks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: deckName, cards: validCards }),
+          });
+          const deckData = (await deckRes.json()) as { id?: string; error?: string };
+
+          if (!deckRes.ok) {
+            setError(
+              deckData.error ||
+                (lang === "en" ? "Could not save the deck." : "No se pudo guardar el mazo."),
+            );
+            return;
+          }
+
+          const deckId = deckData.id ?? "";
+
+          // 4. Add assistant flashcard message
+          const assistantMsg: Message = {
+            role: "assistant",
+            content:
+              lang === "en"
+                ? `I generated **${validCards.length} flashcards** from the research context.`
+                : `Generé **${validCards.length} tarjetas** a partir del contexto de investigación.`,
+            generatedCards: {
+              deckId,
+              deckName,
+              cardCount: validCards.length,
+              preview: validCards.slice(0, 2),
+            },
+          };
+
+          setSessionState((prev) => ({
+            ...prev,
+            sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
+              const next = {
+                ...session,
+                messages: {
+                  ...session.messages,
+                  [activeTool]: [...(session.messages[activeTool] ?? []), assistantMsg],
+                },
+                savedAt: Date.now(),
+              };
+              return { ...next, title: deriveSessionTitle(next, lang) };
+            }),
+          }));
+        } catch (err) {
+          console.error("[ResearchMode] flashcard generation failed:", err);
+          setError(
+            lang === "en" ? "Network error. Try again." : "Error de red. Intenta de nuevo.",
+          );
+        } finally {
+          setLoading(false);
+        }
+        return; // skip the regular send path
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     setLoading(true);
     setError("");
 
@@ -728,7 +972,12 @@ export default function ResearchMode() {
                     </div>
                     <div className="ri-bubble">
                       {message.role === "assistant" ? (
-                        <MarkdownMessage content={message.content} />
+                        <>
+                          <MarkdownMessage content={message.content} />
+                          {message.generatedCards && (
+                            <FlashcardBubble data={message.generatedCards} lang={lang} />
+                          )}
+                        </>
                       ) : (
                         <>
                           {message.attachment && (

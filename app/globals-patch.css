@@ -5668,3 +5668,86 @@ body {
 .ri-error-banner button:hover { opacity: 1; }
 @keyframes ri-banner-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
+/* ── Flashcard bubble (Research → Study integration) ── */
+.ri-fc-bubble {
+  margin-top: 12px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.ri-fc-bubble-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px 10px;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+}
+.ri-fc-bubble-icon { font-size: 19px; flex-shrink: 0; }
+.ri-fc-bubble-title {
+  display: block;
+  font: 600 13px var(--font-body);
+  color: var(--ink);
+  line-height: 1.3;
+}
+.ri-fc-bubble-count {
+  display: block;
+  font: 400 11px var(--font-body);
+  color: var(--ink-muted, #64748b);
+  margin-top: 1px;
+}
+.ri-fc-preview {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ri-fc-preview-card {
+  background: var(--surface-raised, var(--bg, #f8fafc));
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.ri-fc-preview-q {
+  font: 600 12px var(--font-body);
+  color: var(--ink);
+  margin: 0 0 3px;
+  line-height: 1.4;
+}
+.ri-fc-preview-a {
+  font: 400 11px var(--font-body);
+  color: var(--ink-muted, #64748b);
+  margin: 0;
+  line-height: 1.4;
+}
+.ri-fc-study-btn {
+  display: block;
+  text-align: center;
+  padding: 10px 14px;
+  background: var(--blue-50, #eff6ff);
+  color: var(--blue-700, #1d4ed8);
+  font: 600 13px var(--font-body);
+  border-top: 1px solid var(--line, #e2e8f0);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  border-radius: 0 0 12px 12px;
+}
+.ri-fc-study-btn:hover {
+  background: var(--blue-100, #dbeafe);
+  color: var(--blue-800, #1e40af);
+}
+html:not(.light) .ri-fc-bubble {
+  background: var(--surface, #1e2636);
+}
+html:not(.light) .ri-fc-preview-card {
+  background: var(--bg, #161e2d);
+}
+html:not(.light) .ri-fc-study-btn {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
+html:not(.light) .ri-fc-study-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #bfdbfe;
+}
+
