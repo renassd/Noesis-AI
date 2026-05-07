@@ -418,50 +418,92 @@ function extractCardsFromParsed(parsed: unknown): Array<{ question: string; answ
 }
 
 /**
- * Main parser.  Tries five strategies in order, stopping at the first that
- * produces at least one valid card.
+ * Main parser — 4 independent strategies, each can succeed on its own.
+ * Returns as soon as any strategy produces ≥1 valid card.
  */
 function parseFlashcardResponse(raw: string): Array<{ question: string; answer: string }> {
   if (!raw?.trim()) return [];
 
-  // Step 0: strip markdown code fences
+  // Strip markdown code fences
   const cleaned = raw
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/g, "")
     .trim();
 
-  console.log("RAW_FLASHCARD_RESPONSE:", cleaned.slice(0, 400));
-
-  // ── Strategy 1: parse the whole string ───────────────────────────────────
+  // ── Strategy 1: parse the whole string as JSON ────────────────────────────
   try {
-    const parsed = JSON.parse(cleaned);
-    const cards = extractCardsFromParsed(parsed);
+    const cards = extractCardsFromParsed(JSON.parse(cleaned));
     if (cards.length > 0) return cards;
   } catch { /* continue */ }
 
-  // ── Strategy 2: find any {...} or [...] span and try each ─────────────────
-  // Works when the model adds prose before/after the JSON.
-  // We try all { and [ positions paired with all } and ] positions.
-  const openChars = new Set(["{", "["]);
-  const closeMap: Record<string, string> = { "{": "}", "[": "]" };
-
+  // ── Strategy 2: bracket scan — every {/[ paired with }/] ─────────────────
+  // Handles "Here are your cards: {...}" (prose before JSON)
+  const opens = new Set(["{", "["]);
+  const closeOf: Record<string, string> = { "{": "}", "[": "]" };
   for (let si = 0; si < cleaned.length; si++) {
-    const open = cleaned[si];
-    if (!openChars.has(open ?? "")) continue;
-    const close = closeMap[open!]!;
+    const ch = cleaned[si];
+    if (!opens.has(ch!)) continue;
+    const close = closeOf[ch!]!;
     for (let ei = cleaned.length - 1; ei > si; ei--) {
       if (cleaned[ei] !== close) continue;
       try {
-        const parsed = JSON.parse(cleaned.slice(si, ei + 1));
-        const cards = extractCardsFromParsed(parsed);
+        const cards = extractCardsFromParsed(JSON.parse(cleaned.slice(si, ei + 1)));
         if (cards.length > 0) return cards;
-      } catch { /* try shorter slice */ }
+      } catch { /* try next */ }
     }
   }
 
-  // ── Strategy 3: Q/A line-by-line fallback ─────────────────────────────────
-  // Handles numbered/bulleted lists the model occasionally produces.
-  return parseQALines(cleaned);
+  // ── Strategy 3: Q/A line-by-line ─────────────────────────────────────────
+  const qaCards = parseQALines(cleaned);
+  if (qaCards.length > 0) return qaCards;
+
+  // ── Strategy 4: raw regex — works even on truncated/malformed JSON ────────
+  // Directly scans for  "question":"VALUE"  followed by  "answer":"VALUE"
+  // anywhere in the text, regardless of surrounding structure.
+  return extractCardsByRegex(cleaned);
+}
+
+/**
+ * Absolute last-resort parser.
+ * Uses regex to pull "question"/"answer" (and alias variants) pairs from any
+ * text, even when JSON.parse fails entirely.
+ */
+function extractCardsByRegex(text: string): Array<{ question: string; answer: string }> {
+  const cards: Array<{ question: string; answer: string }> = [];
+
+  // Match any key that maps to a question concept
+  const Q_KEYS = "question|pregunta|front|q";
+  const A_KEYS = "answer|respuesta|back|a";
+
+  // Pattern: "KEY" : "VALUE"
+  //   KEY  — one of the recognised question keys
+  //   VALUE — any quoted string (handles \" escapes inside)
+  const pairRe = new RegExp(
+    `"(?:${Q_KEYS})"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"[\\s\\S]*?"(?:${A_KEYS})"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`,
+    "gi",
+  );
+
+  let m: RegExpExecArray | null;
+  while ((m = pairRe.exec(text)) !== null) {
+    const question = m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").trim();
+    const answer   = m[2].replace(/\\"/g, '"').replace(/\\n/g, "\n").trim();
+    if (question && answer) cards.push({ question, answer });
+  }
+
+  // Also handle the reversed order (answer before question — unlikely but possible)
+  if (cards.length === 0) {
+    const reversedRe = new RegExp(
+      `"(?:${A_KEYS})"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"[\\s\\S]*?"(?:${Q_KEYS})"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`,
+      "gi",
+    );
+    while ((m = reversedRe.exec(text)) !== null) {
+      const answer   = m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").trim();
+      const question = m[2].replace(/\\"/g, '"').replace(/\\n/g, "\n").trim();
+      if (question && answer) cards.push({ question, answer });
+    }
+  }
+
+  return cards;
 }
 
 function parseQALines(text: string): Array<{ question: string; answer: string }> {
@@ -935,14 +977,17 @@ export default function ResearchMode() {
           console.log("FLASHCARDS_GENERATED_COUNT", validCards.length, { first: validCards[0] ?? null });
 
           if (!validCards.length) {
+            // Show the first 120 chars of what the AI actually returned so the
+            // failure reason is immediately visible without opening DevTools.
+            const snippet = rawText.slice(0, 120).replace(/\n/g, " ");
             console.log("FLASHCARD_GENERATION_ERROR", {
               reason: "parse_failed",
-              rawPreview: rawText.slice(0, 400),
+              rawPreview: rawText.slice(0, 500),
             });
             setError(
               lang === "en"
-                ? "Could not parse flashcards. Check console log RAW_FLASHCARD_RESPONSE."
-                : "No se pudieron generar tarjetas. Revisá RAW_FLASHCARD_RESPONSE en la consola.",
+                ? `Could not read the AI response. It said: "${snippet}"`
+                : `No se pudo leer la respuesta. La IA dijo: "${snippet}"`,
             );
             return;
           }
