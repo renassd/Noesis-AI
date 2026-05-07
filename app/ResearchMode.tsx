@@ -264,8 +264,16 @@ function detectFlashcardIntent(text: string): boolean {
 
 /**
  * Collects usable source content for flashcard generation.
- * Searches the current tool tab first, then all other tabs, then the attachment.
- * Returns the text and a human-readable source description for logging.
+ *
+ * Priority order (intentional):
+ *  1. Current session attachment — the user explicitly uploaded a file for
+ *     this action. After a send() the session clears the attachment, so this
+ *     is only available when the upload is fresh (i.e. "PDF + ask flashcards"
+ *     in one step).
+ *  2. Current tool's assistant responses — previous explanation in this tab.
+ *  3. Other tool tabs' assistant responses — cross-tab context fallback.
+ *
+ * Returns the collected text and a source label for logging.
  */
 function buildChatContextText(
   allMessages: Record<ToolId, Message[]>,
@@ -275,41 +283,46 @@ function buildChatContextText(
   const parts: string[] = [];
   const sources: string[] = [];
 
-  // 1. Current tool's assistant responses (most relevant — user just chatted here)
+  // ── Priority 1: Fresh attachment (PDF/document uploaded, not yet sent) ──────
+  if (attachment?.content?.trim()) {
+    const content = attachment.content.trim().slice(0, 3000);
+    parts.push(content);
+    sources.push(`uploaded "${attachment.fileName}"`);
+    console.log("[FC-context] source=attachment", { fileName: attachment.fileName, length: content.length });
+  }
+
+  // ── Priority 2: Current tool's assistant responses ────────────────────────
   const currentAssistant = (allMessages[currentTool] ?? [])
     .filter((m) => m.role === "assistant" && !m.generatedCards && m.content.length > 100)
-    .slice(-5)
+    .slice(-4)
     .map((m) => m.content);
   if (currentAssistant.length > 0) {
     parts.push(currentAssistant.join("\n\n"));
-    sources.push(`${currentTool} tab`);
+    sources.push(`${currentTool} conversation`);
+    console.log("[FC-context] source=currentTool", { tool: currentTool, count: currentAssistant.length });
   }
 
-  // 2. If the current tool has little context, check the other tabs too
-  const ALL_TOOLS: ToolId[] = ["summary", "review", "explain", "writing"];
+  // ── Priority 3: Other tabs (cross-tab fallback) ───────────────────────────
   if (parts.join("").length < 300) {
+    const ALL_TOOLS: ToolId[] = ["summary", "review", "explain", "writing"];
     for (const tool of ALL_TOOLS) {
       if (tool === currentTool) continue;
-      const otherAssistant = (allMessages[tool] ?? [])
+      const other = (allMessages[tool] ?? [])
         .filter((m) => m.role === "assistant" && !m.generatedCards && m.content.length > 100)
-        .slice(-4)
+        .slice(-3)
         .map((m) => m.content);
-      if (otherAssistant.length > 0) {
-        parts.push(otherAssistant.join("\n\n"));
+      if (other.length > 0) {
+        parts.push(other.join("\n\n"));
         sources.push(`${tool} tab`);
-        break; // use the first other tab that has meaningful content
+        console.log("[FC-context] source=otherTool", { tool, count: other.length });
+        break;
       }
     }
   }
 
-  // 3. Attachment still in session (not yet sent to AI) — append as bonus context
-  if (attachment?.content) {
-    parts.push(attachment.content.slice(0, 2500));
-    sources.push(`attachment "${attachment.fileName}"`);
-  }
-
   const text = parts.join("\n\n").slice(0, 4000);
   const source = sources.join(" + ") || "none";
+  console.log("[FC-context] final", { textLength: text.length, source });
   return { text, source };
 }
 
@@ -324,38 +337,82 @@ function extractFlashcardJson(raw: string): Array<{ question: string; answer: st
     return null;
   }
 
-  // 1. Direct parse — best case: model returned pure JSON
+  // ── Strategy 1: Direct JSON parse ────────────────────────────────────────
   const direct = tryParse(cleaned);
   if (direct) {
     const cards = filterCards(direct);
     if (cards.length > 0) return cards;
   }
 
-  // 2. Robust bracket search: try every [ as a start position, every ] as an end
-  //    position (start left-to-right, end right-to-left so longest candidates win).
-  //    This correctly handles research content that contains [citations], [A,B] lists,
-  //    or any other bracket patterns before/after the actual JSON array.
+  // ── Strategy 2: Bracket scan ─────────────────────────────────────────────
+  // Try every [ paired with every ] (start left→right, end right→left so the
+  // longest — and most likely complete — candidate is tried first for each start).
   const starts: number[] = [];
   const ends: number[] = [];
   for (let i = 0; i < cleaned.length; i++) {
     if (cleaned[i] === "[") starts.push(i);
     if (cleaned[i] === "]") ends.push(i);
   }
-
   for (const s of starts) {
     for (let ei = ends.length - 1; ei >= 0; ei--) {
       const e = ends[ei]!;
-      if (e <= s) break; // no valid end for this start
+      if (e <= s) break;
       const arr = tryParse(cleaned.slice(s, e + 1));
       if (arr) {
         const cards = filterCards(arr);
         if (cards.length > 0) return cards;
-        // arr parsed but items had no question/answer — keep trying smaller slices
       }
     }
   }
 
+  // ── Strategy 3: Q&A line-by-line fallback ────────────────────────────────
+  // Handles the case where the model ignores the JSON instruction and returns
+  // a numbered/bulleted list like:
+  //   1. **Q:** What is X?
+  //      **A:** It is Y.
+  // or:
+  //   Question: What is X?
+  //   Answer: Y.
+  const qaCards = parseQAFallback(cleaned);
+  if (qaCards.length > 0) return qaCards;
+
   return null;
+}
+
+/**
+ * Fallback parser for numbered Q&A lists that Claude sometimes produces
+ * instead of JSON, e.g.:
+ *   "1. Q: ...\n   A: ..."
+ *   "**Question:** ...\n**Answer:** ..."
+ *   "Pregunta: ...\nRespuesta: ..."
+ */
+function parseQAFallback(text: string): Array<{ question: string; answer: string }> {
+  const strip = (s: string) => s.replace(/^\*+|\*+$/g, "").replace(/\s+/g, " ").trim();
+  const cards: Array<{ question: string; answer: string }> = [];
+  let pendingQ = "";
+
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    // Match question markers (English + Spanish)
+    const qMatch = line.match(
+      /^(?:\d+[.)]\s*)?(?:\*+)?\s*(?:Q(?:uestion)?|Pregunta)\s*:?\s*\*?\s*(.+)/i,
+    );
+    // Match answer markers (English + Spanish)
+    const aMatch = line.match(
+      /^(?:\*+)?\s*(?:A(?:nswer)?|Respuesta)\s*:?\s*\*?\s*(.+)/i,
+    );
+
+    if (qMatch) {
+      pendingQ = strip(qMatch[1]);
+    } else if (aMatch && pendingQ) {
+      cards.push({ question: pendingQ, answer: strip(aMatch[1]) });
+      pendingQ = "";
+    }
+  }
+
+  return cards;
 }
 
 /**
@@ -410,15 +467,15 @@ function buildFlashcardSystemPrompt(
 
   return `You are a flashcard generator. Your ENTIRE response must be one single raw JSON array. Nothing before it. Nothing after it. No preamble. No explanation. No markdown. No code fences.
 
-Generate exactly ${quantity} flashcards from the content the user sends.
+The source content to convert is enclosed in <source> tags in the user message. Generate exactly ${quantity} flashcards from that content.
 
 FIELD NAMES: Always use the English keys "question" and "answer". Never translate these key names.
 CONTENT LANGUAGE: ${langNote}
 QUESTIONS: Test comprehension — not literal memorisation.
 ANSWERS: Concise, 1–3 sentences.
-FORMULAS: LaTeX — $...$ inline, $$...$$ display block.
+FORMULAS: LaTeX — $...$ inline, $$...$$ display.
 
-Output format (nothing else):
+Output exactly this format and nothing else:
 [{"question":"...","answer":"..."},{"question":"...","answer":"..."}]`;
 }
 
@@ -824,13 +881,19 @@ export default function ResearchMode() {
             contextSource,
           });
 
+          // Wrap the source content in XML tags so the model cannot confuse
+          // PDF text / markdown / research notes with instructions. This is
+          // the single most reliable way to prevent "I cannot process this"
+          // or numbered-list responses when the PDF contains unusual patterns.
+          const userMessage = `<source>\n${contextText}\n</source>`;
+
           const aiRes = await fetchWithSupabaseAuth("/api/ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               max_tokens: 2200,
               system: buildFlashcardSystemPrompt(8, fcLang),
-              messages: [{ role: "user", content: contextText }],
+              messages: [{ role: "user", content: userMessage }],
             }),
           });
           const aiData = await aiRes.json();

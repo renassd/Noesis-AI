@@ -139,19 +139,28 @@ function buildMockResponse(body: {
     ].join("\n\n");
   }
 
-  // Detect flashcard generation requests in two ways:
-  //  a) system prompt contains "flashcard generator" (new Research flow: user msg is bare context)
-  //  b) old style: user message contains the full prompt with "flashcards"/"question"/"answer"
+  // Detect flashcard generation requests:
+  //  a) system prompt contains "flashcard generator" — dedicated Research→FC flow
+  //  b) legacy: user message contains "flashcards" + "question" + "answer" keywords
   const isFlashcardRequest =
     system.includes("flashcard generator") ||
     (/flashcards/i.test(lastMessage) && /"question"/.test(lastMessage) && /"answer"/.test(lastMessage));
 
   if (isFlashcardRequest) {
-    // In the new flow the user message IS the raw context text (not the prompt).
-    // In the old flow we need to strip the instructions before "TEXT:".
-    const textBlock = system.includes("flashcard generator")
-      ? lastMessage  // bare context — use as-is
-      : (lastMessage.split(/\bTEXT:\n?|\btexto:/i).pop()?.trim() || lastMessage);
+    let textBlock = lastMessage;
+
+    if (system.includes("flashcard generator")) {
+      // New flow: content is wrapped in <source>...</source> XML tags
+      const tagged = lastMessage.match(/<source>([\s\S]*?)<\/source>/i);
+      if (tagged) {
+        textBlock = tagged[1].trim();
+      }
+      // (no tags = bare content — use lastMessage as-is, covers edge cases)
+    } else {
+      // Legacy flow: content follows "TEXT:" or "texto:" separator
+      textBlock = lastMessage.split(/\bTEXT:\n?|\btexto:/i).pop()?.trim() || lastMessage;
+    }
+
     const flashcards = createMockFlashcards(textBlock, 8);
     return JSON.stringify(flashcards, null, 2);
   }
