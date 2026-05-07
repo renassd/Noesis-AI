@@ -358,33 +358,67 @@ function extractFlashcardJson(raw: string): Array<{ question: string; answer: st
   return null;
 }
 
+/**
+ * Normalises a raw parsed array into { question, answer } pairs.
+ * Accepts English field names (required by prompt) AND common Spanish/short
+ * aliases as a fallback — prevents silent failures when the model ignores the
+ * "always use English keys" instruction and returns "pregunta"/"respuesta".
+ */
 function filterCards(arr: unknown[]): Array<{ question: string; answer: string }> {
-  return arr.filter(
-    (c): c is { question: string; answer: string } =>
-      typeof (c as Record<string, unknown>).question === "string" &&
-      typeof (c as Record<string, unknown>).answer === "string",
-  );
+  return arr.flatMap((c) => {
+    if (typeof c !== "object" || c === null) return [];
+    const obj = c as Record<string, unknown>;
+    const question =
+      typeof obj.question === "string"   ? obj.question   :
+      typeof obj.pregunta === "string"   ? obj.pregunta   :
+      typeof obj.q        === "string"   ? obj.q          :
+      null;
+    const answer =
+      typeof obj.answer    === "string"  ? obj.answer     :
+      typeof obj.respuesta === "string"  ? obj.respuesta  :
+      typeof obj.a         === "string"  ? obj.a          :
+      null;
+    if (question?.trim() && answer?.trim()) {
+      return [{ question: question.trim(), answer: answer.trim() }];
+    }
+    return [];
+  });
 }
 
 /**
- * System prompt for the flashcard generation request.
- * Putting instructions in `system` (not in the user message) makes the model
- * much more reliably return raw JSON without preamble or explanation.
+ * System prompt for the dedicated flashcard generation pipeline.
+ *
+ * Key design decisions:
+ * - All output instructions go in `system`; the user message is ONLY the
+ *   source content — this is the most reliable way to get pure JSON back.
+ * - The language hint deliberately says "write the content in X" rather than
+ *   "respond entirely in X" — the latter causes models to translate JSON field
+ *   names ("pregunta"/"respuesta") which breaks our parser.
+ * - Field names are locked to English ("question"/"answer") regardless of
+ *   content language.
  */
-function buildFlashcardSystemPrompt(quantity: number, langHint: string): string {
-  return `You are a flashcard generator. Your ENTIRE response must be a single raw JSON array — nothing before it, nothing after it. No preamble, no explanation, no markdown, no code fences.
+function buildFlashcardSystemPrompt(
+  quantity: number,
+  contentLang: "es" | "en" | "auto",
+): string {
+  const langNote =
+    contentLang === "es"
+      ? "Write the question and answer TEXT in Spanish."
+      : contentLang === "en"
+      ? "Write the question and answer TEXT in English."
+      : "Write the question and answer TEXT in the same language as the source content.";
 
-${langHint}
+  return `You are a flashcard generator. Your ENTIRE response must be one single raw JSON array. Nothing before it. Nothing after it. No preamble. No explanation. No markdown. No code fences.
 
 Generate exactly ${quantity} flashcards from the content the user sends.
 
-Rules:
-- Every item must have exactly "question" and "answer" fields (strings).
-- Questions test comprehension, not literal memorisation.
-- Answers are concise: 1–3 sentences.
-- For formulas use LaTeX: $...$ for inline, $$...$$ for display.
+FIELD NAMES: Always use the English keys "question" and "answer". Never translate these key names.
+CONTENT LANGUAGE: ${langNote}
+QUESTIONS: Test comprehension — not literal memorisation.
+ANSWERS: Concise, 1–3 sentences.
+FORMULAS: LaTeX — $...$ inline, $$...$$ display block.
 
-Output (and NOTHING else):
+Output format (nothing else):
 [{"question":"...","answer":"..."},{"question":"...","answer":"..."}]`;
 }
 
@@ -752,7 +786,7 @@ export default function ResearchMode() {
         contextPreview: contextText.slice(0, 120),
       });
 
-      if (contextText.trim().length >= 100) {
+      if (contextText.trim().length >= 60) {
         const nextSessionId =
           activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
         const rawTitle = activeSession.title.replace(/^(New chat|Nuevo chat)$/, "Research");
@@ -780,10 +814,14 @@ export default function ResearchMode() {
 
         try {
           // ── Step 1: AI generates flashcards ──────────────────────────────
-          const fcLangHint = langInstruction(detectLang(contextText));
+          // Use detectLang directly (NOT langInstruction) so we only set the
+          // content language — never "respond entirely in Spanish" which causes
+          // the model to translate JSON field names and break the parser.
+          const fcLang = detectLang(contextText);
           console.log("[ResearchMode] calling /api/ai for flashcards", {
             contextLength: contextText.length,
-            lang: fcLangHint.slice(0, 40),
+            detectedLang: fcLang,
+            contextSource,
           });
 
           const aiRes = await fetchWithSupabaseAuth("/api/ai", {
@@ -791,10 +829,7 @@ export default function ResearchMode() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               max_tokens: 2200,
-              // Instructions in system, bare content as user — Claude is much
-              // more reliably JSON-only this way than when instructions are
-              // mixed into the user message.
-              system: buildFlashcardSystemPrompt(8, fcLangHint),
+              system: buildFlashcardSystemPrompt(8, fcLang),
               messages: [{ role: "user", content: contextText }],
             }),
           });
@@ -805,28 +840,47 @@ export default function ResearchMode() {
             setError(
               aiData.error ||
                 (lang === "en"
-                  ? "Could not generate flashcards."
-                  : "No se pudieron generar las tarjetas."),
+                  ? "Could not generate flashcards — AI error."
+                  : "Error de IA al generar las tarjetas."),
             );
             return;
           }
 
-          // ── Step 2: Parse the JSON array ─────────────────────────────────
+          // ── Step 2: Parse and validate the JSON array ─────────────────────
           const rawText = (aiData.text || "").trim();
-          console.log("[ResearchMode] AI response for flashcards", {
+          console.log("[ResearchMode] AI raw response", {
             length: rawText.length,
-            preview: rawText.slice(0, 200),
+            preview: rawText.slice(0, 250),
+            isMock: aiData.mock ?? false,
           });
 
-          const validCards = extractFlashcardJson(rawText) ?? [];
-          console.log("[ResearchMode] parsed cards:", validCards.length);
-
-          if (!validCards.length) {
+          if (!rawText) {
             setError(
               lang === "en"
-                ? "Could not extract flashcards from the AI response. Try asking again."
-                : "No se pudieron extraer tarjetas de la respuesta. Intentá de nuevo.",
+                ? "The AI returned an empty response. Try again."
+                : "La IA devolvió una respuesta vacía. Intentá de nuevo.",
             );
+            return;
+          }
+
+          const validCards = extractFlashcardJson(rawText) ?? [];
+          console.log("[ResearchMode] parsed flashcards:", {
+            count: validCards.length,
+            hasJsonBrackets: rawText.includes("[") && rawText.includes("]"),
+            firstItem: validCards[0] ?? null,
+          });
+
+          if (!validCards.length) {
+            // Give a specific reason so the user knows what to do
+            const hasArrayShape = rawText.includes("[") && rawText.includes("]");
+            const specificError = !hasArrayShape
+              ? (lang === "en"
+                  ? "The AI didn't return structured data. Ask for an explanation first, then request flashcards."
+                  : "La IA no devolvió datos estructurados. Pedí una explicación primero y luego las tarjetas.")
+              : (lang === "en"
+                  ? "The AI response has an unexpected format. Try asking again."
+                  : "El formato de respuesta fue inesperado. Intentá de nuevo.");
+            setError(specificError);
             return;
           }
 
@@ -892,8 +946,15 @@ export default function ResearchMode() {
           contextLength: contextText.length,
           contextSource,
         });
-        // Fall through to regular send — the research AI will naturally ask
-        // the user to provide content first.
+        // Not enough context yet — inject a hint into the user message so the
+        // research AI tells the user what to do, rather than silently ignoring.
+        setError(
+          lang === "en"
+            ? "No research content found yet. Ask a question or upload a document first, then request flashcards."
+            : "Todavía no hay contenido de investigación. Hacé una pregunta o subí un documento primero, y luego pedí las tarjetas.",
+        );
+        setLoading(false);
+        return;
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
