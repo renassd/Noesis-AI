@@ -262,18 +262,55 @@ function detectFlashcardIntent(text: string): boolean {
   return FLASHCARD_TRIGGERS.some((trigger) => lower.includes(trigger));
 }
 
-function buildChatContextText(messages: Message[], attachment: AttachedDocument | null): string {
+/**
+ * Collects usable source content for flashcard generation.
+ * Searches the current tool tab first, then all other tabs, then the attachment.
+ * Returns the text and a human-readable source description for logging.
+ */
+function buildChatContextText(
+  allMessages: Record<ToolId, Message[]>,
+  currentTool: ToolId,
+  attachment: AttachedDocument | null,
+): { text: string; source: string } {
   const parts: string[] = [];
-  if (attachment?.content) {
-    parts.push(`[Document: ${attachment.fileName}]\n${attachment.content.slice(0, 3500)}`);
-  }
-  const assistantContent = messages
-    .filter((m) => m.role === "assistant" && !m.generatedCards && m.content.length > 80)
+  const sources: string[] = [];
+
+  // 1. Current tool's assistant responses (most relevant — user just chatted here)
+  const currentAssistant = (allMessages[currentTool] ?? [])
+    .filter((m) => m.role === "assistant" && !m.generatedCards && m.content.length > 100)
     .slice(-5)
-    .map((m) => m.content)
-    .join("\n\n");
-  if (assistantContent) parts.push(assistantContent);
-  return parts.join("\n\n").slice(0, 4000);
+    .map((m) => m.content);
+  if (currentAssistant.length > 0) {
+    parts.push(currentAssistant.join("\n\n"));
+    sources.push(`${currentTool} tab`);
+  }
+
+  // 2. If the current tool has little context, check the other tabs too
+  const ALL_TOOLS: ToolId[] = ["summary", "review", "explain", "writing"];
+  if (parts.join("").length < 300) {
+    for (const tool of ALL_TOOLS) {
+      if (tool === currentTool) continue;
+      const otherAssistant = (allMessages[tool] ?? [])
+        .filter((m) => m.role === "assistant" && !m.generatedCards && m.content.length > 100)
+        .slice(-4)
+        .map((m) => m.content);
+      if (otherAssistant.length > 0) {
+        parts.push(otherAssistant.join("\n\n"));
+        sources.push(`${tool} tab`);
+        break; // use the first other tab that has meaningful content
+      }
+    }
+  }
+
+  // 3. Attachment still in session (not yet sent to AI) — append as bonus context
+  if (attachment?.content) {
+    parts.push(attachment.content.slice(0, 2500));
+    sources.push(`attachment "${attachment.fileName}"`);
+  }
+
+  const text = parts.join("\n\n").slice(0, 4000);
+  const source = sources.join(" + ") || "none";
+  return { text, source };
 }
 
 function extractFlashcardJson(raw: string): Array<{ question: string; answer: string }> | null {
@@ -287,26 +324,37 @@ function extractFlashcardJson(raw: string): Array<{ question: string; answer: st
     return null;
   }
 
-  // 1. Try the whole string first
+  // 1. Direct parse — best case: model returned pure JSON
   const direct = tryParse(cleaned);
-  if (direct) return filterCards(direct);
+  if (direct) {
+    const cards = filterCards(direct);
+    if (cards.length > 0) return cards;
+  }
 
-  // 2. Scan for all [ ... ] spans and try each one (greedy: longest first)
-  const opens: number[] = [];
-  const candidates: string[] = [];
+  // 2. Robust bracket search: try every [ as a start position, every ] as an end
+  //    position (start left-to-right, end right-to-left so longest candidates win).
+  //    This correctly handles research content that contains [citations], [A,B] lists,
+  //    or any other bracket patterns before/after the actual JSON array.
+  const starts: number[] = [];
+  const ends: number[] = [];
   for (let i = 0; i < cleaned.length; i++) {
-    if (cleaned[i] === "[") opens.push(i);
-    if (cleaned[i] === "]" && opens.length) {
-      const start = opens[0]!;
-      candidates.push(cleaned.slice(start, i + 1));
-      opens.length = 0; // reset so next [ starts fresh
+    if (cleaned[i] === "[") starts.push(i);
+    if (cleaned[i] === "]") ends.push(i);
+  }
+
+  for (const s of starts) {
+    for (let ei = ends.length - 1; ei >= 0; ei--) {
+      const e = ends[ei]!;
+      if (e <= s) break; // no valid end for this start
+      const arr = tryParse(cleaned.slice(s, e + 1));
+      if (arr) {
+        const cards = filterCards(arr);
+        if (cards.length > 0) return cards;
+        // arr parsed but items had no question/answer — keep trying smaller slices
+      }
     }
   }
-  // Try longest candidates first
-  for (const candidate of candidates.sort((a, b) => b.length - a.length)) {
-    const arr = tryParse(candidate);
-    if (arr && arr.length > 0) return filterCards(arr);
-  }
+
   return null;
 }
 
@@ -318,25 +366,26 @@ function filterCards(arr: unknown[]): Array<{ question: string; answer: string }
   );
 }
 
-function buildFlashcardPrompt(quantity: number, text: string, langHint: string): string {
-  return `You are a study assistant. Generate exactly ${quantity} flashcards from the text below.
+/**
+ * System prompt for the flashcard generation request.
+ * Putting instructions in `system` (not in the user message) makes the model
+ * much more reliably return raw JSON without preamble or explanation.
+ */
+function buildFlashcardSystemPrompt(quantity: number, langHint: string): string {
+  return `You are a flashcard generator. Your ENTIRE response must be a single raw JSON array — nothing before it, nothing after it. No preamble, no explanation, no markdown, no code fences.
 
 ${langHint}
 
-STRICT INSTRUCTIONS:
-- Respond ONLY with a JSON array. No introduction, no explanation, no text before or after.
-- Do not use markdown code blocks.
-- The array must have exactly ${quantity} objects.
-- Each object must have exactly these fields: "question" and "answer".
-- Questions should test comprehension, not literal memory.
-- Answers should be concise (1-3 sentences).
-- For math or science formulas, use valid LaTeX: $...$ for inline, $$...$$ for block.
+Generate exactly ${quantity} flashcards from the content the user sends.
 
-EXACT FORMAT:
-[{"question":"...","answer":"..."}]
+Rules:
+- Every item must have exactly "question" and "answer" fields (strings).
+- Questions test comprehension, not literal memorisation.
+- Answers are concise: 1–3 sentences.
+- For formulas use LaTeX: $...$ for inline, $$...$$ for display.
 
-TEXT:
-${text.slice(0, 4000)}`;
+Output (and NOTHING else):
+[{"question":"...","answer":"..."},{"question":"...","answer":"..."}]`;
 }
 
 // ── Flashcard bubble component ────────────────────────────────────────────────
@@ -689,23 +738,33 @@ export default function ResearchMode() {
 
     // ── Flashcard intent detection ────────────────────────────────────────────
     if (detectFlashcardIntent(messageContent)) {
-      const contextText = buildChatContextText(currentMsgs, attachment);
-      if (contextText.trim()) {
+      // Gather context from ALL tool tabs (not just the active one)
+      const { text: contextText, source: contextSource } = buildChatContextText(
+        activeSession.messages,
+        activeTool,
+        attachment,
+      );
+
+      console.log("[ResearchMode] flashcard intent detected", {
+        trigger: messageContent.slice(0, 60),
+        contextSource,
+        contextLength: contextText.length,
+        contextPreview: contextText.slice(0, 120),
+      });
+
+      if (contextText.trim().length >= 100) {
         const nextSessionId =
           activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
-        const sessionTitle = activeSession.title.replace(
-          /^(New chat|Nuevo chat)$/,
-          lang === "en" ? "Research" : "Investigación",
-        );
+        const rawTitle = activeSession.title.replace(/^(New chat|Nuevo chat)$/, "Research");
         const deckName =
           lang === "en"
-            ? `Research: ${sessionTitle.slice(0, 40)}`
-            : `Investigación: ${sessionTitle.slice(0, 40)}`;
+            ? `Research: ${rawTitle.slice(0, 40)}`
+            : `Investigación: ${rawTitle.slice(0, 40)}`;
 
         setLoading(true);
         setError("");
 
-        // Add user message and clear input immediately
+        // Optimistically commit the user message and clear the input
         setSessionState((prev) => ({
           activeSessionId: nextSessionId,
           sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
@@ -720,18 +779,23 @@ export default function ResearchMode() {
         setPastedImage(null);
 
         try {
-          // 1. Generate flashcards via AI
+          // ── Step 1: AI generates flashcards ──────────────────────────────
           const fcLangHint = langInstruction(detectLang(contextText));
-          const fcPrompt = buildFlashcardPrompt(8, contextText, fcLangHint);
+          console.log("[ResearchMode] calling /api/ai for flashcards", {
+            contextLength: contextText.length,
+            lang: fcLangHint.slice(0, 40),
+          });
+
           const aiRes = await fetchWithSupabaseAuth("/api/ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               max_tokens: 2200,
-              // Strict system prompt so the model never wraps the JSON in prose
-              system:
-                "You are a flashcard generator. Your entire response must be a single valid JSON array and nothing else. No introduction, no explanation, no markdown, no code fences. Only the raw JSON array.",
-              messages: [{ role: "user", content: fcPrompt }],
+              // Instructions in system, bare content as user — Claude is much
+              // more reliably JSON-only this way than when instructions are
+              // mixed into the user message.
+              system: buildFlashcardSystemPrompt(8, fcLangHint),
+              messages: [{ role: "user", content: contextText }],
             }),
           });
           const aiData = await aiRes.json();
@@ -747,20 +811,26 @@ export default function ResearchMode() {
             return;
           }
 
-          // 2. Parse cards
+          // ── Step 2: Parse the JSON array ─────────────────────────────────
           const rawText = (aiData.text || "").trim();
+          console.log("[ResearchMode] AI response for flashcards", {
+            length: rawText.length,
+            preview: rawText.slice(0, 200),
+          });
+
           const validCards = extractFlashcardJson(rawText) ?? [];
+          console.log("[ResearchMode] parsed cards:", validCards.length);
+
           if (!validCards.length) {
-            console.error("[ResearchMode] flashcard parse failed. raw:", rawText.slice(0, 300));
             setError(
               lang === "en"
-                ? "Could not generate flashcards from this content. Try asking after getting a detailed explanation first."
-                : "No se pudieron generar tarjetas con este contenido. Intentá después de obtener una explicación detallada.",
+                ? "Could not extract flashcards from the AI response. Try asking again."
+                : "No se pudieron extraer tarjetas de la respuesta. Intentá de nuevo.",
             );
             return;
           }
 
-          // 3. Save deck
+          // ── Step 3: Save deck ─────────────────────────────────────────────
           const deckRes = await fetchWithSupabaseAuth("/api/decks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -777,14 +847,15 @@ export default function ResearchMode() {
           }
 
           const deckId = deckData.id ?? "";
+          console.log("[ResearchMode] deck saved", { deckId, deckName, cards: validCards.length });
 
-          // 4. Add assistant flashcard message
+          // ── Step 4: Append the flashcard bubble message ───────────────────
           const assistantMsg: Message = {
             role: "assistant",
             content:
               lang === "en"
-                ? `I generated **${validCards.length} flashcards** from the research context.`
-                : `Generé **${validCards.length} tarjetas** a partir del contexto de investigación.`,
+                ? `Generated **${validCards.length} flashcards** from the research context (${contextSource}).`
+                : `Generé **${validCards.length} tarjetas** a partir del contexto de investigación (${contextSource}).`,
             generatedCards: {
               deckId,
               deckName,
@@ -816,6 +887,13 @@ export default function ResearchMode() {
           setLoading(false);
         }
         return; // skip the regular send path
+      } else {
+        console.log("[ResearchMode] flashcard intent but insufficient context", {
+          contextLength: contextText.length,
+          contextSource,
+        });
+        // Fall through to regular send — the research AI will naturally ask
+        // the user to provide content first.
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
