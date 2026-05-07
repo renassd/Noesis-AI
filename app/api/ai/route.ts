@@ -140,7 +140,8 @@ function buildMockResponse(body: {
   }
 
   if (/flashcards/i.test(lastMessage) && /"question"/.test(lastMessage) && /"answer"/.test(lastMessage)) {
-    const textBlock = lastMessage.split(/texto:/i).pop()?.trim() || lastMessage;
+    // Split on either Spanish "texto:" or English "TEXT:" to extract the source content
+    const textBlock = lastMessage.split(/\bTEXT:\n?|\btexto:/i).pop()?.trim() || lastMessage;
     const flashcards = createMockFlashcards(textBlock, getRequestedFlashcardCount(lastMessage));
     return JSON.stringify(flashcards, null, 2);
   }

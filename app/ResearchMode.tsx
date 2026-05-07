@@ -278,6 +278,7 @@ function buildChatContextText(messages: Message[], attachment: AttachedDocument 
 
 function extractFlashcardJson(raw: string): Array<{ question: string; answer: string }> | null {
   const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+
   function tryParse(s: string): unknown[] | null {
     try {
       const p = JSON.parse(s);
@@ -285,13 +286,31 @@ function extractFlashcardJson(raw: string): Array<{ question: string; answer: st
     } catch { /* ignore */ }
     return null;
   }
-  let arr = tryParse(cleaned);
-  if (!arr) {
-    const start = cleaned.indexOf("[");
-    const end = cleaned.lastIndexOf("]");
-    if (start !== -1 && end > start) arr = tryParse(cleaned.slice(start, end + 1));
+
+  // 1. Try the whole string first
+  const direct = tryParse(cleaned);
+  if (direct) return filterCards(direct);
+
+  // 2. Scan for all [ ... ] spans and try each one (greedy: longest first)
+  const opens: number[] = [];
+  const candidates: string[] = [];
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned[i] === "[") opens.push(i);
+    if (cleaned[i] === "]" && opens.length) {
+      const start = opens[0]!;
+      candidates.push(cleaned.slice(start, i + 1));
+      opens.length = 0; // reset so next [ starts fresh
+    }
   }
-  if (!arr) return null;
+  // Try longest candidates first
+  for (const candidate of candidates.sort((a, b) => b.length - a.length)) {
+    const arr = tryParse(candidate);
+    if (arr && arr.length > 0) return filterCards(arr);
+  }
+  return null;
+}
+
+function filterCards(arr: unknown[]): Array<{ question: string; answer: string }> {
   return arr.filter(
     (c): c is { question: string; answer: string } =>
       typeof (c as Record<string, unknown>).question === "string" &&
@@ -709,6 +728,9 @@ export default function ResearchMode() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               max_tokens: 2200,
+              // Strict system prompt so the model never wraps the JSON in prose
+              system:
+                "You are a flashcard generator. Your entire response must be a single valid JSON array and nothing else. No introduction, no explanation, no markdown, no code fences. Only the raw JSON array.",
               messages: [{ role: "user", content: fcPrompt }],
             }),
           });
@@ -726,12 +748,14 @@ export default function ResearchMode() {
           }
 
           // 2. Parse cards
-          const validCards = extractFlashcardJson(aiData.text || "") ?? [];
+          const rawText = (aiData.text || "").trim();
+          const validCards = extractFlashcardJson(rawText) ?? [];
           if (!validCards.length) {
+            console.error("[ResearchMode] flashcard parse failed. raw:", rawText.slice(0, 300));
             setError(
               lang === "en"
-                ? "Could not parse flashcards from the AI response."
-                : "No se pudieron parsear las tarjetas de la respuesta.",
+                ? "Could not generate flashcards from this content. Try asking after getting a detailed explanation first."
+                : "No se pudieron generar tarjetas con este contenido. Intentá después de obtener una explicación detallada.",
             );
             return;
           }
