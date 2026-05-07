@@ -176,8 +176,9 @@ function buildMockResponse(body: {
     console.log("[mock] FLASHCARD_SOURCE_SELECTED:", textBlock.slice(0, 80));
     const flashcards = createMockFlashcards(textBlock, 8);
     console.log("[mock] FLASHCARDS_GENERATED_COUNT:", flashcards.length);
-    // Return the FULL JSON array (the client handles the "[" prefill separately)
-    return JSON.stringify(flashcards, null, 2);
+    // Return {"flashcards":[...]} — matches the format required by the client parser.
+    // reconstructFlashcardJson will detect this as already-complete JSON and use it as-is.
+    return JSON.stringify({ flashcards }, null, 2);
   }
 
   // Use lastMessage (which may be the assistant prefill "[") for the general

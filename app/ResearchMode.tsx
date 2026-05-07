@@ -326,67 +326,132 @@ function buildChatContextText(
   return { text, source };
 }
 
-function extractFlashcardJson(raw: string): Array<{ question: string; answer: string }> | null {
-  const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+// ── Flashcard response parser ─────────────────────────────────────────────────
+//
+// The pipeline uses Anthropic response-prefilling: we send
+//   { role: "assistant", content: FLASHCARD_PREFILL }
+// as the last message so the model is forced to CONTINUE from that prefix.
+// The server returns only the continuation; the client reconstructs the full JSON.
+//
+// FLASHCARD_PREFILL must stay in sync with buildFlashcardSystemPrompt.
+const FLASHCARD_PREFILL = '{"flashcards":[';
 
-  function tryParse(s: string): unknown[] | null {
-    try {
-      const p = JSON.parse(s);
-      if (Array.isArray(p)) return p;
-    } catch { /* ignore */ }
-    return null;
+/**
+ * Reconstruct the full JSON string from the Anthropic continuation.
+ *
+ * Three cases:
+ *   a) Mock path  – mock returns a complete JSON array like [{"question":...}]
+ *   b) Real API   – Anthropic returns only the continuation after FLASHCARD_PREFILL
+ *   c) Edge case  – model restarted and already produced complete JSON
+ *
+ * Strategy: try JSON.parse on the raw continuation first.  If it succeeds the
+ * string is already well-formed (case a/c).  If it fails we prepend the prefill
+ * and try again (case b).
+ */
+function reconstructFlashcardJson(rawContinuation: string): string {
+  try {
+    JSON.parse(rawContinuation);   // succeeds → already complete
+    return rawContinuation;
+  } catch {
+    return FLASHCARD_PREFILL + rawContinuation;  // prepend prefill and retry outside
   }
-
-  // ── Strategy 1: Direct JSON parse ────────────────────────────────────────
-  const direct = tryParse(cleaned);
-  if (direct) {
-    const cards = filterCards(direct);
-    if (cards.length > 0) return cards;
-  }
-
-  // ── Strategy 2: Bracket scan ─────────────────────────────────────────────
-  // Try every [ paired with every ] (start left→right, end right→left so the
-  // longest — and most likely complete — candidate is tried first for each start).
-  const starts: number[] = [];
-  const ends: number[] = [];
-  for (let i = 0; i < cleaned.length; i++) {
-    if (cleaned[i] === "[") starts.push(i);
-    if (cleaned[i] === "]") ends.push(i);
-  }
-  for (const s of starts) {
-    for (let ei = ends.length - 1; ei >= 0; ei--) {
-      const e = ends[ei]!;
-      if (e <= s) break;
-      const arr = tryParse(cleaned.slice(s, e + 1));
-      if (arr) {
-        const cards = filterCards(arr);
-        if (cards.length > 0) return cards;
-      }
-    }
-  }
-
-  // ── Strategy 3: Q&A line-by-line fallback ────────────────────────────────
-  // Handles the case where the model ignores the JSON instruction and returns
-  // a numbered/bulleted list like:
-  //   1. **Q:** What is X?
-  //      **A:** It is Y.
-  // or:
-  //   Question: What is X?
-  //   Answer: Y.
-  const qaCards = parseQAFallback(cleaned);
-  if (qaCards.length > 0) return qaCards;
-
-  return null;
 }
 
 /**
- * Fallback parser for numbered Q&A lists that Claude sometimes produces
- * instead of JSON, e.g.:
- *   "1. Q: ...\n   A: ..."
- *   "**Question:** ...\n**Answer:** ..."
- *   "Pregunta: ...\nRespuesta: ..."
+ * Normalise a single card object.
+ * Accepts English, Spanish, and front/back field names.
  */
-function parseQAFallback(text: string): Array<{ question: string; answer: string }> {
+function normalizeCard(c: unknown): { question: string; answer: string } | null {
+  if (typeof c !== "object" || c === null) return null;
+  const obj = c as Record<string, unknown>;
+  const question =
+    typeof obj.question  === "string" ? obj.question  :
+    typeof obj.pregunta  === "string" ? obj.pregunta  :
+    typeof obj.front     === "string" ? obj.front     :
+    typeof obj.q         === "string" ? obj.q         :
+    null;
+  const answer =
+    typeof obj.answer    === "string" ? obj.answer    :
+    typeof obj.respuesta === "string" ? obj.respuesta :
+    typeof obj.back      === "string" ? obj.back      :
+    typeof obj.a         === "string" ? obj.a         :
+    null;
+  if (!question?.trim() || !answer?.trim()) return null;
+  return { question: question.trim(), answer: answer.trim() };
+}
+
+/**
+ * Extract cards from any parsed JSON value:
+ *   { flashcards: [...] }  ← new required format
+ *   { cards: [...] }       ← alias
+ *   [...]                  ← direct array
+ */
+function extractCardsFromParsed(parsed: unknown): Array<{ question: string; answer: string }> {
+  let arr: unknown[] = [];
+
+  if (Array.isArray(parsed)) {
+    arr = parsed;
+  } else if (typeof parsed === "object" && parsed !== null) {
+    const obj = parsed as Record<string, unknown>;
+    if (Array.isArray(obj.flashcards)) arr = obj.flashcards;
+    else if (Array.isArray(obj.cards))  arr = obj.cards;
+    else if (Array.isArray(obj.items))  arr = obj.items;
+  }
+
+  return arr.flatMap((c) => {
+    const card = normalizeCard(c);
+    return card ? [card] : [];
+  });
+}
+
+/**
+ * Main parser.  Tries five strategies in order, stopping at the first that
+ * produces at least one valid card.
+ */
+function parseFlashcardResponse(raw: string): Array<{ question: string; answer: string }> {
+  if (!raw?.trim()) return [];
+
+  // Step 0: strip markdown code fences
+  const cleaned = raw
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+
+  console.log("RAW_FLASHCARD_RESPONSE:", cleaned.slice(0, 400));
+
+  // ── Strategy 1: parse the whole string ───────────────────────────────────
+  try {
+    const parsed = JSON.parse(cleaned);
+    const cards = extractCardsFromParsed(parsed);
+    if (cards.length > 0) return cards;
+  } catch { /* continue */ }
+
+  // ── Strategy 2: find any {...} or [...] span and try each ─────────────────
+  // Works when the model adds prose before/after the JSON.
+  // We try all { and [ positions paired with all } and ] positions.
+  const openChars = new Set(["{", "["]);
+  const closeMap: Record<string, string> = { "{": "}", "[": "]" };
+
+  for (let si = 0; si < cleaned.length; si++) {
+    const open = cleaned[si];
+    if (!openChars.has(open ?? "")) continue;
+    const close = closeMap[open!]!;
+    for (let ei = cleaned.length - 1; ei > si; ei--) {
+      if (cleaned[ei] !== close) continue;
+      try {
+        const parsed = JSON.parse(cleaned.slice(si, ei + 1));
+        const cards = extractCardsFromParsed(parsed);
+        if (cards.length > 0) return cards;
+      } catch { /* try shorter slice */ }
+    }
+  }
+
+  // ── Strategy 3: Q/A line-by-line fallback ─────────────────────────────────
+  // Handles numbered/bulleted lists the model occasionally produces.
+  return parseQALines(cleaned);
+}
+
+function parseQALines(text: string): Array<{ question: string; answer: string }> {
   const strip = (s: string) => s.replace(/^\*+|\*+$/g, "").replace(/\s+/g, " ").trim();
   const cards: Array<{ question: string; answer: string }> = [];
   let pendingQ = "";
@@ -394,52 +459,21 @@ function parseQAFallback(text: string): Array<{ question: string; answer: string
   for (const raw of text.split("\n")) {
     const line = raw.trim();
     if (!line) continue;
-
-    // Match question markers (English + Spanish)
-    const qMatch = line.match(
-      /^(?:\d+[.)]\s*)?(?:\*+)?\s*(?:Q(?:uestion)?|Pregunta)\s*:?\s*\*?\s*(.+)/i,
-    );
-    // Match answer markers (English + Spanish)
-    const aMatch = line.match(
-      /^(?:\*+)?\s*(?:A(?:nswer)?|Respuesta)\s*:?\s*\*?\s*(.+)/i,
-    );
-
-    if (qMatch) {
-      pendingQ = strip(qMatch[1]);
-    } else if (aMatch && pendingQ) {
-      cards.push({ question: pendingQ, answer: strip(aMatch[1]) });
+    const qm = line.match(/^(?:\d+[.)]\s*)?(?:\*+)?\s*(?:Q(?:uestion)?|Pregunta)\s*:?\s*\*?\s*(.+)/i);
+    const am = line.match(/^(?:\*+)?\s*(?:A(?:nswer)?|Respuesta)\s*:?\s*\*?\s*(.+)/i);
+    if (qm) {
+      pendingQ = strip(qm[1]);
+    } else if (am && pendingQ) {
+      cards.push({ question: pendingQ, answer: strip(am[1]) });
       pendingQ = "";
     }
   }
-
   return cards;
 }
 
-/**
- * Normalises a raw parsed array into { question, answer } pairs.
- * Accepts English field names (required by prompt) AND common Spanish/short
- * aliases as a fallback — prevents silent failures when the model ignores the
- * "always use English keys" instruction and returns "pregunta"/"respuesta".
- */
+// Keep filterCards as a thin alias so no other code breaks
 function filterCards(arr: unknown[]): Array<{ question: string; answer: string }> {
-  return arr.flatMap((c) => {
-    if (typeof c !== "object" || c === null) return [];
-    const obj = c as Record<string, unknown>;
-    const question =
-      typeof obj.question === "string"   ? obj.question   :
-      typeof obj.pregunta === "string"   ? obj.pregunta   :
-      typeof obj.q        === "string"   ? obj.q          :
-      null;
-    const answer =
-      typeof obj.answer    === "string"  ? obj.answer     :
-      typeof obj.respuesta === "string"  ? obj.respuesta  :
-      typeof obj.a         === "string"  ? obj.a          :
-      null;
-    if (question?.trim() && answer?.trim()) {
-      return [{ question: question.trim(), answer: answer.trim() }];
-    }
-    return [];
-  });
+  return extractCardsFromParsed(arr);
 }
 
 /**
@@ -465,18 +499,22 @@ function buildFlashcardSystemPrompt(
       ? "Write the question and answer TEXT in English."
       : "Write the question and answer TEXT in the same language as the source content.";
 
-  return `You are a flashcard generator. Your ENTIRE response must be one single raw JSON array. Nothing before it. Nothing after it. No preamble. No explanation. No markdown. No code fences.
+  // IMPORTANT: this output format must match FLASHCARD_PREFILL exactly.
+  // The response-prefilling technique forces the model to start with
+  // {"flashcards":[ so the response is guaranteed to be well-formed JSON.
+  return `You are a flashcard generator. Return ONLY valid JSON. No markdown. No explanations. No text before or after the JSON.
 
-The source content to convert is enclosed in <source> tags in the user message. Generate exactly ${quantity} flashcards from that content.
+The user will send source content inside <source> tags. Generate exactly ${quantity} flashcards from that content.
 
-FIELD NAMES: Always use the English keys "question" and "answer". Never translate these key names.
-CONTENT LANGUAGE: ${langNote}
-QUESTIONS: Test comprehension — not literal memorisation.
-ANSWERS: Concise, 1–3 sentences.
-FORMULAS: LaTeX — $...$ inline, $$...$$ display.
+REQUIRED OUTPUT FORMAT — return exactly this structure and nothing else:
+{"flashcards":[{"question":"...","answer":"..."},{"question":"...","answer":"..."}]}
 
-Output exactly this format and nothing else:
-[{"question":"...","answer":"..."},{"question":"...","answer":"..."}]`;
+RULES:
+- Field names MUST be "question" and "answer" in English. Never translate the keys.
+- ${langNote}
+- Questions test comprehension, not memorisation.
+- Answers are concise (1–3 sentences).
+- For formulas: $...$ inline LaTeX, $$...$$ display.`;
 }
 
 // ── Flashcard bubble component ────────────────────────────────────────────────
@@ -882,16 +920,14 @@ export default function ResearchMode() {
             contextSource,
           });
 
-          // Wrap source content in <source> XML tags to clearly separate it
-          // from any instruction-like text that may appear in PDFs or notes.
+          // Wrap source content in <source> XML tags to isolate it from any
+          // instruction-like text that may appear in PDFs or research notes.
           const userMessage = `<source>\n${contextText}\n</source>`;
 
-          // ── Response prefilling ───────────────────────────────────────────
-          // Sending an assistant message starting with "[" as the LAST turn
-          // forces the Anthropic API to continue from that character. This
-          // makes it physically impossible for the model to add a preamble
-          // or return a numbered list — the response MUST be JSON continuation.
-          // The client then prepends "[" back to reconstruct the full array.
+          // ── Response-prefilling (Anthropic feature) ───────────────────────
+          // Ending the messages array with an assistant turn forces the model
+          // to CONTINUE from that text, preventing any preamble.
+          // FLASHCARD_PREFILL = '{"flashcards":['  (defined near the parser)
           const aiRes = await fetchWithSupabaseAuth("/api/ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -899,8 +935,8 @@ export default function ResearchMode() {
               max_tokens: 2200,
               system: buildFlashcardSystemPrompt(8, fcLang),
               messages: [
-                { role: "user", content: userMessage },
-                { role: "assistant", content: "[" }, // prefill forces JSON start
+                { role: "user",      content: userMessage   },
+                { role: "assistant", content: FLASHCARD_PREFILL }, // prefill
               ],
             }),
           });
@@ -918,20 +954,14 @@ export default function ResearchMode() {
             return;
           }
 
-          // ── Step 2: Reconstruct and parse the JSON array ──────────────────
-          // The API returns the CONTINUATION after "[". If mock mode returned
-          // the full JSON (starts with "["), skip prepending.
+          // ── Step 2: Reconstruct and parse ────────────────────────────────
+          // reconstructFlashcardJson tries JSON.parse on the raw continuation.
+          // If it fails (real-API path where the continuation comes after the
+          // prefill), it prepends FLASHCARD_PREFILL and returns the full JSON.
           const rawContinuation = (aiData.text || "").trim();
-          const rawText = rawContinuation.startsWith("[")
-            ? rawContinuation           // mock / no-prefill path
-            : "[" + rawContinuation;    // real API prefill path
-
-          console.log("FLASHCARD_GENERATION_RESPONSE", {
-            rawLength: rawContinuation.length,
-            fullLength: rawText.length,
-            preview: rawText.slice(0, 200),
-            isMock: aiData.mock ?? false,
-          });
+          console.log("FLASHCARD_SOURCE_TEXT_LENGTH:", contextText.length);
+          console.log("FLASHCARD_SOURCE_TYPE:", contextSource);
+          console.log("RAW_FLASHCARD_RESPONSE:", rawContinuation.slice(0, 300));
 
           if (!rawContinuation) {
             console.log("FLASHCARD_GENERATION_ERROR", { reason: "empty_response" });
@@ -943,19 +973,20 @@ export default function ResearchMode() {
             return;
           }
 
-          const validCards = extractFlashcardJson(rawText) ?? [];
-          console.log("FLASHCARDS_GENERATED_COUNT", validCards.length, { firstCard: validCards[0] ?? null });
+          const fullJson = reconstructFlashcardJson(rawContinuation);
+          const validCards = parseFlashcardResponse(fullJson);
+
+          console.log("FLASHCARDS_GENERATED_COUNT", validCards.length, { first: validCards[0] ?? null });
 
           if (!validCards.length) {
             console.log("FLASHCARD_GENERATION_ERROR", {
               reason: "parse_failed",
-              hasArrayBrackets: rawText.includes("[") && rawText.includes("]"),
-              rawPreview: rawText.slice(0, 300),
+              fullJsonPreview: fullJson.slice(0, 400),
             });
             setError(
               lang === "en"
-                ? "Could not parse the flashcards. Try again."
-                : "No se pudieron generar las tarjetas. Intentá de nuevo.",
+                ? "Could not parse flashcards. Check the console for RAW_FLASHCARD_RESPONSE and report."
+                : "No se pudieron generar tarjetas. Revisá la consola (RAW_FLASHCARD_RESPONSE) y reportá.",
             );
             return;
           }
