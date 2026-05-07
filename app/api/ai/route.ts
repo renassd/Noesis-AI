@@ -126,48 +126,67 @@ function buildMockResponse(body: {
   messages?: ChatMessage[];
   max_tokens?: number;
 }) {
-  const last = body.messages?.[body.messages.length - 1];
-  const lastMessage = last?.content?.trim() || "";
+  const msgs = body.messages ?? [];
+  const last = msgs[msgs.length - 1];
   const system = body.system?.toLowerCase() || "";
+
+  // ── Always use the last USER message for content extraction ──────────────
+  // When the flashcard pipeline uses response-prefilling (last message is an
+  // assistant turn starting with "["), `last` is the prefill — not the content.
+  // We must look for the last actual user message to find the source text.
+  const lastUserMsg = [...msgs].reverse().find((m) => m.role === "user");
+  const lastUserContent = lastUserMsg?.content?.trim() || "";
+  // For general (non-flashcard) context, use the very last message as before.
+  const lastMessage = last?.content?.trim() || "";
 
   if (last?.imageDataUrl) {
     return [
       "Modo demo activo.",
       "La imagen se adjunto correctamente, pero el analisis visual real necesita la API externa configurada.",
       "Si activas ANTHROPIC_API_KEY, Claude podra leer la imagen ademas del texto.",
-      `Texto adjunto: ${lastMessage || "(sin texto adicional)"}`,
+      `Texto adjunto: ${lastUserContent || "(sin texto adicional)"}`,
     ].join("\n\n");
   }
 
-  // Detect flashcard generation requests:
-  //  a) system prompt contains "flashcard generator" — dedicated Research→FC flow
-  //  b) legacy: user message contains "flashcards" + "question" + "answer" keywords
+  // ── Flashcard generation detection ───────────────────────────────────────
+  //  a) system contains "flashcard generator" — dedicated Research→FC pipeline
+  //  b) legacy: user message has "flashcards"+"question"+"answer" keywords
   const isFlashcardRequest =
     system.includes("flashcard generator") ||
-    (/flashcards/i.test(lastMessage) && /"question"/.test(lastMessage) && /"answer"/.test(lastMessage));
+    (/flashcards/i.test(lastUserContent) &&
+      /"question"/.test(lastUserContent) &&
+      /"answer"/.test(lastUserContent));
 
   if (isFlashcardRequest) {
-    let textBlock = lastMessage;
+    let textBlock = lastUserContent;
 
     if (system.includes("flashcard generator")) {
-      // New flow: content is wrapped in <source>...</source> XML tags
-      const tagged = lastMessage.match(/<source>([\s\S]*?)<\/source>/i);
+      // New flow: user message wraps content in <source>...</source> tags
+      const tagged = lastUserContent.match(/<source>([\s\S]*?)<\/source>/i);
       if (tagged) {
         textBlock = tagged[1].trim();
+        console.log("[mock] PDF_TEXT_LENGTH:", textBlock.length);
       }
-      // (no tags = bare content — use lastMessage as-is, covers edge cases)
     } else {
       // Legacy flow: content follows "TEXT:" or "texto:" separator
-      textBlock = lastMessage.split(/\bTEXT:\n?|\btexto:/i).pop()?.trim() || lastMessage;
+      textBlock =
+        lastUserContent.split(/\bTEXT:\n?|\btexto:/i).pop()?.trim() || lastUserContent;
     }
 
+    console.log("[mock] FLASHCARD_SOURCE_SELECTED:", textBlock.slice(0, 80));
     const flashcards = createMockFlashcards(textBlock, 8);
+    console.log("[mock] FLASHCARDS_GENERATED_COUNT:", flashcards.length);
+    // Return the FULL JSON array (the client handles the "[" prefill separately)
     return JSON.stringify(flashcards, null, 2);
   }
 
+  // Use lastMessage (which may be the assistant prefill "[") for the general
+  // branch — that's fine because we only care about system-level routing here.
+  const contentForGeneral = lastUserContent || lastMessage;
+
   if (system.includes("tutor")) {
     return [
-      `Modo demo activo. Vamos a trabajar el tema: ${lastMessage.replace("Quiero aprender sobre:", "").trim() || "tu tema"}.`,
+      `Modo demo activo. Vamos a trabajar el tema: ${contentForGeneral.replace("Quiero aprender sobre:", "").trim() || "tu tema"}.`,
       "Primero te doy una explicacion simple: piensa en el concepto como un sistema con partes, funciones y relaciones clave.",
       "Ahora una pregunta de comprension: como lo explicarias con tus propias palabras en una o dos frases?",
     ].join("\n\n");
@@ -176,7 +195,7 @@ function buildMockResponse(body: {
   if (system.includes("investigacion academica") || system.includes("escritura academica")) {
     return [
       "Modo demo activo. Esta respuesta es local para que puedas probar la interfaz sin API externa.",
-      `Resumen breve de tu pedido: ${lastMessage.slice(0, 220) || "No se recibio contenido."}`,
+      `Resumen breve de tu pedido: ${contentForGeneral.slice(0, 220) || "No se recibio contenido."}`,
       "Puntos sugeridos:",
       "- idea central",
       "- argumentos o hallazgos principales",
@@ -188,7 +207,7 @@ function buildMockResponse(body: {
   return [
     "Modo demo activo.",
     "La API externa no esta configurada, asi que estoy respondiendo localmente para que puedas probar la web.",
-    `Tu ultimo mensaje fue: ${lastMessage.slice(0, 240) || "sin contenido"}`,
+    `Tu ultimo mensaje fue: ${contentForGeneral.slice(0, 240) || "sin contenido"}`,
   ].join("\n\n");
 }
 

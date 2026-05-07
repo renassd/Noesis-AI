@@ -829,19 +829,20 @@ export default function ResearchMode() {
 
     // ── Flashcard intent detection ────────────────────────────────────────────
     if (detectFlashcardIntent(messageContent)) {
+      console.log("FLASHCARD_INTENT_DETECTED", { trigger: messageContent.slice(0, 80) });
+
       // Gather context from ALL tool tabs (not just the active one)
+      const hasPdf = Boolean(attachment?.content?.trim());
+      console.log("PDF_UPLOAD_DETECTED", { hasPdf, fileName: attachment?.fileName ?? null });
+
       const { text: contextText, source: contextSource } = buildChatContextText(
         activeSession.messages,
         activeTool,
         attachment,
       );
 
-      console.log("[ResearchMode] flashcard intent detected", {
-        trigger: messageContent.slice(0, 60),
-        contextSource,
-        contextLength: contextText.length,
-        contextPreview: contextText.slice(0, 120),
-      });
+      console.log("PDF_TEXT_LENGTH", contextText.length);
+      console.log("FLASHCARD_SOURCE_SELECTED", contextSource);
 
       if (contextText.trim().length >= 60) {
         const nextSessionId =
@@ -881,25 +882,33 @@ export default function ResearchMode() {
             contextSource,
           });
 
-          // Wrap the source content in XML tags so the model cannot confuse
-          // PDF text / markdown / research notes with instructions. This is
-          // the single most reliable way to prevent "I cannot process this"
-          // or numbered-list responses when the PDF contains unusual patterns.
+          // Wrap source content in <source> XML tags to clearly separate it
+          // from any instruction-like text that may appear in PDFs or notes.
           const userMessage = `<source>\n${contextText}\n</source>`;
 
+          // ── Response prefilling ───────────────────────────────────────────
+          // Sending an assistant message starting with "[" as the LAST turn
+          // forces the Anthropic API to continue from that character. This
+          // makes it physically impossible for the model to add a preamble
+          // or return a numbered list — the response MUST be JSON continuation.
+          // The client then prepends "[" back to reconstruct the full array.
           const aiRes = await fetchWithSupabaseAuth("/api/ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               max_tokens: 2200,
               system: buildFlashcardSystemPrompt(8, fcLang),
-              messages: [{ role: "user", content: userMessage }],
+              messages: [
+                { role: "user", content: userMessage },
+                { role: "assistant", content: "[" }, // prefill forces JSON start
+              ],
             }),
           });
           const aiData = await aiRes.json();
           applyUsage(aiData.usage);
 
           if (!aiRes.ok) {
+            console.log("FLASHCARD_GENERATION_ERROR", { status: aiRes.status, error: aiData.error });
             setError(
               aiData.error ||
                 (lang === "en"
@@ -909,15 +918,23 @@ export default function ResearchMode() {
             return;
           }
 
-          // ── Step 2: Parse and validate the JSON array ─────────────────────
-          const rawText = (aiData.text || "").trim();
-          console.log("[ResearchMode] AI raw response", {
-            length: rawText.length,
-            preview: rawText.slice(0, 250),
+          // ── Step 2: Reconstruct and parse the JSON array ──────────────────
+          // The API returns the CONTINUATION after "[". If mock mode returned
+          // the full JSON (starts with "["), skip prepending.
+          const rawContinuation = (aiData.text || "").trim();
+          const rawText = rawContinuation.startsWith("[")
+            ? rawContinuation           // mock / no-prefill path
+            : "[" + rawContinuation;    // real API prefill path
+
+          console.log("FLASHCARD_GENERATION_RESPONSE", {
+            rawLength: rawContinuation.length,
+            fullLength: rawText.length,
+            preview: rawText.slice(0, 200),
             isMock: aiData.mock ?? false,
           });
 
-          if (!rawText) {
+          if (!rawContinuation) {
+            console.log("FLASHCARD_GENERATION_ERROR", { reason: "empty_response" });
             setError(
               lang === "en"
                 ? "The AI returned an empty response. Try again."
@@ -927,23 +944,19 @@ export default function ResearchMode() {
           }
 
           const validCards = extractFlashcardJson(rawText) ?? [];
-          console.log("[ResearchMode] parsed flashcards:", {
-            count: validCards.length,
-            hasJsonBrackets: rawText.includes("[") && rawText.includes("]"),
-            firstItem: validCards[0] ?? null,
-          });
+          console.log("FLASHCARDS_GENERATED_COUNT", validCards.length, { firstCard: validCards[0] ?? null });
 
           if (!validCards.length) {
-            // Give a specific reason so the user knows what to do
-            const hasArrayShape = rawText.includes("[") && rawText.includes("]");
-            const specificError = !hasArrayShape
-              ? (lang === "en"
-                  ? "The AI didn't return structured data. Ask for an explanation first, then request flashcards."
-                  : "La IA no devolvió datos estructurados. Pedí una explicación primero y luego las tarjetas.")
-              : (lang === "en"
-                  ? "The AI response has an unexpected format. Try asking again."
-                  : "El formato de respuesta fue inesperado. Intentá de nuevo.");
-            setError(specificError);
+            console.log("FLASHCARD_GENERATION_ERROR", {
+              reason: "parse_failed",
+              hasArrayBrackets: rawText.includes("[") && rawText.includes("]"),
+              rawPreview: rawText.slice(0, 300),
+            });
+            setError(
+              lang === "en"
+                ? "Could not parse the flashcards. Try again."
+                : "No se pudieron generar las tarjetas. Intentá de nuevo.",
+            );
             return;
           }
 
@@ -1005,7 +1018,8 @@ export default function ResearchMode() {
         }
         return; // skip the regular send path
       } else {
-        console.log("[ResearchMode] flashcard intent but insufficient context", {
+        console.log("FLASHCARD_GENERATION_ERROR", {
+          reason: "insufficient_context",
           contextLength: contextText.length,
           contextSource,
         });
