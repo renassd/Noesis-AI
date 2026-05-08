@@ -22,52 +22,102 @@ interface RawCard {
   answer: string;
 }
 
-function extractJsonArray(raw: string): unknown[] | null {
-  const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-
-  function parseCandidate(candidate: string): unknown[] | null {
-    try {
-      const parsed = JSON.parse(candidate);
-      if (Array.isArray(parsed)) return parsed;
-      if (typeof parsed === "string") {
-        const nested = JSON.parse(parsed);
-        if (Array.isArray(nested)) return nested;
-      }
-    } catch {
-      return null;
-    }
-    return null;
-  }
-
-  const direct = parseCandidate(cleaned);
-  if (direct) return direct;
-
-  const start = cleaned.indexOf("[");
-  const end = cleaned.lastIndexOf("]");
-  if (start === -1 || end === -1 || end <= start) return null;
-
-  return parseCandidate(cleaned.slice(start, end + 1));
-}
-
 function buildPrompt(quantity: number, text: string, langHint: string): string {
   return `You are a study assistant. Generate exactly ${quantity} flashcards from the text below.
 
 ${langHint}
 
-STRICT INSTRUCTIONS:
-- Respond ONLY with a JSON array. No introduction, no explanation, no text before or after.
-- Do not use markdown code blocks.
-- The array must have exactly ${quantity} objects.
-- Each object must have exactly these fields: "question" and "answer".
-- Questions should test comprehension, not literal memory.
-- Answers should be concise (1-3 sentences).
-- For math or science formulas, use valid LaTeX: $...$ for inline, $$...$$ for block.
+CRITICAL — output rules:
+- Your response must begin with [ and end with ]. Nothing before or after.
+- No markdown, no code fences, no numbered lists, no explanation.
+- Each item must have "question" and "answer" string fields.
+- Questions test comprehension. Answers are 1-3 sentences.
+- Formulas: $...$ inline LaTeX, $$...$$ display.
 
-EXACT FORMAT:
-[{"question":"...","answer":"..."}]
+[{"question":"...","answer":"..."},{"question":"...","answer":"..."}]
 
 TEXT:
 ${text.slice(0, 4000)}`;
+}
+
+// ── Robust parser ─────────────────────────────────────────────────────────────
+// Accepts: JSON array [...], wrapped object {"flashcards":[...]}, numbered Q/A
+// lists, or raw regex extraction — so any reasonable AI output is handled.
+
+function normalizeItem(c: unknown): RawCard | null {
+  if (typeof c !== "object" || c === null) return null;
+  const o = c as Record<string, unknown>;
+  const question =
+    typeof o.question  === "string" ? o.question  :
+    typeof o.pregunta  === "string" ? o.pregunta  :
+    typeof o.front     === "string" ? o.front     :
+    typeof o.q         === "string" ? o.q         : null;
+  const answer =
+    typeof o.answer    === "string" ? o.answer    :
+    typeof o.respuesta === "string" ? o.respuesta :
+    typeof o.back      === "string" ? o.back      :
+    typeof o.a         === "string" ? o.a         : null;
+  if (!question?.trim() || !answer?.trim()) return null;
+  return { question: question.trim(), answer: answer.trim() };
+}
+
+function extractCards(parsed: unknown): RawCard[] {
+  const arr: unknown[] = Array.isArray(parsed)
+    ? parsed
+    : (() => {
+        if (typeof parsed !== "object" || parsed === null) return [];
+        const o = parsed as Record<string, unknown>;
+        if (Array.isArray(o.flashcards)) return o.flashcards;
+        if (Array.isArray(o.cards))      return o.cards;
+        if (Array.isArray(o.items))      return o.items;
+        return [];
+      })();
+  return arr.flatMap((c) => { const r = normalizeItem(c); return r ? [r] : []; });
+}
+
+function extractJsonArray(raw: string): RawCard[] | null {
+  if (!raw?.trim()) return null;
+  const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+
+  // Strategy 1: parse the whole string
+  try { const r = extractCards(JSON.parse(cleaned)); if (r.length) return r; } catch {}
+
+  // Strategy 2: find any {...} or [...] span (handles prose preamble)
+  for (let si = 0; si < cleaned.length; si++) {
+    const ch = cleaned[si];
+    if (ch !== "[" && ch !== "{") continue;
+    const close = ch === "[" ? "]" : "}";
+    for (let ei = cleaned.length - 1; ei > si; ei--) {
+      if (cleaned[ei] !== close) continue;
+      try { const r = extractCards(JSON.parse(cleaned.slice(si, ei + 1))); if (r.length) return r; } catch {}
+    }
+  }
+
+  // Strategy 3: Q/A line-by-line (numbered lists)
+  const strip = (s: string) => s.replace(/^\*+|\*+$/g, "").replace(/\s+/g, " ").trim();
+  const qaCards: RawCard[] = [];
+  let pq = "";
+  for (const line of cleaned.split("\n")) {
+    const l = line.trim();
+    const qm = l.match(/^(?:\d+[.)]\s*)?(?:\*+)?\s*(?:Q(?:uestion)?|Pregunta)\s*:?\s*\*?\s*(.+)/i);
+    const am = l.match(/^(?:\*+)?\s*(?:A(?:nswer)?|Respuesta)\s*:?\s*\*?\s*(.+)/i);
+    if (qm) pq = strip(qm[1]);
+    else if (am && pq) { qaCards.push({ question: pq, answer: strip(am[1]) }); pq = ""; }
+  }
+  if (qaCards.length) return qaCards;
+
+  // Strategy 4: regex scan (works on partially malformed JSON)
+  const re = /"(?:question|pregunta|front|q)"\s*:\s*"((?:[^"\\]|\\.)*)"\s*[,}][^]*?"(?:answer|respuesta|back|a)"\s*:\s*"((?:[^"\\]|\\.)*)"/gi;
+  const regCards: RawCard[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(cleaned)) !== null) {
+    const q = m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").trim();
+    const a = m[2].replace(/\\"/g, '"').replace(/\\n/g, "\n").trim();
+    if (q && a) regCards.push({ question: q, answer: a });
+  }
+  if (regCards.length) return regCards;
+
+  return null;
 }
 
 export default function FlashcardGenerator({ onSaveDeck }: Props) {
@@ -120,21 +170,10 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
       const rawText = data.text || "";
       if (!rawText.trim()) throw new Error(s.generatorEmptyError);
 
-      const parsed = extractJsonArray(rawText);
-      if (!parsed || parsed.length === 0) {
+      // extractJsonArray tries 4 strategies and already normalises field names
+      const validCards = extractJsonArray(rawText);
+      if (!validCards || validCards.length === 0) {
         throw new Error(s.generatorParseError);
-      }
-
-      const validCards = parsed.filter(
-        (item): item is RawCard =>
-          typeof item === "object" &&
-          item !== null &&
-          typeof (item as Record<string, unknown>).question === "string" &&
-          typeof (item as Record<string, unknown>).answer === "string",
-      );
-
-      if (validCards.length === 0) {
-        throw new Error(s.generatorFormatError);
       }
 
       const generatedCards: GeneratedCard[] = validCards.map((card, index) => ({
