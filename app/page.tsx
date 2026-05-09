@@ -10,6 +10,7 @@ import { useLang } from "./i18n";
 import { useAuth } from "@/context/AuthContext";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { HeroMockup } from "./HeroMockup";
+import ThemePanel from "./theme/ThemePanel";
 
 /* ── Profile dropdown ───────────────────────────────────────── */
 function ProfileDropdown({
@@ -21,21 +22,27 @@ function ProfileDropdown({
   signOut: () => void;
   en: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open,        setOpen]        = useState(false);
+  const [themeOpen,   setThemeOpen]   = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const initial = name ? name[0].toUpperCase() : email[0].toUpperCase();
-  const displayName = name || email;
-  const planLabel = usage?.plan === "pro" ? "Pro" : (en ? "Free" : "Gratis");
-  const isPro = usage?.plan === "pro";
+  // Priority: full name > portion before @ in email
+  const displayName  = name?.trim() || email.split("@")[0];
+  const initial      = displayName[0].toUpperCase();
+  const planLabel    = usage?.plan === "pro" ? "Pro" : (en ? "Free" : "Gratis");
+  const isPro        = usage?.plan === "pro";
 
   /* Close on outside click or Escape */
   useEffect(() => {
     if (!open) return;
-    function onKey(e: KeyboardEvent)   { if (e.key === "Escape") setOpen(false); }
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
+    const onKey  = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen(false); setProfileOpen(false); } };
+    const onDown = (e: MouseEvent)    => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setProfileOpen(false);
+      }
+    };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown",   onKey);
     return () => {
@@ -44,111 +51,136 @@ function ProfileDropdown({
     };
   }, [open]);
 
-  const items: Array<{
-    icon: string;
-    label: string;
-    danger?: boolean;
-    action: () => void;
-    accent?: boolean;
-  }> = [
-    {
-      icon: "upgrade",
-      label: en ? "Upgrade plan" : "Mejorar plan",
-      accent: !isPro,
-      action: () => { setOpen(false); document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }); },
-    },
-    {
-      icon: "tune",
-      label: en ? "Personalization" : "Personalización",
-      action: () => { setOpen(false); },
-    },
-    {
-      icon: "person",
-      label: en ? "Profile" : "Perfil",
-      action: () => { setOpen(false); },
-    },
-    {
-      icon: "settings",
-      label: en ? "Settings" : "Configuración",
-      action: () => { setOpen(false); },
-    },
-    {
-      icon: "help_outline",
-      label: en ? "Help" : "Ayuda",
-      action: () => { setOpen(false); },
-    },
-  ];
+  function close() { setOpen(false); setProfileOpen(false); }
 
   return (
-    <div className="pd-root" ref={ref}>
-      {/* Trigger — avatar + chevron */}
-      <button
-        type="button"
-        className={`pd-trigger${open ? " pd-trigger--open" : ""}`}
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={en ? "Account menu" : "Menú de cuenta"}
-      >
-        <span className="pd-avatar" aria-hidden="true">{initial}</span>
-        <span className="pd-trigger-email">{email}</span>
-        <span className="material-symbols-outlined pd-chevron" aria-hidden="true">
-          expand_more
-        </span>
-      </button>
+    <>
+      {/* ThemePanel rendered outside the dropdown (uses portal, won't be clipped) */}
+      <ThemePanel open={themeOpen} onClose={() => setThemeOpen(false)} />
 
-      {/* Dropdown panel */}
-      {open && (
-        <div className="pd-panel" role="menu" aria-label={en ? "Account menu" : "Menú de cuenta"}>
+      <div className="pd-root" ref={ref}>
+        {/* ── Trigger: avatar + display name + chevron ── */}
+        <button
+          type="button"
+          className={`pd-trigger${open ? " pd-trigger--open" : ""}`}
+          onClick={() => { setOpen((v) => !v); setProfileOpen(false); }}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={en ? "Account menu" : "Menú de cuenta"}
+        >
+          <span className="pd-avatar" aria-hidden="true">{initial}</span>
+          <span className="pd-trigger-name">{displayName}</span>
+          <span className="material-symbols-outlined pd-chevron" aria-hidden="true">expand_more</span>
+        </button>
 
-          {/* ── User header ── */}
-          <div className="pd-header">
-            <div className="pd-header-avatar" aria-hidden="true">{initial}</div>
-            <div className="pd-header-info">
-              <span className="pd-header-name" title={displayName}>{displayName}</span>
-              <span className={`pd-header-plan${isPro ? " pd-header-plan--pro" : ""}`}>
-                {isPro
-                  ? <><span className="material-symbols-outlined" style={{ fontSize: 11 }}>workspace_premium</span>{planLabel}</>
-                  : planLabel}
-              </span>
+        {/* ── Dropdown panel ── */}
+        {open && (
+          <div className="pd-panel" role="menu" aria-label={en ? "Account menu" : "Menú de cuenta"}>
+
+            {/* Header: avatar + name + plan (no email) */}
+            <div className="pd-header">
+              <div className="pd-header-avatar" aria-hidden="true">{initial}</div>
+              <div className="pd-header-info">
+                <span className="pd-header-name" title={displayName}>{displayName}</span>
+                <span className={`pd-header-plan${isPro ? " pd-header-plan--pro" : ""}`}>
+                  {isPro && (
+                    <span className="material-symbols-outlined" style={{ fontSize: 11 }} aria-hidden="true">
+                      workspace_premium
+                    </span>
+                  )}
+                  {planLabel}
+                </span>
+              </div>
+            </div>
+
+            {/* Profile expanded: email shown only here */}
+            {profileOpen && (
+              <div className="pd-profile-reveal" aria-live="polite">
+                <span className="material-symbols-outlined pd-profile-icon" aria-hidden="true">mail</span>
+                <span className="pd-profile-email" title={email}>{email}</span>
+              </div>
+            )}
+
+            <div className="pd-divider" aria-hidden="true" />
+
+            {/* Menu items */}
+            <div className="pd-items" role="none">
+              {/* Upgrade plan */}
+              {!isPro && (
+                <button
+                  type="button" role="menuitem"
+                  className="pd-item pd-item--accent"
+                  onClick={() => { close(); document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }); }}
+                >
+                  <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">upgrade</span>
+                  {en ? "Upgrade plan" : "Mejorar plan"}
+                </button>
+              )}
+
+              {/* Personalization → opens ThemePanel */}
+              <button
+                type="button" role="menuitem"
+                className="pd-item"
+                onClick={() => { close(); setTimeout(() => setThemeOpen(true), 80); }}
+              >
+                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">tune</span>
+                {en ? "Personalization" : "Personalización"}
+              </button>
+
+              {/* Profile → reveals email inside dropdown */}
+              <button
+                type="button" role="menuitem"
+                className={`pd-item${profileOpen ? " pd-item--active" : ""}`}
+                onClick={() => setProfileOpen((v) => !v)}
+              >
+                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">person</span>
+                {en ? "Profile" : "Perfil"}
+                <span className="material-symbols-outlined pd-item-chevron" aria-hidden="true">
+                  {profileOpen ? "expand_less" : "chevron_right"}
+                </span>
+              </button>
+
+              {/* Settings → opens ThemePanel (same panel covers appearance + theme) */}
+              <button
+                type="button" role="menuitem"
+                className="pd-item"
+                onClick={() => { close(); setTimeout(() => setThemeOpen(true), 80); }}
+              >
+                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">settings</span>
+                {en ? "Settings" : "Configuración"}
+              </button>
+
+              {/* Help */}
+              <button
+                type="button" role="menuitem"
+                className="pd-item"
+                onClick={() => {
+                  close();
+                  window.open("mailto:hello@neuvra.ai?subject=Help", "_blank");
+                }}
+              >
+                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">help_outline</span>
+                {en ? "Help" : "Ayuda"}
+              </button>
+            </div>
+
+            <div className="pd-divider" aria-hidden="true" />
+
+            {/* Sign out — always visible */}
+            <div className="pd-signout-row" role="none">
+              <button
+                type="button" role="menuitem"
+                className="pd-item pd-item--signout"
+                onClick={() => { close(); signOut(); }}
+              >
+                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">logout</span>
+                {en ? "Sign out" : "Cerrar sesión"}
+              </button>
             </div>
           </div>
-
-          <div className="pd-divider" aria-hidden="true" />
-
-          {/* ── Menu items ── */}
-          <div className="pd-items" role="none">
-            {items.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                role="menuitem"
-                className={`pd-item${item.accent ? " pd-item--accent" : ""}`}
-                onClick={item.action}
-              >
-                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">{item.icon}</span>
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="pd-divider" aria-hidden="true" />
-
-          {/* ── Sign out ── */}
-          <div role="none">
-            <button
-              type="button"
-              role="menuitem"
-              className="pd-item pd-item--danger"
-              onClick={() => { setOpen(false); signOut(); }}
-            >
-              <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">logout</span>
-              {en ? "Sign out" : "Cerrar sesión"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
 

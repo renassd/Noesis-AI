@@ -470,6 +470,17 @@ html.light .topbar-plan-badge--pro {
   white-space: nowrap;
 }
 
+/* display name in trigger (replaces email) */
+.pd-trigger-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .pd-chevron {
   font-size: 16px !important;
   color: var(--muted);
@@ -608,25 +619,71 @@ html.light .pd-item:hover { background: rgba(15,23,42,0.05); color: #0f172a; }
 html.light .pd-item--accent       { color: #4f46e5; }
 html.light .pd-item--accent:hover { background: rgba(99,102,241,0.08); color: #4338ca; }
 
-/* Danger (sign out) */
-.pd-items + .pd-divider + div .pd-item--danger,
-.pd-item--danger {
-  color: rgba(255,255,255,0.55);
-  padding: 9px 14px;
+/* Profile inline reveal */
+.pd-profile-reveal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 0;
+  animation: pd-in 0.14s ease;
 }
-.pd-item--danger:hover {
-  background: rgba(239,68,68,0.1);
-  color: #f87171;
+.pd-profile-icon {
+  font-size: 14px !important;
+  color: rgba(255,255,255,0.35);
+  flex-shrink: 0;
 }
-html.light .pd-item--danger       { color: rgba(15,23,42,0.5); }
-html.light .pd-item--danger:hover { background: rgba(239,68,68,0.07); color: #dc2626; }
+html.light .pd-profile-icon { color: rgba(15,23,42,0.35); }
+.pd-profile-email {
+  font: 400 11px var(--font-body);
+  color: rgba(255,255,255,0.45);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.light .pd-profile-email { color: rgba(15,23,42,0.45); }
+
+/* Active item (Profile when expanded) */
+.pd-item--active {
+  color: #fff;
+  background: rgba(255,255,255,0.06);
+}
+html.light .pd-item--active { color: #0f172a; background: rgba(15,23,42,0.05); }
+
+/* Inline chevron inside item (Profile expand arrow) */
+.pd-item-chevron {
+  font-size: 16px !important;
+  margin-left: auto;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.3);
+}
+html.light .pd-item-chevron { color: rgba(15,23,42,0.3); }
+
+/* Sign out row */
+.pd-signout-row { padding: 2px 0; }
+
+/* Sign out — always visible with a clear but subtle danger tone */
+.pd-item--signout {
+  color: #fca5a5 !important;   /* light red, always on */
+}
+.pd-item--signout:hover {
+  background: rgba(239,68,68,0.12) !important;
+  color: #f87171 !important;
+}
+html.light .pd-item--signout       { color: #dc2626 !important; }
+html.light .pd-item--signout:hover { background: rgba(239,68,68,0.07) !important; color: #b91c1c !important; }
 
 .pd-item-icon {
   font-size: 17px !important;
   flex-shrink: 0;
   opacity: 0.75;
 }
-.pd-item:hover .pd-item-icon { opacity: 1; }
+.pd-item:hover .pd-item-icon,
+.pd-item--active .pd-item-icon,
+.pd-item--signout .pd-item-icon { opacity: 1; }
+
+@media (max-width: 540px) {
+  .pd-trigger-name { display: none; }
+}
 
 @media (max-width: 640px) {
   .topbar-user-email {
