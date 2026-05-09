@@ -428,6 +428,14 @@ export default function HomePage() {
       <header className="landing-topbar" role="banner">
         <div className="wrap">
           <a href="#hero" className="lp-brand" aria-label="Neuvra AI — Inicio">
+            <Image
+              src="/logo.jpeg"
+              alt=""
+              width={28}
+              height={28}
+              className="lp-brand-icon"
+              aria-hidden="true"
+            />
             Neuvra
           </a>
 
@@ -601,40 +609,82 @@ export default function HomePage() {
                   : "Elegido por estudiantes e investigadores de"}
               </p>
 
-              <div className="lp-trust-logos" role="list">
+              {/*
+                Layout: 3 × 2 grid on desktop  |  2 × 3 on tablet  |  1-col on mobile
+                ─────────────────────────────────────────────────────────────────────
+                Institutions with existing image files → use <Image>
+                Institutions without files → text mark (image slot commented below,
+                ready to enable when /logos/{name}.png is added to /public/logos/)
+              */}
+              <div className="lp-trust-grid" role="list">
 
-                {/* ── Harvard University ── */}
-                <div className="lp-trust-logo-item" role="listitem" aria-label="Harvard University">
-                  <Image
-                    src="/logos/harvard.png"
-                    alt="Harvard University"
-                    width={735} height={234}
-                    style={{ height: 72, width: "auto" }}
-                    className="lp-trust-img lp-trust-img--harvard"
-                  />
+                {/* ── 1. Harvard University (has image) ── */}
+                <div className="lp-trust-cell" role="listitem" aria-label="Harvard University">
+                  <div className="lp-trust-img-wrap">
+                    <Image
+                      src="/logos/harvard.png"
+                      alt="Harvard University"
+                      width={735} height={234}
+                      className="lp-trust-img lp-trust-img--harvard"
+                    />
+                  </div>
                 </div>
 
-                <div className="lp-trust-sep" aria-hidden="true" />
+                {/* ── 2. MIT ── */}
+                {/* Image slot: <Image src="/logos/mit.png" alt="MIT" width={…} height={…} className="lp-trust-img" /> */}
+                <div className="lp-trust-cell" role="listitem" aria-label="Massachusetts Institute of Technology">
+                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
+                    <span className="lp-trust-logo-name">MIT</span>
+                    <span className="lp-trust-logo-sub">Massachusetts Institute of Technology</span>
+                  </div>
+                </div>
 
-                {/* ── University of Pennsylvania ── */}
-                <div className="lp-trust-logo-item" role="listitem" aria-label="University of Pennsylvania">
-                  <Image
-                    src="/logos/upenn.png"
-                    alt="University of Pennsylvania shield"
-                    width={500} height={432}
-                    style={{ height: 72, width: "auto" }}
-                    className="lp-trust-img lp-trust-light-only"
-                  />
-                  <Image
-                    src="/logos/upenn-dark.png"
-                    alt="University of Pennsylvania shield"
-                    width={500} height={432}
-                    style={{ height: 72, width: "auto" }}
-                    className="lp-trust-img lp-trust-dark-only"
-                  />
-                  <div className="lp-trust-logo-text">
-                    <span className="lp-trust-logo-name">UPENN</span>
-                    <span className="lp-trust-logo-sub">UNIVERSITY OF PENNSYLVANIA</span>
+                {/* ── 3. Yale University ── */}
+                {/* Image slot: <Image src="/logos/yale.png" alt="Yale University" width={…} height={…} className="lp-trust-img" /> */}
+                <div className="lp-trust-cell" role="listitem" aria-label="Yale University">
+                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
+                    <span className="lp-trust-logo-name">Yale</span>
+                    <span className="lp-trust-logo-sub">Yale University</span>
+                  </div>
+                </div>
+
+                {/* ── 4. Stanford University ── */}
+                {/* Image slot: <Image src="/logos/stanford.png" alt="Stanford University" width={…} height={…} className="lp-trust-img" /> */}
+                <div className="lp-trust-cell" role="listitem" aria-label="Stanford University">
+                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
+                    <span className="lp-trust-logo-name">Stanford</span>
+                    <span className="lp-trust-logo-sub">Stanford University</span>
+                  </div>
+                </div>
+
+                {/* ── 5. Princeton University ── */}
+                {/* Image slot: <Image src="/logos/princeton.png" alt="Princeton University" width={…} height={…} className="lp-trust-img" /> */}
+                <div className="lp-trust-cell" role="listitem" aria-label="Princeton University">
+                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
+                    <span className="lp-trust-logo-name">Princeton</span>
+                    <span className="lp-trust-logo-sub">Princeton University</span>
+                  </div>
+                </div>
+
+                {/* ── 6. University of Pennsylvania (has image) ── */}
+                <div className="lp-trust-cell" role="listitem" aria-label="University of Pennsylvania">
+                  <div className="lp-trust-img-wrap">
+                    <Image
+                      src="/logos/upenn.png"
+                      alt="University of Pennsylvania"
+                      width={500} height={432}
+                      className="lp-trust-img lp-trust-light-only"
+                    />
+                    <Image
+                      src="/logos/upenn-dark.png"
+                      alt="University of Pennsylvania"
+                      width={500} height={432}
+                      className="lp-trust-img lp-trust-dark-only"
+                    />
+                  </div>
+                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
+                    <span className="lp-trust-logo-name">Penn</span>
+                    <span className="lp-trust-logo-sub">University of Pennsylvania</span>
                   </div>
                 </div>
 

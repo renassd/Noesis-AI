@@ -99,6 +99,9 @@
 
 /* brand in landing */
 .lp-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--lp-font-head);
   font-size: 1.5rem;
   font-weight: 700;
@@ -107,6 +110,17 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-decoration: none;
+}
+
+/* Neuvra logo icon in navbar */
+.lp-brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  /* icon must not inherit the gradient text-fill */
+  -webkit-text-fill-color: initial;
 }
 
 /* nav links in landing */
@@ -705,6 +719,62 @@ html:not(.light) .lp-trust-img--harvard {
   .lp-trust-logos      { flex-direction: column; gap: 32px; }
   .lp-trust-sep        { width: 40px; height: 1px; }
   .lp-trust-logo-item  { padding: 0 20px; }
+}
+
+/* ── TRUST BELT GRID (6-university, 3 × 2) ──────────────────── */
+.lp-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+/* Each cell — consistent height, centred content, subtle inner border */
+.lp-trust-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 32px;
+  border: 1px solid rgba(255,255,255,0.06);
+  /* Collapse shared borders so we get a clean grid line, not double lines */
+  margin: -1px 0 0 -1px;
+  transition: background 0.22s var(--lp-ease);
+}
+.lp-trust-cell:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+/* Fixed-height wrapper so image logos and text marks align on the same baseline */
+.lp-trust-img-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+}
+
+/* Centre-aligned text mark variant (used when no image file exists yet) */
+.lp-trust-logo-text--center {
+  text-align: center;
+}
+.lp-trust-logo-text--center .lp-trust-logo-name { text-align: center; }
+.lp-trust-logo-text--center .lp-trust-logo-sub  { text-align: center; }
+
+/* Harvard image inside the grid */
+.lp-trust-img--harvard {
+  height: 36px;
+  width: auto;
+}
+
+/* Responsive — 2 columns on tablet */
+@media (max-width: 680px) {
+  .lp-trust-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Responsive — 1 column on mobile */
+@media (max-width: 420px) {
+  .lp-trust-grid { grid-template-columns: 1fr; }
+  .lp-trust-cell { padding: 20px 24px; }
 }
 
 /* ── METRICS ────────────────────────────────────────────────── */
