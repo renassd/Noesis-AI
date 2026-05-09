@@ -177,6 +177,93 @@
   border-radius: 12px;
 }
 
+/* ── Research CTA button ─────────────────────────────────────── */
+.lp-btn--research {
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.35);
+  color: #93c5fd;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.lp-btn--research:hover  {
+  background: rgba(59,130,246,0.22);
+  border-color: rgba(59,130,246,0.55);
+  color: #bfdbfe;
+  transform: scale(1.03);
+}
+.lp-btn--research:active { transform: scale(0.97); }
+html.light .lp-btn--research {
+  background: rgba(59,130,246,0.08);
+  border-color: rgba(59,130,246,0.3);
+  color: #1d4ed8;
+}
+html.light .lp-btn--research:hover {
+  background: rgba(59,130,246,0.14);
+  color: #1e40af;
+}
+
+/* ── Hero CTA layout ─────────────────────────────────────────── */
+.lp-hero-cta-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+.lp-hero-cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.lp-hero-cta-ghost {
+  font-size: 0.92rem;
+  padding: 11px 22px;
+  opacity: 0.85;
+}
+
+/* ── Plan pill ───────────────────────────────────────────────── */
+.lp-plan-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 9px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.01em;
+  width: fit-content;
+}
+.lp-plan-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  flex-shrink: 0;
+}
+.lp-plan-pill-dot--pro {
+  background: var(--lp-primary);
+  box-shadow: 0 0 6px rgba(124,58,237,0.6);
+}
+html.light .lp-plan-pill {
+  background: rgba(15,23,42,0.05);
+  border-color: rgba(15,23,42,0.12);
+  color: rgba(15,23,42,0.55);
+}
+html.light .lp-plan-pill-dot {
+  background: rgba(15,23,42,0.25);
+}
+
+@media (max-width: 680px) {
+  .lp-hero-cta-row { flex-direction: column; align-items: stretch; }
+  .lp-hero-cta-row .lp-btn { justify-content: center; }
+  .lp-hero-cta-ghost { align-self: center; }
+  .lp-hero-cta-wrap  { align-items: stretch; }
+  .lp-plan-pill      { align-self: center; }
+}
+
 /* ── GLASS CARD ─────────────────────────────────────────────── */
 .lp-glass {
   background: var(--lp-surface);

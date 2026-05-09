@@ -8,6 +8,7 @@ import ColorModeToggle from "./ColorModeToggle";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
 import { useAuth } from "@/context/AuthContext";
+import { useAiUsage } from "@/context/AiUsageContext";
 import { HeroMockup } from "./HeroMockup";
 
 /* ── Scroll hooks ──────────────────────────────────────────── */
@@ -208,6 +209,7 @@ function TaglineVisual({ lang }: { lang: "en" | "es" }) {
 export default function HomePage() {
   const { t, lang } = useLang();
   const { auth, openModal, signOut } = useAuth();
+  const { usage } = useAiUsage();
   const l = t.landing;
   const nav = t.nav;
   const aboutHref = lang === "es" ? "/quienes-somos" : "/who-we-are";
@@ -218,7 +220,7 @@ export default function HomePage() {
 
   const router = useRouter();
 
-  /** CTA handler — redirects authenticated users straight to the app */
+  /** CTA handler — redirects authenticated users to Study */
   function handleCta() {
     if (auth.signedIn) {
       router.push("/estudio");
@@ -226,6 +228,22 @@ export default function HomePage() {
       openModal();
     }
   }
+
+  /** Research CTA handler — redirects authenticated users to Research */
+  function handleResearchCta() {
+    if (auth.signedIn) {
+      router.push("/investigacion");
+    } else {
+      openModal();
+    }
+  }
+
+  /** Friendly plan label */
+  const planLabel = (() => {
+    if (!auth.signedIn || !usage) return null;
+    if (usage.plan === "pro") return en ? "Pro" : "Pro";
+    return en ? "Free" : "Gratis";
+  })();
 
   /* Material Symbols font loaded via Google Fonts CDN for icon rendering */
   useEffect(() => {
@@ -259,6 +277,11 @@ export default function HomePage() {
                   {auth.name ? auth.name[0].toUpperCase() : auth.email[0].toUpperCase()}
                 </span>
                 <span className="topbar-user-email">{auth.email}</span>
+                {planLabel && (
+                  <span className={`topbar-plan-badge${usage?.plan === "pro" ? " topbar-plan-badge--pro" : ""}`}>
+                    {planLabel}
+                  </span>
+                )}
                 <button type="button" className="topbar-signout" onClick={signOut}>
                   {en ? "Sign out" : "Salir"}
                 </button>
@@ -336,16 +359,39 @@ export default function HomePage() {
                   ))}
                 </FadeReveal>
 
-                <FadeReveal as="div" delay={380} style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <button
-                    type="button"
-                    className="lp-btn lp-btn--primary"
-                    onClick={handleCta}
-                    aria-label={en ? "Start learning with Neuvra" : "Empezar a aprender con Neuvra"}
-                  >
-                    {l.ctaPrimary}
-                  </button>
-                  <a href="#journey" className="lp-btn lp-btn--ghost">
+                <FadeReveal as="div" delay={380} className="lp-hero-cta-wrap">
+                  {/* Current plan pill — only shown when signed in */}
+                  {planLabel && (
+                    <div className="lp-plan-pill" aria-label={en ? `Current plan: ${planLabel}` : `Plan actual: ${planLabel}`}>
+                      <span className={`lp-plan-pill-dot${usage?.plan === "pro" ? " lp-plan-pill-dot--pro" : ""}`} aria-hidden="true" />
+                      {en ? `Current plan: ${planLabel}` : `Plan actual: ${planLabel}`}
+                    </div>
+                  )}
+
+                  {/* Main CTA buttons */}
+                  <div className="lp-hero-cta-row">
+                    <button
+                      type="button"
+                      className="lp-btn lp-btn--primary"
+                      onClick={handleCta}
+                      aria-label={en ? "Start learning with Neuvra" : "Empezar a aprender con Neuvra"}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">school</span>
+                      {l.ctaPrimary}
+                    </button>
+                    <button
+                      type="button"
+                      className="lp-btn lp-btn--research"
+                      onClick={handleResearchCta}
+                      aria-label={en ? "Start researching with Neuvra" : "Explorar investigación con Neuvra"}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">search_insights</span>
+                      {en ? "Start researching" : "Explorar investigación"}
+                    </button>
+                  </div>
+
+                  {/* Secondary ghost link */}
+                  <a href="#journey" className="lp-btn lp-btn--ghost lp-hero-cta-ghost">
                     {l.ctaSecondary}
                   </a>
                 </FadeReveal>
@@ -574,8 +620,8 @@ export default function HomePage() {
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
                   {(en
-                    ? ["AI Tutor with Socratic method", "PDF & document explanations", "Concept simplification"]
-                    : ["Tutor IA con método socrático", "Explicaciones de PDFs y docs", "Simplificación de conceptos"]
+                    ? ["AI Tutor with Socratic method", "Research paper analysis", "PDF & document explanations", "Concept simplification"]
+                    : ["Tutor IA con método socrático", "Análisis de papers de investigación", "Explicaciones de PDFs y docs", "Simplificación de conceptos"]
                   ).map(f => (
                     <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.78rem", color: "var(--lp-muted)" }}>
                       <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--lp-primary)", flexShrink: 0 }} aria-hidden="true" />
@@ -807,6 +853,16 @@ export default function HomePage() {
                       ? "Sample: 1,200 students, 6-month longitudinal"
                       : "Muestra: 1.200 estudiantes, 6 meses longitudinal"}
                   </div>
+                </div>
+
+                {/* Paper analysis feature chips */}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} aria-hidden="true">
+                  {(en
+                    ? ["Analyze papers", "PDF summaries", "Citations", "Literature review"]
+                    : ["Analizar papers", "Resúmenes PDF", "Citas", "Revisión de literatura"]
+                  ).map((tag) => (
+                    <span key={tag} className="lp-step-feat-tag" style={{ color: "rgba(59,130,246,0.85)", borderColor: "rgba(59,130,246,0.2)" }}>{tag}</span>
+                  ))}
                 </div>
 
                 <a
