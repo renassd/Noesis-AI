@@ -13,9 +13,10 @@ import { HeroMockup } from "./HeroMockup";
 
 /* ── Profile dropdown ───────────────────────────────────────── */
 function ProfileDropdown({
-  auth, usage, signOut, en, router,
+  email, name, usage, signOut, en, router,
 }: {
-  auth: { signedIn: true; email: string; name?: string };
+  email: string;
+  name?: string;
   usage: { plan: string } | null;
   signOut: () => void;
   en: boolean;
@@ -24,8 +25,8 @@ function ProfileDropdown({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const initial = auth.name ? auth.name[0].toUpperCase() : auth.email[0].toUpperCase();
-  const displayName = auth.name || auth.email;
+  const initial = name ? name[0].toUpperCase() : email[0].toUpperCase();
+  const displayName = name || email;
   const planLabel = usage?.plan === "pro" ? "Pro" : (en ? "Free" : "Gratis");
   const isPro = usage?.plan === "pro";
 
@@ -408,7 +409,8 @@ export default function HomePage() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {auth.signedIn ? (
               <ProfileDropdown
-                auth={auth}
+                email={auth.email}
+                name={auth.name}
                 usage={usage}
                 signOut={signOut}
                 en={en}
