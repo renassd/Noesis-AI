@@ -603,7 +603,7 @@ html.light .lp-plan-pill-dot {
 
 /* ── TRUST BELT (affiliation strip) ─────────────────────────── */
 .lp-trust-belt {
-  padding: 60px 0;
+  padding: 72px 0 80px;
   text-align: center;
   position: relative;
 }
@@ -623,12 +623,12 @@ html.light .lp-plan-pill-dot {
 /* Label above logos */
 .lp-trust-belt-label {
   font-family: var(--lp-font-body);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.20em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.28);
-  margin: 0 0 44px;
+  color: rgba(255,255,255,0.22);
+  margin: 0 0 52px;
 }
 
 /* Logos row */
@@ -712,123 +712,98 @@ html:not(.light) .lp-trust-light-only { display: none; }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   TRUST BELT GRID  — 6-university, 3 × 2
-   Premium Stripe/Vercel-style: muted, balanced, clean grid lines
+   TRUST BELT — floating logo strip
+   No grid lines · No cards · Logos breathe freely
    ══════════════════════════════════════════════════════════════ */
 
-/* Outer panel — hairline border, rounded corners, gap = visible grid lines */
+/* Flex row that wraps — pure whitespace between logos, no structure */
 .lp-trust-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;                               /* gap fills with bg → becomes the line */
-  background: rgba(255,255,255,0.07);     /* the line colour */
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 18px;
-  overflow: hidden;
-  max-width: 720px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 48px 64px;
+  max-width: 800px;
   margin-inline: auto;
 }
 
-/* Each cell — fills the gap, centres the logo */
+/* Each logo slot — no background, no border, just breathing room */
 .lp-trust-cell {
-  background: #0b1326;                    /* match page bg exactly */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 36px 28px;
-  min-height: 116px;
-  transition: background 0.22s var(--lp-ease);
   cursor: default;
 }
-.lp-trust-cell:hover {
-  background: rgba(255,255,255,0.032);
-}
 
-/* Fixed-height image container — all logos share the same visual baseline */
+/* Image wrapper — sized to unify the visual height baseline */
 .lp-trust-img-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 52px;
 }
 
-/* ── Logo sizing strategy ───────────────────────────────────────
-   Horizontal/text logos: tall-constrained, wide allowed
-   Square/icon logos:     slightly taller max-height so visual
-                          mass matches the wider text logos
-   ─────────────────────────────────────────────────────────────── */
-
-/* All grid logos: default text/horizontal style */
+/* ── All logos: muted by default, alive on hover ── */
 .lp-trust-grid .lp-trust-img {
-  max-height: 40px;
-  max-width: 160px;
-  height: auto;
-  width: auto;
-  object-fit: contain;
   display: block;
-  /* Premium muted presentation */
-  filter: grayscale(45%) opacity(0.62);
-  transition: filter 0.3s ease, transform 0.28s var(--lp-ease);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  /* Horizontal / text logos */
+  max-height: 34px;
+  max-width: 148px;
+  /* Subtle muted premium feel */
+  filter: grayscale(30%) opacity(0.58);
+  transition: filter 0.28s ease, transform 0.25s var(--lp-ease);
 }
 
-/* Reveal on cell hover */
 .lp-trust-cell:hover .lp-trust-img {
-  filter: grayscale(0%) opacity(0.88);
-  transform: scale(1.05);
+  filter: grayscale(0%) opacity(0.90);
+  transform: scale(1.06);
 }
 
-/* Square/icon logos (Stanford S, Penn seal) — need more height
-   to feel visually balanced against wide text logos */
+/* Icon/square logos need more height to match text logo visual weight */
 .lp-trust-grid .lp-trust-img--stanford,
 .lp-trust-grid .lp-trust-img--penn {
-  max-height: 56px;
-  max-width: 56px;
+  max-height: 52px;
+  max-width: 52px;
 }
 
-/* ── Dark mode: frosted white pill for dark-ink logos ───────────
-   Keeps authentic colors readable on the navy background.
-   Applied to Harvard, MIT, Yale, Stanford, Princeton.
-   Penn dark variant already has a light-colored logo — no bg needed.
+/* ── Dark mode: minimal white surface for dark-ink logos ──────────
+   Necessary for legibility on the navy background.
+   No border — just a soft translucent surface, as unobtrusive as possible.
    ─────────────────────────────────────────────────────────────── */
 html:not(.light) .lp-trust-grid .lp-trust-img--on-white,
 html:not(.light) .lp-trust-grid .lp-trust-img--harvard {
-  background: rgba(255,255,255,0.90);
-  border-radius: 8px;
-  padding: 9px 18px;
+  background: rgba(255,255,255,0.88);
+  border-radius: 6px;
+  padding: 7px 14px;
   box-sizing: content-box;
-  /* Compensate for padding so the logo inside stays at target height */
-  max-height: 30px;
-  max-width: 124px;
+  max-height: 26px;   /* content height inside the surface */
+  max-width: 120px;
 }
 
-/* Stanford icon: square pill with equal padding */
+/* Stanford block-S: square icon, equal padding */
 html:not(.light) .lp-trust-grid .lp-trust-img--stanford {
-  background: rgba(255,255,255,0.90);
-  border-radius: 8px;
-  padding: 8px;
+  background: rgba(255,255,255,0.88);
+  border-radius: 6px;
+  padding: 7px;
   box-sizing: content-box;
-  max-height: 40px;
-  max-width: 40px;
+  max-height: 38px;
+  max-width: 38px;
 }
 
-/* Penn dark variant sits directly on dark bg — no pill, more size */
+/* Penn dark logo is already light-coloured — no surface needed */
 .lp-trust-grid .lp-trust-dark-only {
-  max-height: 52px;
-  max-width: 56px;
+  max-height: 48px;
+  max-width: 52px;
 }
 
-/* Responsive — 2 columns on tablet */
-@media (max-width: 680px) {
-  .lp-trust-grid {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 480px;
-  }
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .lp-trust-grid { gap: 36px 48px; max-width: 520px; }
 }
-
-/* Responsive — 1 column on small mobile */
-@media (max-width: 380px) {
-  .lp-trust-grid { grid-template-columns: 1fr; max-width: 280px; }
-  .lp-trust-cell { padding: 24px 28px; min-height: 88px; }
+@media (max-width: 420px) {
+  .lp-trust-grid { gap: 28px 32px; }
 }
 
 /* ── METRICS ────────────────────────────────────────────────── */
