@@ -8,7 +8,6 @@ import ColorModeToggle from "./ColorModeToggle";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
 import { useAuth } from "@/context/AuthContext";
-import { useAiUsage } from "@/context/AiUsageContext";
 import { HeroMockup } from "./HeroMockup";
 
 /* ── Scroll hooks ──────────────────────────────────────────── */
@@ -209,7 +208,6 @@ function TaglineVisual({ lang }: { lang: "en" | "es" }) {
 export default function HomePage() {
   const { t, lang } = useLang();
   const { auth, openModal, signOut } = useAuth();
-  const { usage } = useAiUsage();
   const l = t.landing;
   const nav = t.nav;
   const aboutHref = lang === "es" ? "/quienes-somos" : "/who-we-are";
@@ -238,12 +236,6 @@ export default function HomePage() {
     }
   }
 
-  /** Friendly plan label */
-  const planLabel = (() => {
-    if (!auth.signedIn || !usage) return null;
-    if (usage.plan === "pro") return en ? "Pro" : "Pro";
-    return en ? "Free" : "Gratis";
-  })();
 
   /* Material Symbols font loaded via Google Fonts CDN for icon rendering */
   useEffect(() => {
@@ -277,11 +269,6 @@ export default function HomePage() {
                   {auth.name ? auth.name[0].toUpperCase() : auth.email[0].toUpperCase()}
                 </span>
                 <span className="topbar-user-email">{auth.email}</span>
-                {planLabel && (
-                  <span className={`topbar-plan-badge${usage?.plan === "pro" ? " topbar-plan-badge--pro" : ""}`}>
-                    {planLabel}
-                  </span>
-                )}
                 <button type="button" className="topbar-signout" onClick={signOut}>
                   {en ? "Sign out" : "Salir"}
                 </button>
@@ -360,14 +347,6 @@ export default function HomePage() {
                 </FadeReveal>
 
                 <FadeReveal as="div" delay={380} className="lp-hero-cta-wrap">
-                  {/* Current plan pill — only shown when signed in */}
-                  {planLabel && (
-                    <div className="lp-plan-pill" aria-label={en ? `Current plan: ${planLabel}` : `Plan actual: ${planLabel}`}>
-                      <span className={`lp-plan-pill-dot${usage?.plan === "pro" ? " lp-plan-pill-dot--pro" : ""}`} aria-hidden="true" />
-                      {en ? `Current plan: ${planLabel}` : `Plan actual: ${planLabel}`}
-                    </div>
-                  )}
-
                   {/* Main CTA buttons */}
                   <div className="lp-hero-cta-row">
                     <button
