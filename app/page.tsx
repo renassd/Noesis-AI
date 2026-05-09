@@ -11,6 +11,147 @@ import { useAuth } from "@/context/AuthContext";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { HeroMockup } from "./HeroMockup";
 
+/* ── Profile dropdown ───────────────────────────────────────── */
+function ProfileDropdown({
+  auth, usage, signOut, en, router,
+}: {
+  auth: { signedIn: true; email: string; name?: string };
+  usage: { plan: string } | null;
+  signOut: () => void;
+  en: boolean;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const initial = auth.name ? auth.name[0].toUpperCase() : auth.email[0].toUpperCase();
+  const displayName = auth.name || auth.email;
+  const planLabel = usage?.plan === "pro" ? "Pro" : (en ? "Free" : "Gratis");
+  const isPro = usage?.plan === "pro";
+
+  /* Close on outside click or Escape */
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent)   { if (e.key === "Escape") setOpen(false); }
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown",   onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown",   onKey);
+    };
+  }, [open]);
+
+  const items: Array<{
+    icon: string;
+    label: string;
+    danger?: boolean;
+    action: () => void;
+    accent?: boolean;
+  }> = [
+    {
+      icon: "upgrade",
+      label: en ? "Upgrade plan" : "Mejorar plan",
+      accent: !isPro,
+      action: () => { setOpen(false); document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }); },
+    },
+    {
+      icon: "tune",
+      label: en ? "Personalization" : "Personalización",
+      action: () => { setOpen(false); },
+    },
+    {
+      icon: "person",
+      label: en ? "Profile" : "Perfil",
+      action: () => { setOpen(false); },
+    },
+    {
+      icon: "settings",
+      label: en ? "Settings" : "Configuración",
+      action: () => { setOpen(false); },
+    },
+    {
+      icon: "help_outline",
+      label: en ? "Help" : "Ayuda",
+      action: () => { setOpen(false); },
+    },
+  ];
+
+  return (
+    <div className="pd-root" ref={ref}>
+      {/* Trigger — avatar + chevron */}
+      <button
+        type="button"
+        className={`pd-trigger${open ? " pd-trigger--open" : ""}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={en ? "Account menu" : "Menú de cuenta"}
+      >
+        <span className="pd-avatar" aria-hidden="true">{initial}</span>
+        <span className="pd-trigger-email">{auth.email}</span>
+        <span className="material-symbols-outlined pd-chevron" aria-hidden="true">
+          expand_more
+        </span>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div className="pd-panel" role="menu" aria-label={en ? "Account menu" : "Menú de cuenta"}>
+
+          {/* ── User header ── */}
+          <div className="pd-header">
+            <div className="pd-header-avatar" aria-hidden="true">{initial}</div>
+            <div className="pd-header-info">
+              <span className="pd-header-name" title={displayName}>{displayName}</span>
+              <span className={`pd-header-plan${isPro ? " pd-header-plan--pro" : ""}`}>
+                {isPro
+                  ? <><span className="material-symbols-outlined" style={{ fontSize: 11 }}>workspace_premium</span>{planLabel}</>
+                  : planLabel}
+              </span>
+            </div>
+          </div>
+
+          <div className="pd-divider" aria-hidden="true" />
+
+          {/* ── Menu items ── */}
+          <div className="pd-items" role="none">
+            {items.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                role="menuitem"
+                className={`pd-item${item.accent ? " pd-item--accent" : ""}`}
+                onClick={item.action}
+              >
+                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="pd-divider" aria-hidden="true" />
+
+          {/* ── Sign out ── */}
+          <div role="none">
+            <button
+              type="button"
+              role="menuitem"
+              className="pd-item pd-item--danger"
+              onClick={() => { setOpen(false); signOut(); }}
+            >
+              <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">logout</span>
+              {en ? "Sign out" : "Cerrar sesión"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Scroll hooks ──────────────────────────────────────────── */
 function useScrollReveal() {
   useEffect(() => {
@@ -266,20 +407,13 @@ export default function HomePage() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {auth.signedIn ? (
-              <div className="topbar-user">
-                <span className="topbar-user-avatar">
-                  {auth.name ? auth.name[0].toUpperCase() : auth.email[0].toUpperCase()}
-                </span>
-                <span className="topbar-user-email">{auth.email}</span>
-                {usage && (
-                  <span className={`topbar-plan-badge${usage.plan === "pro" ? " topbar-plan-badge--pro" : ""}`}>
-                    {usage.plan === "pro" ? "Pro" : (en ? "Free" : "Gratis")}
-                  </span>
-                )}
-                <button type="button" className="topbar-signout" onClick={signOut}>
-                  {en ? "Sign out" : "Salir"}
-                </button>
-              </div>
+              <ProfileDropdown
+                auth={auth}
+                usage={usage}
+                signOut={signOut}
+                en={en}
+                router={router}
+              />
             ) : (
               <button
                 type="button"
