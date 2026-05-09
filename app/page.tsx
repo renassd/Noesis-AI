@@ -8,6 +8,7 @@ import ColorModeToggle from "./ColorModeToggle";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
 import { useAuth } from "@/context/AuthContext";
+import { useAiUsage } from "@/context/AiUsageContext";
 import { HeroMockup } from "./HeroMockup";
 
 /* ── Scroll hooks ──────────────────────────────────────────── */
@@ -208,6 +209,7 @@ function TaglineVisual({ lang }: { lang: "en" | "es" }) {
 export default function HomePage() {
   const { t, lang } = useLang();
   const { auth, openModal, signOut } = useAuth();
+  const { usage } = useAiUsage();
   const l = t.landing;
   const nav = t.nav;
   const aboutHref = lang === "es" ? "/quienes-somos" : "/who-we-are";
@@ -269,6 +271,11 @@ export default function HomePage() {
                   {auth.name ? auth.name[0].toUpperCase() : auth.email[0].toUpperCase()}
                 </span>
                 <span className="topbar-user-email">{auth.email}</span>
+                {usage && (
+                  <span className={`topbar-plan-badge${usage.plan === "pro" ? " topbar-plan-badge--pro" : ""}`}>
+                    {usage.plan === "pro" ? "Pro" : (en ? "Free" : "Gratis")}
+                  </span>
+                )}
                 <button type="button" className="topbar-signout" onClick={signOut}>
                   {en ? "Sign out" : "Salir"}
                 </button>
