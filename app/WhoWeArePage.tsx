@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 // useRef + useState kept for WordReveal; useEffect kept for global reveal + topbar
@@ -528,6 +529,14 @@ export function WhoWeArePage() {
       <header className="landing-topbar" role="banner">
         <div className="wrap">
           <Link href="/" className="lp-brand" aria-label="Neuvra AI">
+            <Image
+              src="/logo.jpeg"
+              alt=""
+              width={28}
+              height={28}
+              className="lp-brand-icon"
+              aria-hidden="true"
+            />
             Neuvra
           </Link>
 
