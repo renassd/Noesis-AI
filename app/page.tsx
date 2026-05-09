@@ -13,14 +13,13 @@ import { HeroMockup } from "./HeroMockup";
 
 /* ── Profile dropdown ───────────────────────────────────────── */
 function ProfileDropdown({
-  email, name, usage, signOut, en, router,
+  email, name, usage, signOut, en,
 }: {
   email: string;
   name?: string;
   usage: { plan: string } | null;
   signOut: () => void;
   en: boolean;
-  router: ReturnType<typeof useRouter>;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -92,7 +91,7 @@ function ProfileDropdown({
         aria-label={en ? "Account menu" : "Menú de cuenta"}
       >
         <span className="pd-avatar" aria-hidden="true">{initial}</span>
-        <span className="pd-trigger-email">{auth.email}</span>
+        <span className="pd-trigger-email">{email}</span>
         <span className="material-symbols-outlined pd-chevron" aria-hidden="true">
           expand_more
         </span>
@@ -414,7 +413,6 @@ export default function HomePage() {
                 usage={usage}
                 signOut={signOut}
                 en={en}
-                router={router}
               />
             ) : (
               <button
