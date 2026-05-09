@@ -662,148 +662,62 @@ html.light .lp-plan-pill-dot {
   flex-shrink: 0;
 }
 
-/* University logo image — base style (no !important so grid can override) */
+/* University logo image — base (grid overrides via .lp-trust-grid .lp-trust-img) */
 .lp-trust-img {
-  height: 48px;
+  display: block;
   width: auto;
-  display: block;
-  flex-shrink: 0;
+  height: auto;
   object-fit: contain;
-  filter: none;
-  mix-blend-mode: normal;
-}
-
-/* Dark/light asset swap for Penn */
-.lp-trust-dark-only  { display: none; }
-.lp-trust-light-only { display: block; }
-html:not(.light) .lp-trust-dark-only  { display: block; }
-html:not(.light) .lp-trust-light-only { display: none; }
-
-/* Text block next to logo */
-.lp-trust-logo-text { text-align: left; }
-
-.lp-trust-logo-name {
-  font-family: 'Georgia', 'Times New Roman', serif;
-  font-size: 1.1rem;
-  font-weight: 400;
-  letter-spacing: 0.10em;
-  color: currentColor;
-  line-height: 1;
-  text-transform: uppercase;
-  display: block;
-}
-.lp-trust-logo-sub {
-  font-family: var(--lp-font-body);
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: currentColor;
-  opacity: 0.55;
-  margin-top: 4px;
-  display: block;
-}
-
-/* Responsive — stack vertically only on very narrow viewports (old flex row) */
-@media (max-width: 460px) {
-  .lp-trust-logos      { flex-direction: column; gap: 32px; }
-  .lp-trust-sep        { width: 40px; height: 1px; }
-  .lp-trust-logo-item  { padding: 0 20px; }
 }
 
 /* ══════════════════════════════════════════════════════════════
    TRUST BELT — floating logo strip
-   No grid lines · No cards · Logos breathe freely
+   No cards · No boxes · No dividers · Logos breathe freely
    ══════════════════════════════════════════════════════════════ */
 
-/* Flex row that wraps — pure whitespace between logos, no structure */
 .lp-trust-grid {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 48px 64px;
-  max-width: 800px;
+  gap: 44px 60px;
+  max-width: 820px;
   margin-inline: auto;
 }
 
-/* Each logo slot — no background, no border, just breathing room */
 .lp-trust-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: default;
 }
 
-/* Image wrapper — sized to unify the visual height baseline */
-.lp-trust-img-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ── All logos: muted by default, alive on hover ── */
+/* ── All logos ─────────────────────────────────────────────────
+   brightness(0) invert(1): converts any dark-ink logo to a clean
+   white silhouette — the standard approach for dark backgrounds.
+   No boxes, no backgrounds, no containers needed.
+   Individual max-heights are set via inline style per logo.
+   ─────────────────────────────────────────────────────────────── */
 .lp-trust-grid .lp-trust-img {
   display: block;
   width: auto;
   height: auto;
+  max-width: 200px;          /* safety cap for unusually wide logos */
   object-fit: contain;
-  /* Horizontal / text logos */
-  max-height: 34px;
-  max-width: 148px;
-  /* Subtle muted premium feel */
-  filter: grayscale(30%) opacity(0.58);
-  transition: filter 0.28s ease, transform 0.25s var(--lp-ease);
+  filter: brightness(0) invert(1) opacity(0.50);
+  transition: filter 0.25s ease, transform 0.22s var(--lp-ease);
 }
 
 .lp-trust-cell:hover .lp-trust-img {
-  filter: grayscale(0%) opacity(0.90);
-  transform: scale(1.06);
-}
-
-/* Icon/square logos need more height to match text logo visual weight */
-.lp-trust-grid .lp-trust-img--stanford,
-.lp-trust-grid .lp-trust-img--penn {
-  max-height: 52px;
-  max-width: 52px;
-}
-
-/* ── Dark mode: minimal white surface for dark-ink logos ──────────
-   Necessary for legibility on the navy background.
-   No border — just a soft translucent surface, as unobtrusive as possible.
-   ─────────────────────────────────────────────────────────────── */
-html:not(.light) .lp-trust-grid .lp-trust-img--on-white,
-html:not(.light) .lp-trust-grid .lp-trust-img--harvard {
-  background: rgba(255,255,255,0.88);
-  border-radius: 6px;
-  padding: 7px 14px;
-  box-sizing: content-box;
-  max-height: 26px;   /* content height inside the surface */
-  max-width: 120px;
-}
-
-/* Stanford block-S: square icon, equal padding */
-html:not(.light) .lp-trust-grid .lp-trust-img--stanford {
-  background: rgba(255,255,255,0.88);
-  border-radius: 6px;
-  padding: 7px;
-  box-sizing: content-box;
-  max-height: 38px;
-  max-width: 38px;
-}
-
-/* Penn dark logo is already light-coloured — no surface needed */
-.lp-trust-grid .lp-trust-dark-only {
-  max-height: 48px;
-  max-width: 52px;
+  filter: brightness(0) invert(1) opacity(0.95);
+  transform: scale(1.05);
 }
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .lp-trust-grid { gap: 36px 48px; max-width: 520px; }
+  .lp-trust-grid { gap: 32px 44px; }
 }
-@media (max-width: 420px) {
-  .lp-trust-grid { gap: 28px 32px; }
+@media (max-width: 400px) {
+  .lp-trust-grid { gap: 26px 32px; }
 }
 
 /* ── METRICS ────────────────────────────────────────────────── */
