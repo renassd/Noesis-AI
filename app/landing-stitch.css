@@ -662,16 +662,15 @@ html.light .lp-plan-pill-dot {
   flex-shrink: 0;
 }
 
-/* University logo image — full opacity, no filter, no blend mode */
+/* University logo image — base style (no !important so grid can override) */
 .lp-trust-img {
-  height: 72px;
+  height: 48px;
   width: auto;
   display: block;
   flex-shrink: 0;
   object-fit: contain;
-  filter: none !important;
-  mix-blend-mode: normal !important;
-  opacity: 1 !important;
+  filter: none;
+  mix-blend-mode: normal;
 }
 
 /* Dark/light asset swap for Penn */
@@ -679,32 +678,6 @@ html.light .lp-plan-pill-dot {
 .lp-trust-light-only { display: block; }
 html:not(.light) .lp-trust-dark-only  { display: block; }
 html:not(.light) .lp-trust-light-only { display: none; }
-
-/* Harvard: show original logo on a white surface in dark mode so
-   the authentic dark text stays readable — zero pixel processing */
-html:not(.light) .lp-trust-img--harvard {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 8px;
-  padding: 8px 16px;
-  box-sizing: content-box;
-}
-
-/* Generic "dark-on-white" logos (MIT, Yale, Princeton, Stanford) —
-   same frosted white pill treatment in dark mode */
-html:not(.light) .lp-trust-img--on-white {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 8px;
-  padding: 8px 14px;
-  box-sizing: content-box;
-}
-
-/* Stanford block-S: square icon → size by height, tighter padding */
-html:not(.light) .lp-trust-img--stanford {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 8px;
-  padding: 6px;
-  box-sizing: content-box;
-}
 
 /* Text block next to logo */
 .lp-trust-logo-text { text-align: left; }
@@ -731,69 +704,131 @@ html:not(.light) .lp-trust-img--stanford {
   display: block;
 }
 
-/* Responsive — stack vertically only on very narrow viewports */
+/* Responsive — stack vertically only on very narrow viewports (old flex row) */
 @media (max-width: 460px) {
   .lp-trust-logos      { flex-direction: column; gap: 32px; }
   .lp-trust-sep        { width: 40px; height: 1px; }
   .lp-trust-logo-item  { padding: 0 20px; }
 }
 
-/* ── TRUST BELT GRID (6-university, 3 × 2) ──────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   TRUST BELT GRID  — 6-university, 3 × 2
+   Premium Stripe/Vercel-style: muted, balanced, clean grid lines
+   ══════════════════════════════════════════════════════════════ */
+
+/* Outer panel — hairline border, rounded corners, gap = visible grid lines */
 .lp-trust-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  max-width: 760px;
+  gap: 1px;                               /* gap fills with bg → becomes the line */
+  background: rgba(255,255,255,0.07);     /* the line colour */
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  overflow: hidden;
+  max-width: 720px;
   margin-inline: auto;
 }
 
-/* Each cell — consistent height, centred content, subtle inner border */
+/* Each cell — fills the gap, centres the logo */
 .lp-trust-cell {
+  background: #0b1326;                    /* match page bg exactly */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 28px 32px;
-  border: 1px solid rgba(255,255,255,0.06);
-  /* Collapse shared borders so we get a clean grid line, not double lines */
-  margin: -1px 0 0 -1px;
+  padding: 36px 28px;
+  min-height: 116px;
   transition: background 0.22s var(--lp-ease);
+  cursor: default;
 }
 .lp-trust-cell:hover {
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.032);
 }
 
-/* Fixed-height wrapper so image logos and text marks align on the same baseline */
+/* Fixed-height image container — all logos share the same visual baseline */
 .lp-trust-img-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 56px;
+  height: 52px;
 }
 
-/* Centre-aligned text mark variant (used when no image file exists yet) */
-.lp-trust-logo-text--center {
-  text-align: center;
-}
-.lp-trust-logo-text--center .lp-trust-logo-name { text-align: center; }
-.lp-trust-logo-text--center .lp-trust-logo-sub  { text-align: center; }
+/* ── Logo sizing strategy ───────────────────────────────────────
+   Horizontal/text logos: tall-constrained, wide allowed
+   Square/icon logos:     slightly taller max-height so visual
+                          mass matches the wider text logos
+   ─────────────────────────────────────────────────────────────── */
 
-/* All grid logos: uniform height, auto width preserves aspect ratio */
-.lp-trust-img--harvard,
-.lp-trust-img--on-white,
-.lp-trust-img--stanford {
-  height: 36px;
+/* All grid logos: default text/horizontal style */
+.lp-trust-grid .lp-trust-img {
+  max-height: 40px;
+  max-width: 160px;
+  height: auto;
   width: auto;
+  object-fit: contain;
+  display: block;
+  /* Premium muted presentation */
+  filter: grayscale(45%) opacity(0.62);
+  transition: filter 0.3s ease, transform 0.28s var(--lp-ease);
+}
+
+/* Reveal on cell hover */
+.lp-trust-cell:hover .lp-trust-img {
+  filter: grayscale(0%) opacity(0.88);
+  transform: scale(1.05);
+}
+
+/* Square/icon logos (Stanford S, Penn seal) — need more height
+   to feel visually balanced against wide text logos */
+.lp-trust-grid .lp-trust-img--stanford,
+.lp-trust-grid .lp-trust-img--penn {
+  max-height: 56px;
+  max-width: 56px;
+}
+
+/* ── Dark mode: frosted white pill for dark-ink logos ───────────
+   Keeps authentic colors readable on the navy background.
+   Applied to Harvard, MIT, Yale, Stanford, Princeton.
+   Penn dark variant already has a light-colored logo — no bg needed.
+   ─────────────────────────────────────────────────────────────── */
+html:not(.light) .lp-trust-grid .lp-trust-img--on-white,
+html:not(.light) .lp-trust-grid .lp-trust-img--harvard {
+  background: rgba(255,255,255,0.90);
+  border-radius: 8px;
+  padding: 9px 18px;
+  box-sizing: content-box;
+  /* Compensate for padding so the logo inside stays at target height */
+  max-height: 30px;
+  max-width: 124px;
+}
+
+/* Stanford icon: square pill with equal padding */
+html:not(.light) .lp-trust-grid .lp-trust-img--stanford {
+  background: rgba(255,255,255,0.90);
+  border-radius: 8px;
+  padding: 8px;
+  box-sizing: content-box;
+  max-height: 40px;
+  max-width: 40px;
+}
+
+/* Penn dark variant sits directly on dark bg — no pill, more size */
+.lp-trust-grid .lp-trust-dark-only {
+  max-height: 52px;
+  max-width: 56px;
 }
 
 /* Responsive — 2 columns on tablet */
 @media (max-width: 680px) {
-  .lp-trust-grid { grid-template-columns: repeat(2, 1fr); }
+  .lp-trust-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 480px;
+  }
 }
 
-/* Responsive — 1 column on mobile */
-@media (max-width: 420px) {
-  .lp-trust-grid { grid-template-columns: 1fr; }
-  .lp-trust-cell { padding: 20px 24px; }
+/* Responsive — 1 column on small mobile */
+@media (max-width: 380px) {
+  .lp-trust-grid { grid-template-columns: 1fr; max-width: 280px; }
+  .lp-trust-cell { padding: 24px 28px; min-height: 88px; }
 }
 
 /* ── METRICS ────────────────────────────────────────────────── */

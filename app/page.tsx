@@ -686,13 +686,13 @@ export default function HomePage() {
                       src="/logos/upenn.png"
                       alt="University of Pennsylvania"
                       width={500} height={432}
-                      className="lp-trust-img lp-trust-img--on-white lp-trust-light-only"
+                      className="lp-trust-img lp-trust-img--penn lp-trust-img--on-white lp-trust-light-only"
                     />
                     <Image
                       src="/logos/upenn-dark.png"
                       alt="University of Pennsylvania"
                       width={500} height={432}
-                      className="lp-trust-img lp-trust-dark-only"
+                      className="lp-trust-img lp-trust-img--penn lp-trust-dark-only"
                     />
                   </div>
                 </div>
