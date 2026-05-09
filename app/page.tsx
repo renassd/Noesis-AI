@@ -631,49 +631,62 @@ export default function HomePage() {
                 </div>
 
                 {/* ── 2. MIT ── */}
-                {/* Image slot: <Image src="/logos/mit.png" alt="MIT" width={…} height={…} className="lp-trust-img" /> */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Massachusetts Institute of Technology">
-                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
-                    <span className="lp-trust-logo-name">MIT</span>
-                    <span className="lp-trust-logo-sub">Massachusetts Institute of Technology</span>
+                  <div className="lp-trust-img-wrap">
+                    <Image
+                      src="/logos/mit.png"
+                      alt="Massachusetts Institute of Technology"
+                      width={357} height={100}
+                      className="lp-trust-img lp-trust-img--on-white"
+                    />
                   </div>
                 </div>
 
                 {/* ── 3. Yale University ── */}
-                {/* Image slot: <Image src="/logos/yale.png" alt="Yale University" width={…} height={…} className="lp-trust-img" /> */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Yale University">
-                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
-                    <span className="lp-trust-logo-name">Yale</span>
-                    <span className="lp-trust-logo-sub">Yale University</span>
+                  <div className="lp-trust-img-wrap">
+                    <Image
+                      src="/logos/yale.svg"
+                      alt="Yale University"
+                      width={500} height={216}
+                      className="lp-trust-img lp-trust-img--on-white"
+                      unoptimized
+                    />
                   </div>
                 </div>
 
                 {/* ── 4. Stanford University ── */}
-                {/* Image slot: <Image src="/logos/stanford.png" alt="Stanford University" width={…} height={…} className="lp-trust-img" /> */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Stanford University">
-                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
-                    <span className="lp-trust-logo-name">Stanford</span>
-                    <span className="lp-trust-logo-sub">Stanford University</span>
+                  <div className="lp-trust-img-wrap">
+                    <Image
+                      src="/logos/stanford.png"
+                      alt="Stanford University"
+                      width={400} height={490}
+                      className="lp-trust-img lp-trust-img--stanford"
+                    />
                   </div>
                 </div>
 
                 {/* ── 5. Princeton University ── */}
-                {/* Image slot: <Image src="/logos/princeton.png" alt="Princeton University" width={…} height={…} className="lp-trust-img" /> */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Princeton University">
-                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
-                    <span className="lp-trust-logo-name">Princeton</span>
-                    <span className="lp-trust-logo-sub">Princeton University</span>
+                  <div className="lp-trust-img-wrap">
+                    <Image
+                      src="/logos/princeton.png"
+                      alt="Princeton University"
+                      width={300} height={100}
+                      className="lp-trust-img lp-trust-img--on-white"
+                    />
                   </div>
                 </div>
 
-                {/* ── 6. University of Pennsylvania (has image) ── */}
+                {/* ── 6. University of Pennsylvania ── */}
                 <div className="lp-trust-cell" role="listitem" aria-label="University of Pennsylvania">
                   <div className="lp-trust-img-wrap">
                     <Image
                       src="/logos/upenn.png"
                       alt="University of Pennsylvania"
                       width={500} height={432}
-                      className="lp-trust-img lp-trust-light-only"
+                      className="lp-trust-img lp-trust-img--on-white lp-trust-light-only"
                     />
                     <Image
                       src="/logos/upenn-dark.png"
@@ -681,10 +694,6 @@ export default function HomePage() {
                       width={500} height={432}
                       className="lp-trust-img lp-trust-dark-only"
                     />
-                  </div>
-                  <div className="lp-trust-logo-text lp-trust-logo-text--center">
-                    <span className="lp-trust-logo-name">Penn</span>
-                    <span className="lp-trust-logo-sub">University of Pennsylvania</span>
                   </div>
                 </div>
 

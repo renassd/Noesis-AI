@@ -689,6 +689,23 @@ html:not(.light) .lp-trust-img--harvard {
   box-sizing: content-box;
 }
 
+/* Generic "dark-on-white" logos (MIT, Yale, Princeton, Stanford) —
+   same frosted white pill treatment in dark mode */
+html:not(.light) .lp-trust-img--on-white {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  padding: 8px 14px;
+  box-sizing: content-box;
+}
+
+/* Stanford block-S: square icon → size by height, tighter padding */
+html:not(.light) .lp-trust-img--stanford {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  padding: 6px;
+  box-sizing: content-box;
+}
+
 /* Text block next to logo */
 .lp-trust-logo-text { text-align: left; }
 
@@ -760,8 +777,10 @@ html:not(.light) .lp-trust-img--harvard {
 .lp-trust-logo-text--center .lp-trust-logo-name { text-align: center; }
 .lp-trust-logo-text--center .lp-trust-logo-sub  { text-align: center; }
 
-/* Harvard image inside the grid */
-.lp-trust-img--harvard {
+/* All grid logos: uniform height, auto width preserves aspect ratio */
+.lp-trust-img--harvard,
+.lp-trust-img--on-white,
+.lp-trust-img--stanford {
   height: 36px;
   width: auto;
 }
