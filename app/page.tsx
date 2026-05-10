@@ -609,54 +609,64 @@ export default function HomePage() {
                   : "Elegido por estudiantes e investigadores de"}
               </p>
 
-              {/*
-                Layout: 3 × 2 grid on desktop  |  2 × 3 on tablet  |  1-col on mobile
-                ─────────────────────────────────────────────────────────────────────
-                Institutions with existing image files → use <Image>
-                Institutions without files → text mark (image slot commented below,
-                ready to enable when /logos/{name}.png is added to /public/logos/)
-              */}
-              {/*
-                All logos: brightness(0) invert(1) converts dark ink → white silhouette.
-                Sizes set per-logo via inline maxHeight so each logo has the right
-                visual weight — no CSS class proliferation needed.
-              */}
               <div className="lp-trust-grid" role="list">
 
+                {/* ── Harvard ── */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Harvard University">
-                  <Image src="/logos/harvard.png" alt="Harvard University"
-                    width={735} height={234} className="lp-trust-img"
-                    style={{ maxHeight: 34 }} />
+                  <div className="lp-trust-img-wrap">
+                    <Image src="/logos/harvard.png" alt="Harvard University"
+                      width={735} height={234}
+                      className="lp-trust-img lp-trust-img--harvard" />
+                  </div>
                 </div>
 
+                {/* ── MIT ── */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Massachusetts Institute of Technology">
-                  <Image src="/logos/mit.png" alt="Massachusetts Institute of Technology"
-                    width={357} height={100} className="lp-trust-img"
-                    style={{ maxHeight: 38 }} />
+                  <div className="lp-trust-img-wrap">
+                    <Image src="/logos/mit.png" alt="Massachusetts Institute of Technology"
+                      width={357} height={100}
+                      className="lp-trust-img lp-trust-img--on-white" />
+                  </div>
                 </div>
 
+                {/* ── Yale ── */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Yale University">
-                  <Image src="/logos/yale.svg" alt="Yale University"
-                    width={500} height={216} className="lp-trust-img"
-                    style={{ maxHeight: 22 }} unoptimized />
+                  <div className="lp-trust-img-wrap">
+                    <Image src="/logos/yale.svg" alt="Yale University"
+                      width={500} height={216}
+                      className="lp-trust-img lp-trust-img--on-white"
+                      unoptimized />
+                  </div>
                 </div>
 
+                {/* ── Stanford ── */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Stanford University">
-                  <Image src="/logos/stanford.png" alt="Stanford University"
-                    width={400} height={490} className="lp-trust-img"
-                    style={{ maxHeight: 54 }} />
+                  <div className="lp-trust-img-wrap">
+                    <Image src="/logos/stanford.png" alt="Stanford University"
+                      width={400} height={490}
+                      className="lp-trust-img lp-trust-img--stanford" />
+                  </div>
                 </div>
 
+                {/* ── Princeton ── */}
                 <div className="lp-trust-cell" role="listitem" aria-label="Princeton University">
-                  <Image src="/logos/princeton.png" alt="Princeton University"
-                    width={300} height={100} className="lp-trust-img"
-                    style={{ maxHeight: 28 }} />
+                  <div className="lp-trust-img-wrap">
+                    <Image src="/logos/princeton.png" alt="Princeton University"
+                      width={300} height={100}
+                      className="lp-trust-img lp-trust-img--on-white" />
+                  </div>
                 </div>
 
+                {/* ── Penn — light logo for light mode, dark logo for dark mode ── */}
                 <div className="lp-trust-cell" role="listitem" aria-label="University of Pennsylvania">
-                  <Image src="/logos/upenn-dark.png" alt="University of Pennsylvania"
-                    width={500} height={432} className="lp-trust-img"
-                    style={{ maxHeight: 52 }} />
+                  <div className="lp-trust-img-wrap">
+                    <Image src="/logos/upenn.png" alt="University of Pennsylvania"
+                      width={500} height={432}
+                      className="lp-trust-img lp-trust-img--icon lp-trust-light-only" />
+                    <Image src="/logos/upenn-dark.png" alt="University of Pennsylvania"
+                      width={500} height={432}
+                      className="lp-trust-img lp-trust-img--icon lp-trust-dark-only" />
+                  </div>
                 </div>
 
               </div>
