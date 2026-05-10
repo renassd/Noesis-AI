@@ -1102,9 +1102,72 @@ export default function HomePage() {
                 </div>
               </article>
 
-              {/* ─── MEMORY ENGINE — shown between the two rows in layout but here at end ─ */}
-              {/* This card is inside the research column for tall layout, but actually
-                  the CSS spans research col 3 rows 1-2, so we need Memory as a standalone row below */}
+              {/* ─── PAPERS — row 3, cols 1-2, beside Research column ── */}
+              <article
+                className="lp-glass lp-sys-card lp-sys-papers lp-card-hover"
+                style={{
+                  "--lp-i": 4,
+                  background: "linear-gradient(135deg,rgba(59,130,246,0.12),rgba(14,165,233,0.07))",
+                  borderColor: "rgba(59,130,246,0.20)",
+                } as React.CSSProperties}
+              >
+                {/* Two-column interior: copy left, mini paper preview right */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "flex-start", flex: 1 }}>
+
+                  {/* Left — description */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div className="lp-sys-icon lp-sys-icon--secondary" aria-hidden="true">
+                      <span className="material-symbols-outlined" style={{ fontSize: 22 }}>article</span>
+                    </div>
+                    <h3 className="lp-h3" style={{ fontSize: "1.05rem" }}>
+                      {en ? "Papers" : "Papers"}
+                    </h3>
+                    <p className="lp-body" style={{ fontSize: "0.84rem", margin: 0 }}>
+                      {en
+                        ? "Analyze research papers, extract key ideas, and turn complex documents into clear understanding."
+                        : "Analizá papers de investigación, extraé ideas clave y convertí documentos complejos en comprensión clara."}
+                    </p>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} aria-hidden="true">
+                      {(en
+                        ? ["DOI lookup", "Methodology", "Citations", "Key findings"]
+                        : ["Búsqueda DOI", "Metodología", "Citas", "Hallazgos clave"]
+                      ).map((t) => (
+                        <span key={t} className="lp-step-feat-tag" style={{ color: "rgba(59,130,246,0.85)", borderColor: "rgba(59,130,246,0.22)" }}>{t}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right — mini paper card mock */}
+                  <div className="lp-doc-preview" aria-hidden="true" style={{ marginTop: 0 }}>
+                    <div className="lp-doc-filename" style={{ color: "var(--lp-secondary)", marginBottom: 8 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>article</span>
+                      {en ? "arxiv:2401.09340" : "arxiv:2401.09340"}
+                    </div>
+                    <p style={{ fontSize: "0.74rem", color: "rgba(255,255,255,0.55)", margin: "0 0 10px", lineHeight: 1.4 }}>
+                      {en
+                        ? "Attention mechanisms in large language models: a systematic review"
+                        : "Mecanismos de atención en modelos de lenguaje: una revisión sistemática"}
+                    </p>
+                    <div className="lp-doc-bullet">
+                      {en ? "Transformer attention scales quadratically with sequence length" : "La atención escala cuadráticamente con la longitud de la secuencia"}
+                    </div>
+                    <div className="lp-doc-bullet">
+                      {en ? "Sparse attention reduces cost by 60–80% on long documents" : "La atención dispersa reduce el costo un 60–80% en documentos largos"}
+                    </div>
+                    <div className="lp-doc-bullet">
+                      {en ? "32 papers reviewed, 2018–2024" : "32 papers revisados, 2018–2024"}
+                    </div>
+                  </div>
+
+                </div>
+
+                <a
+                  href="/investigacion"
+                  style={{ color: "var(--lp-secondary)", fontWeight: 700, fontSize: "0.86rem", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, marginTop: 20 }}
+                >
+                  {en ? "Open Research →" : "Abrir Investigación →"}
+                </a>
+              </article>
 
             </div>
 
