@@ -150,5 +150,5 @@ export async function syncSubscriptionFromProvider(
 }
 
 // Re-export feature gate utilities for convenience
-export { hasFeature, getEffectivePlan, requiredPlanFor } from "./feature-gates";
+export { hasFeature, getEffectivePlan, requiredPlanFor, getAccessibleFeatures } from "./feature-gates";
 export type { FeatureKey, PlanId } from "./types";

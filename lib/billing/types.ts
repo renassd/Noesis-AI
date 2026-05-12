@@ -6,6 +6,9 @@
 
 export type PlanId = "free" | "pro" | "enterprise";
 
+// Re-export FeatureKey from feature-gates so types.ts is the single import point
+export type { FeatureKey } from "./feature-gates";
+
 export type SubscriptionStatus =
   | "active"
   | "trialing"
