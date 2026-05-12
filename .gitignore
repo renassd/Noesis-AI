@@ -16,3 +16,5 @@ pnpm-debug.log*
 Thumbs.db
 
 tsconfig.tsbuildinfo
+.claude/
+.tmp_zip_apply/
