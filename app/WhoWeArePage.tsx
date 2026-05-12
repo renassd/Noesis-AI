@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-// useRef + useState kept for WordReveal; useEffect kept for global reveal + topbar
 import ColorModeToggle from "./ColorModeToggle";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
@@ -18,8 +17,36 @@ function useTopbarScroll() {
   }, []);
 }
 
-/* Reveal — just stamps lp-reveal onto a div.
-   Visibility is handled by the single global IntersectionObserver above. */
+function useReveal() {
+  const ref = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      setVisible(true);
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setVisible(true);
+        io.disconnect();
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -32px 0px" },
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return { ref, visible };
+}
+
 function Reveal({
   children,
   className,
@@ -29,9 +56,12 @@ function Reveal({
   className?: string;
   style?: React.CSSProperties;
 }) {
+  const { ref, visible } = useReveal();
+
   return (
     <div
-      className={`lp-reveal${className ? ` ${className}` : ""}`}
+      ref={ref as React.Ref<HTMLDivElement>}
+      className={`lp-reveal${visible ? " lp-visible" : ""}${className ? ` ${className}` : ""}`}
       style={style}
     >
       {children}
@@ -71,7 +101,7 @@ function WordReveal({ text, className }: { text: string; className?: string }) {
       ref={ref}
       className={className}
       aria-label={text}
-      style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", rowGap: "0.12em", width: "100%", maxWidth: "none", margin: "0 auto" }}
+      style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", rowGap: "0.12em" }}
     >
       {text.split(" ").map((word, i) => (
         <span
@@ -87,117 +117,6 @@ function WordReveal({ text, className }: { text: string; className?: string }) {
   );
 }
 
-/* ─── Manifesto content (hardcoded for both langs) ────────────── */
-const MANIFESTO_COPY = {
-  es: [
-    {
-      eyebrow: "Quiénes somos",
-      heading: "Quiénes somos",
-      body: (
-        <>
-          Neuvra es un compañero de estudio e investigación con IA diseñado para transformar
-          ideas complejas en{" "}
-          <span className="lp-grad-text">comprensión real</span>. Combinando explicación,
-          resumen y herramientas de memoria a un costo accesible, ayudamos a las personas a ir
-          más allá del aprendizaje superficial y{" "}
-          <span className="lp-grad-text">construir conocimiento que perdura</span>.
-        </>
-      ),
-    },
-    {
-      eyebrow: "Nuestra visión",
-      heading: "Nuestra visión",
-      body: (
-        <>
-          Nuestra visión es hacer que la investigación avanzada y el{" "}
-          <span className="lp-grad-text">aprendizaje profundo sean accesibles para todos</span>{" "}
-          — permitiendo que las personas comprendan, retengan y creen conocimiento al más alto
-          nivel.
-        </>
-      ),
-    },
-    {
-      eyebrow: "Nuestra misión",
-      heading: "Nuestra misión",
-      body: (
-        <>
-          Neuvra{" "}
-          <span className="lp-grad-text">democratiza la comprensión profunda</span> al
-          transformar información compleja en conocimiento que las personas realmente pueden
-          aprender, retener y usar{" "}
-          <span className="lp-grad-text">para mejorar el mundo</span>.
-        </>
-      ),
-    },
-  ],
-  en: [
-    {
-      eyebrow: "Who we are",
-      heading: "Who we are",
-      body: (
-        <>
-          Neuvra is an AI study and research companion designed to turn complex ideas into{" "}
-          <span className="lp-grad-text">true understanding</span>. By combining explanation,
-          summarization, and memory tools at accessible costs, we help people move beyond
-          surface learning and{" "}
-          <span className="lp-grad-text">build knowledge that lasts</span>.
-        </>
-      ),
-    },
-    {
-      eyebrow: "Our vision",
-      heading: "Our vision",
-      body: (
-        <>
-          Our vision is to make advanced research and{" "}
-          <span className="lp-grad-text">deep learning accessible to anyone</span> —
-          empowering people to understand, retain, and create knowledge at the highest level.
-        </>
-      ),
-    },
-    {
-      eyebrow: "Our mission",
-      heading: "Our mission",
-      body: (
-        <>
-          Neuvra{" "}
-          <span className="lp-grad-text">democratizes deep understanding</span> by turning
-          complex information into knowledge people can truly learn, retain, and use{" "}
-          <span className="lp-grad-text">to better the world</span>.
-        </>
-      ),
-    },
-  ],
-} as const;
-
-/* ─── ManifestoSection — driven by navbar lang, no internal toggle ── */
-function ManifestoSection({ lang }: { lang: "en" | "es" }) {
-  const blocks = MANIFESTO_COPY[lang];
-
-  return (
-    <section className="wwa-manifesto wwa-section--dim" aria-labelledby="manifesto-heading">
-      <div className="wrap" style={{ maxWidth: 860 }}>
-        {blocks.map((block, i) => (
-          <div key={`${lang}-${block.eyebrow}`}>
-            {/* No lp-reveal here — content must always be visible regardless of scroll/lang */}
-            <div
-              className="wwa-manifesto-block"
-              id={i === 0 ? "manifesto-heading" : undefined}
-            >
-              <div className="wwa-manifesto-eyebrow">{block.eyebrow}</div>
-              <p className="wwa-manifesto-es">{block.body}</p>
-            </div>
-            {i < blocks.length - 1 && (
-              <div className="wwa-manifesto-rule" aria-hidden="true" />
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════ */
 export function WhoWeArePage() {
   const { t, lang } = useLang();
   const { auth, openModal, signOut } = useAuth();
@@ -209,34 +128,11 @@ export function WhoWeArePage() {
 
   useTopbarScroll();
 
-  /* Global reveal — one observer for ALL .lp-reveal elements.
-     Re-runs when lang changes so newly-mounted elements (keyed by lang) get observed. */
-  useEffect(() => {
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const targets = document.querySelectorAll<Element>(".lp-reveal");
-
-    if (prefersReduced) {
-      targets.forEach((el) => el.classList.add("lp-visible"));
-      return;
-    }
-
-    const io = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          entry.target.classList.add("lp-visible");
-          io.unobserve(entry.target);
-        }),
-      // Low threshold + extend viewport downward so elements near fold trigger early
-      { threshold: 0.01, rootMargin: "0px 0px 120px 0px" }
-    );
-
-    targets.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang]);
-
-  // manifesto content now handled by ManifestoSection component below
+  const manifesto = [
+    { eyebrow: l.whoWeAreTitle, body: l.whoWeAreBody },
+    { eyebrow: l.missionTitle, body: l.missionBody },
+    { eyebrow: l.missionLabel, body: l.missionStatement },
+  ];
 
   const problems = en
     ? [
@@ -273,7 +169,7 @@ export function WhoWeArePage() {
           icon: "visibility_off",
           text: (
             <>
-              <strong>Leer sin comprender.</strong> Subrayás todo, cerrás la pestaña, y seguís sin poder explicar la
+              <strong>Leer sin comprender.</strong> SubrayÃ¡s todo, cerrÃ¡s la pestaÃ±a, y seguÃ­s sin poder explicar la
               idea central con tus propias palabras.
             </>
           ),
@@ -282,7 +178,7 @@ export function WhoWeArePage() {
           icon: "schedule",
           text: (
             <>
-              <strong>Resumir todo a mano durante horas.</strong> Gastás más energía ordenando información que
+              <strong>Resumir todo a mano durante horas.</strong> GastÃ¡s mÃ¡s energÃ­a ordenando informaciÃ³n que
               aprendiendo de verdad.
             </>
           ),
@@ -292,7 +188,7 @@ export function WhoWeArePage() {
           text: (
             <>
               <strong>Conocimiento partido en herramientas.</strong> Notas, PDFs, flashcards y repaso viven separados,
-              así que el ciclo de aprendizaje nunca se cierra.
+              asÃ­ que el ciclo de aprendizaje nunca se cierra.
             </>
           ),
         },
@@ -306,7 +202,7 @@ export function WhoWeArePage() {
           color: "var(--lp-primary)",
           title: "AI as mentor",
           body: "AI should not do the thinking for you. It should guide you to think better, question better, and understand better.",
-          tag: "AI Tutor · Socratic method",
+          tag: "AI Tutor Â· Socratic method",
         },
         {
           cls: "wwa-phil-2",
@@ -314,7 +210,7 @@ export function WhoWeArePage() {
           color: "var(--lp-tertiary)",
           title: "Active learning, not passive review",
           body: "Reading without transforming information is not studying. Neuvra forces you to process, synthesize, connect and produce.",
-          tag: "Active understanding · Flashcards · Smart Notes",
+          tag: "Active understanding Â· Flashcards Â· Smart Notes",
         },
         {
           cls: "wwa-phil-3",
@@ -322,7 +218,7 @@ export function WhoWeArePage() {
           color: "var(--lp-primary)",
           title: "Connection over accumulation",
           body: "The brain does not store knowledge in folders. It weaves it into networks. Connected knowledge becomes intuition.",
-          tag: "Knowledge maps · Research assistant",
+          tag: "Knowledge maps Â· Research assistant",
         },
         {
           cls: "wwa-phil-4",
@@ -330,7 +226,7 @@ export function WhoWeArePage() {
           color: "var(--lp-tertiary)",
           title: "Long-term memory",
           body: "We do not study for the exam. We study for life. Spaced repetition turns what you learn today into intuition tomorrow.",
-          tag: "Memory engine · Spaced repetition",
+          tag: "Memory engine Â· Spaced repetition",
         },
       ]
     : [
@@ -339,32 +235,32 @@ export function WhoWeArePage() {
           icon: "auto_awesome",
           color: "var(--lp-primary)",
           title: "IA como mentora",
-          body: "La IA no debería pensar por vos. Debería guiarte para pensar mejor, preguntar mejor y entender más profundo.",
-          tag: "Tutor IA · Método socrático",
+          body: "La IA no deberÃ­a pensar por vos. DeberÃ­a guiarte para pensar mejor, preguntar mejor y entender mÃ¡s profundo.",
+          tag: "Tutor IA Â· MÃ©todo socrÃ¡tico",
         },
         {
           cls: "wwa-phil-2",
           icon: "psychology",
           color: "var(--lp-tertiary)",
           title: "Aprendizaje activo, no pasivo",
-          body: "Leer sin transformar la información no es estudiar. Neuvra te obliga a procesar, sintetizar, conectar y producir.",
-          tag: "Comprensión activa · Flashcards · Smart Notes",
+          body: "Leer sin transformar la informaciÃ³n no es estudiar. Neuvra te obliga a procesar, sintetizar, conectar y producir.",
+          tag: "ComprensiÃ³n activa Â· Flashcards Â· Smart Notes",
         },
         {
           cls: "wwa-phil-3",
           icon: "hub",
           color: "var(--lp-primary)",
-          title: "Conexión sobre acumulación",
-          body: "El cerebro no archiva conocimiento en carpetas. Lo teje en redes. El conocimiento conectado se vuelve intuición.",
-          tag: "Mapas de conocimiento · Asistente de investigación",
+          title: "ConexiÃ³n sobre acumulaciÃ³n",
+          body: "El cerebro no archiva conocimiento en carpetas. Lo teje en redes. El conocimiento conectado se vuelve intuiciÃ³n.",
+          tag: "Mapas de conocimiento Â· Asistente de investigaciÃ³n",
         },
         {
           cls: "wwa-phil-4",
           icon: "update",
           color: "var(--lp-tertiary)",
           title: "Memoria a largo plazo",
-          body: "No estudiamos para el examen. Estudiamos para la vida. La repetición espaciada convierte lo aprendido hoy en intuición mañana.",
-          tag: "Motor de memoria · Repetición espaciada",
+          body: "No estudiamos para el examen. Estudiamos para la vida. La repeticiÃ³n espaciada convierte lo aprendido hoy en intuiciÃ³n maÃ±ana.",
+          tag: "Motor de memoria Â· RepeticiÃ³n espaciada",
         },
       ];
 
@@ -396,23 +292,23 @@ export function WhoWeArePage() {
         {
           n: "1",
           color: "var(--lp-primary)",
-          title: "Comprensión profunda",
-          body: "Antes de guardar algo, primero hay que entenderlo. Subís un PDF, apuntes o un tema difícil, y Neuvra lo convierte en una conversación que se adapta a tu nivel.",
-          tags: ["Tutor IA", "Explicaciones paso a paso", "Asistente de investigación", "Análisis de PDFs"],
+          title: "ComprensiÃ³n profunda",
+          body: "Antes de guardar algo, primero hay que entenderlo. SubÃ­s un PDF, apuntes o un tema difÃ­cil, y Neuvra lo convierte en una conversaciÃ³n que se adapta a tu nivel.",
+          tags: ["Tutor IA", "Explicaciones paso a paso", "Asistente de investigaciÃ³n", "AnÃ¡lisis de PDFs"],
         },
         {
           n: "2",
           color: "var(--lp-tertiary)",
-          title: "Síntesis inteligente",
-          body: "Una vez que entendés, Neuvra te ayuda a condensar. Resúmenes estructurados, Smart Notes y flashcards listas para repasar nacen de la misma fuente.",
-          tags: ["Resúmenes PDF", "Smart Notes", "Flashcards automáticas", "Conceptos clave"],
+          title: "SÃ­ntesis inteligente",
+          body: "Una vez que entendÃ©s, Neuvra te ayuda a condensar. ResÃºmenes estructurados, Smart Notes y flashcards listas para repasar nacen de la misma fuente.",
+          tags: ["ResÃºmenes PDF", "Smart Notes", "Flashcards automÃ¡ticas", "Conceptos clave"],
         },
         {
           n: "3",
           color: "var(--lp-secondary)",
           title: "Memoria evolutiva",
-          body: "No estudiás para un examen aislado. El Motor de Memoria rastrea el olvido y trae el material correcto justo cuando lo necesitás.",
-          tags: ["Motor de memoria", "Repetición espaciada", "Curva del olvido", "Entrenamiento de repaso"],
+          body: "No estudiÃ¡s para un examen aislado. El Motor de Memoria rastrea el olvido y trae el material correcto justo cuando lo necesitÃ¡s.",
+          tags: ["Motor de memoria", "RepeticiÃ³n espaciada", "Curva del olvido", "Entrenamiento de repaso"],
         },
       ];
 
@@ -427,9 +323,9 @@ export function WhoWeArePage() {
           accent: false,
           extra: (
             <div style={{ marginTop: 6, padding: 14, borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ fontSize: "0.76rem", color: "var(--lp-muted)", marginBottom: 8 }}>“I do not understand mitosis vs meiosis.”</div>
+              <div style={{ fontSize: "0.76rem", color: "var(--lp-muted)", marginBottom: 8 }}>â€œI do not understand mitosis vs meiosis.â€</div>
               <div style={{ fontSize: "0.82rem", color: "#fff", lineHeight: 1.55 }}>
-                “Think of mitosis as photocopying, and meiosis as shuffling a deck to create unique combinations.”
+                â€œThink of mitosis as photocopying, and meiosis as shuffling a deck to create unique combinations.â€
               </div>
             </div>
           ),
@@ -480,9 +376,9 @@ export function WhoWeArePage() {
           accent: false,
           extra: (
             <div style={{ marginTop: 6, padding: 14, borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ fontSize: "0.76rem", color: "var(--lp-muted)", marginBottom: 8 }}>“No entiendo mitosis vs meiosis.”</div>
+              <div style={{ fontSize: "0.76rem", color: "var(--lp-muted)", marginBottom: 8 }}>â€œNo entiendo mitosis vs meiosis.â€</div>
               <div style={{ fontSize: "0.82rem", color: "#fff", lineHeight: 1.55 }}>
-                “Pensalo así: mitosis es fotocopiar, meiosis es mezclar un mazo para crear combinaciones únicas.”
+                â€œPensalo asÃ­: mitosis es fotocopiar, meiosis es mezclar un mazo para crear combinaciones Ãºnicas.â€
               </div>
             </div>
           ),
@@ -498,8 +394,8 @@ export function WhoWeArePage() {
           cls: "wwa-b-pdf wwa-bcard",
           icon: "picture_as_pdf",
           color: "var(--lp-tertiary)",
-          title: "Resúmenes PDF",
-          body: "Subís documentos densos y recibís los métodos, conceptos y conclusiones que realmente importan.",
+          title: "ResÃºmenes PDF",
+          body: "SubÃ­s documentos densos y recibÃ­s los mÃ©todos, conceptos y conclusiones que realmente importan.",
         },
         {
           cls: "wwa-b-flash wwa-bcard wwa-bcard--accent",
@@ -519,24 +415,17 @@ export function WhoWeArePage() {
           cls: "wwa-b-research wwa-bcard",
           icon: "search_insights",
           color: "var(--lp-secondary)",
-          title: "Asistente de Investigación",
-          body: "Subís papers, DOIs o carpetas y Neuvra extrae metodología, hallazgos y citas en una salida estructurada.",
+          title: "Asistente de InvestigaciÃ³n",
+          body: "SubÃ­s papers, DOIs o carpetas y Neuvra extrae metodologÃ­a, hallazgos y citas en una salida estructurada.",
         },
       ];
 
   return (
-    <div className="wwa-page">
+    <>
       <header className="landing-topbar" role="banner">
         <div className="wrap">
           <Link href="/" className="lp-brand" aria-label="Neuvra AI">
-            <Image
-              src="/logo.jpeg"
-              alt=""
-              width={28}
-              height={28}
-              className="lp-brand-icon"
-              aria-hidden="true"
-            />
+            <Image src="/logo.jpeg" alt="" width={28} height={28} className="lp-brand-icon" aria-hidden="true" />
             Neuvra
           </Link>
 
@@ -579,13 +468,8 @@ export function WhoWeArePage() {
         </div>
       </header>
 
-      <main>
-        <section
-          className="wwa-section"
-          aria-labelledby="who-we-are-heading"
-          style={{ overflow: "hidden", textAlign: "center", paddingTop: 140, paddingBottom: 72 }}
-        >
-          {/* Ambient glow */}
+      <main className="wwa-page">
+        <section className="wwa-section" aria-labelledby="who-we-are-heading" style={{ overflow: "hidden" }}>
           <div
             aria-hidden="true"
             style={{
@@ -597,45 +481,46 @@ export function WhoWeArePage() {
             }}
           />
 
-          <div
-            className="wrap"
-            style={{ position: "relative", zIndex: 1, maxWidth: 720, textAlign: "center" }}
-          >
-            {/* Hero is always in viewport — skip lp-reveal to prevent flash of invisible content */}
-            <span className="lp-eyebrow" style={{ display: "inline-flex" }}>
-              {l.aboutPageEyebrow}
-            </span>
-
-            <p
-              className="lp-label"
-              style={{ color: "var(--lp-primary)", margin: "20px 0 16px" }}
-            >
-              {l.aboutPageStatement}
-            </p>
-
-            <WordReveal text={l.whoWeAreTitle} className="lp-h1" />
-
-            <p
-              style={{
-                margin: "22px auto 0",
-                maxWidth: 600,
-                color: "var(--lp-muted)",
-                lineHeight: 1.75,
-                fontSize: "1.02rem",
-              }}
-            >
-              {l.aboutPageIntro}
-            </p>
-
-            <div style={{ marginTop: 36, display: "flex", justifyContent: "center" }}>
-              <Link href="/" className="lp-btn lp-btn--ghost">
-                {l.backToHome}
-              </Link>
-            </div>
+          <div className="wrap" style={{ position: "relative", zIndex: 1, maxWidth: 960, paddingTop: 52 }}>
+            <Reveal className="lp-section-header" style={{ marginBottom: 0 }}>
+              <span className="lp-eyebrow">{l.aboutPageEyebrow}</span>
+              <p className="lp-label" style={{ color: "var(--lp-primary)", margin: "20px 0 14px" }}>
+                {l.aboutPageStatement}
+              </p>
+              <WordReveal text={l.whoWeAreTitle} className="lp-h1" />
+              <p
+                style={{
+                  margin: "22px auto 0",
+                  maxWidth: 700,
+                  color: "var(--lp-muted)",
+                  lineHeight: 1.75,
+                  fontSize: "1.02rem",
+                }}
+              >
+                {l.aboutPageIntro}
+              </p>
+              <div style={{ marginTop: 32 }}>
+                <Link href="/" className="lp-btn lp-btn--ghost">
+                  {l.backToHome}
+                </Link>
+              </div>
+            </Reveal>
           </div>
         </section>
 
-        <ManifestoSection lang={lang} />
+        <section className="wwa-manifesto wwa-section--dim" aria-label={l.whoWeAreTitle}>
+          <div className="wrap" style={{ maxWidth: 920 }}>
+            {manifesto.map((block, index) => (
+              <Reveal key={block.eyebrow}>
+                <div className="wwa-manifesto-block">
+                  <span className="wwa-manifesto-eyebrow">{block.eyebrow}</span>
+                  <p className="wwa-manifesto-es">{block.body}</p>
+                </div>
+                {index < manifesto.length - 1 ? <div className="wwa-manifesto-rule" /> : null}
+              </Reveal>
+            ))}
+          </div>
+        </section>
 
         <section className="lp-section" aria-labelledby="problem-heading">
           <div className="wrap">
@@ -653,16 +538,16 @@ export function WhoWeArePage() {
                     </>
                   ) : (
                     <>
-                      El problema no es que estudiás poco.
+                      El problema no es que estudiÃ¡s poco.
                       <br />
-                      Es que estudiás <span className="lp-grad-text">sin estructura.</span>
+                      Es que estudiÃ¡s <span className="lp-grad-text">sin estructura.</span>
                     </>
                   )}
                 </h2>
                 <p className="lp-body" style={{ marginBottom: 32, maxWidth: 470 }}>
                   {en
                     ? "Education taught most people to become containers of information, not builders of knowledge. Information without connection is noise."
-                    : "El sistema educativo nos enseñó a ser contenedores de información, no constructores de conocimiento. La información sin conexión es ruido."}
+                    : "El sistema educativo nos enseÃ±Ã³ a ser contenedores de informaciÃ³n, no constructores de conocimiento. La informaciÃ³n sin conexiÃ³n es ruido."}
                 </p>
                 <ul className="lp-problem-pain-list" aria-label={en ? "Common study problems" : "Problemas comunes al estudiar"}>
                   {problems.map((item, i) => (
@@ -691,7 +576,7 @@ export function WhoWeArePage() {
                   <p className="lp-body" style={{ fontSize: "0.92rem", marginBottom: 28 }}>
                     {en
                       ? "Neuvra replaces disconnected tools with one flow where explanation, synthesis and memory reinforce each other."
-                      : "Neuvra reemplaza herramientas desconectadas por un flujo único donde explicación, síntesis y memoria se refuerzan entre sí."}
+                      : "Neuvra reemplaza herramientas desconectadas por un flujo Ãºnico donde explicaciÃ³n, sÃ­ntesis y memoria se refuerzan entre sÃ­."}
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }} aria-hidden="true">
                     {(en
@@ -702,7 +587,7 @@ export function WhoWeArePage() {
                           { icon: "update", label: "Memory follows up", sub: "Reviews appear before you forget" },
                         ]
                       : [
-                          { icon: "upload_file", label: "Subís cualquier cosa", sub: "PDF, apuntes, paper, transcripción" },
+                          { icon: "upload_file", label: "SubÃ­s cualquier cosa", sub: "PDF, apuntes, paper, transcripciÃ³n" },
                           { icon: "smart_toy", label: "La IA lo explica", sub: "Paso a paso, adaptado a vos" },
                           { icon: "style", label: "Se crean flashcards", sub: "Desde la misma fuente" },
                           { icon: "update", label: "La memoria te sigue", sub: "Los repasos aparecen antes del olvido" },
@@ -730,22 +615,22 @@ export function WhoWeArePage() {
           <div className="wrap" style={{ maxWidth: 1180 }}>
             <Reveal className="lp-section-header">
               <span className="lp-eyebrow" style={{ marginBottom: 16, display: "inline-flex" }}>
-                {en ? "How we think" : "Cómo pensamos"}
+                {en ? "How we think" : "CÃ³mo pensamos"}
               </span>
               <h2 id="philosophy-heading" className="lp-h2">
-                {en ? "Our Philosophy" : "Nuestra Filosofía"}
+                {en ? "Our Philosophy" : "Nuestra FilosofÃ­a"}
               </h2>
               <p className="lp-body" style={{ marginTop: 14 }}>
                 {en
                   ? "Principles that guide every product and learning decision inside Neuvra."
-                  : "Principios que guían cada decisión de producto y aprendizaje dentro de Neuvra."}
+                  : "Principios que guÃ­an cada decisiÃ³n de producto y aprendizaje dentro de Neuvra."}
               </p>
             </Reveal>
 
             <Reveal>
               <div className="wwa-phil-grid">
                 {philosophyCards.map((card) => (
-                  <article key={card.title} className={`wwa-glass ${card.cls}`}>
+                  <article key={card.title} className={`wwa-glass ${card.cls}`} style={{ padding: "32px 28px" }}>
                     <span className="material-symbols-outlined" style={{ color: card.color, fontSize: 36, marginBottom: 16 }} aria-hidden="true">
                       {card.icon}
                     </span>
@@ -763,15 +648,15 @@ export function WhoWeArePage() {
           <div className="wrap" style={{ maxWidth: 820 }}>
             <Reveal className="lp-section-header">
               <span className="lp-eyebrow" style={{ marginBottom: 16, display: "inline-flex" }}>
-                {en ? "How it works" : "Cómo funciona"}
+                {en ? "How it works" : "CÃ³mo funciona"}
               </span>
               <h2 id="mastery-heading" className="lp-h2">
-                {en ? "The Mastery Circle" : "El Círculo de la Maestría"}
+                {en ? "The Mastery Circle" : "El CÃ­rculo de la MaestrÃ­a"}
               </h2>
               <p className="lp-body" style={{ marginTop: 14 }}>
                 {en
                   ? "Three stages that feed each other. Not a checklist, but a continuous cycle of deeper learning."
-                  : "Tres etapas que se alimentan entre sí. No es una checklist, sino un ciclo continuo de aprendizaje más profundo."}
+                  : "Tres etapas que se alimentan entre sÃ­. No es una checklist, sino un ciclo continuo de aprendizaje mÃ¡s profundo."}
               </p>
             </Reveal>
 
@@ -806,13 +691,13 @@ export function WhoWeArePage() {
           <div className="wrap">
             <Reveal className="lp-section-header">
               <span className="lp-eyebrow" style={{ marginBottom: 16, display: "inline-flex" }}>
-                {en ? "The system in action" : "El sistema en acción"}
+                {en ? "The system in action" : "El sistema en acciÃ³n"}
               </span>
               <h2 id="features-heading" className="lp-h2">
                 {en ? "What Neuvra does for you" : "Lo que Neuvra hace por vos"}
               </h2>
               <p className="lp-body" style={{ marginTop: 14 }}>
-                {en ? "Six interconnected capabilities. One single learning flow." : "Seis capacidades interconectadas. Un único flujo de aprendizaje."}
+                {en ? "Six interconnected capabilities. One single learning flow." : "Seis capacidades interconectadas. Un Ãºnico flujo de aprendizaje."}
               </p>
             </Reveal>
 
@@ -846,16 +731,16 @@ export function WhoWeArePage() {
                   </>
                 ) : (
                   <>
-                    Más que una plataforma,
+                    MÃ¡s que una plataforma,
                     <br />
-                    una nueva <em>relación</em> con el conocimiento.
+                    una nueva <em>relaciÃ³n</em> con el conocimiento.
                   </>
                 )}
               </h2>
               <p className="lp-closing-sub">
                 {en
                   ? "When a student stops feeling anxiety in front of the unknown and starts feeling curiosity, our work is done."
-                  : "Cuando un estudiante deja de sentir ansiedad ante lo desconocido y empieza a sentir curiosidad, nuestro trabajo está hecho."}
+                  : "Cuando un estudiante deja de sentir ansiedad ante lo desconocido y empieza a sentir curiosidad, nuestro trabajo estÃ¡ hecho."}
               </p>
               <Link href="/estudio" className="lp-btn lp-btn--primary">
                 {l.ctaPrimary}
@@ -873,14 +758,14 @@ export function WhoWeArePage() {
               {l.footerTagline}
             </p>
             <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.76rem", margin: 0 }}>
-              © {year} Neuvra AI. {l.footerRights}
+              Â© {year} Neuvra AI. {l.footerRights}
             </p>
           </div>
 
           <div>
             <h4 className="lp-label" style={{ color: "#fff", marginBottom: 16 }}>{l.footerProduct}</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <Link href="/investigacion" className="lp-nav-link">{en ? "Research" : "Investigación"}</Link>
+              <Link href="/investigacion" className="lp-nav-link">{en ? "Research" : "InvestigaciÃ³n"}</Link>
               <Link href="/estudio" className="lp-nav-link">{en ? "Study" : "Estudio"}</Link>
               <Link href="/#pricing" className="lp-nav-link">{en ? "Pricing" : "Precios"}</Link>
             </div>
@@ -903,6 +788,6 @@ export function WhoWeArePage() {
           </div>
         </div>
       </footer>
-    </div>
+    </>
   );
 }
