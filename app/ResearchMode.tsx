@@ -36,7 +36,7 @@ type Message = {
   attachment?: Omit<AttachedDocument, "content">;
   generatedCards?: GeneratedCardsData;
 };
-type ToolId = "summary" | "review" | "explain" | "writing";
+type ToolId = "summary" | "review" | "explain" | "writing" | "papers";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
 
 interface ResearchSession {
@@ -128,6 +128,33 @@ Tu trabajo es ayudar a organizar, estructurar y mejorar textos. Segun lo que te 
 - Si el input es ambiguo, pregunta que tipo de ayuda necesita.
 
 ${base}`;
+    case "papers":
+      return `You are a specialist assistant for analysing academic research papers and scientific documents.
+
+When the user pastes a paper, article or academic text, produce a structured analysis:
+
+## Research question
+One or two sentences on what the paper tries to answer or demonstrate.
+
+## Methodology
+Study design, data sources, participants or corpus, and analysis methods.
+
+## Key findings
+Bullet list of the main results with supporting evidence where relevant.
+
+## Contributions
+What this paper adds to its field.
+
+## Limitations & caveats
+Weaknesses in design, scope, generalisability, or potential biases.
+
+## Key concepts
+Any technical terms, models or formulas worth understanding, with brief explanations.
+
+If only a title, abstract or DOI is provided, analyse what is available and ask for the full text.
+If no specific question is asked, produce the full structured analysis above.
+
+${base}`;
   }
 }
 
@@ -200,14 +227,16 @@ ${baseInstructions(langHint)}`;
 function getTools(lang: "es" | "en") {
   return lang === "en"
     ? [
+        { id: "papers"  as ToolId, label: "Analyze paper" },
         { id: "summary" as ToolId, label: "Summarize text" },
-        { id: "review" as ToolId, label: "Literature review" },
+        { id: "review"  as ToolId, label: "Literature review" },
         { id: "explain" as ToolId, label: "Explain concept" },
         { id: "writing" as ToolId, label: "Structure writing" },
       ]
     : [
+        { id: "papers"  as ToolId, label: "Analizar paper" },
         { id: "summary" as ToolId, label: "Resumir texto" },
-        { id: "review" as ToolId, label: "Revisión de literatura" },
+        { id: "review"  as ToolId, label: "Revisión de literatura" },
         { id: "explain" as ToolId, label: "Explicar concepto" },
         { id: "writing" as ToolId, label: "Estructurar escritura" },
       ];
@@ -216,14 +245,16 @@ function getTools(lang: "es" | "en") {
 function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
   return lang === "en"
     ? {
+        papers:  "Paste a research paper, article or abstract — I'll extract methodology, findings, contributions and limitations...",
         summary: "Paste the paper or article text you want to summarize...",
-        review: "Write your topic, research question or what you want to explore...",
+        review:  "Write your topic, research question or what you want to explore...",
         explain: "What concept would you like explained? (e.g. meiosis, Bayes...)",
         writing: "Paste your text or describe what part of your writing needs help...",
       }
     : {
+        papers:  "Pegá un paper, artículo o abstract — extraeré metodología, hallazgos, contribuciones y limitaciones...",
         summary: "Pegá el texto del paper o artículo que querés resumir...",
-        review: "Escribí tu tema, pregunta de investigación o lo que querés explorar...",
+        review:  "Escribí tu tema, pregunta de investigación o lo que querés explorar...",
         explain: "¿Qué concepto querés que te explique? (ej: meiosis, Bayes...)",
         writing: "Pegá tu texto o describí qué parte de tu escritura necesita organizarse...",
       };
@@ -232,14 +263,16 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
 function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
   return lang === "en"
     ? {
+        papers:  "Paste any research paper or academic article. I'll extract the research question, methodology, key findings, contributions and limitations.",
         summary: "Paste the text of a paper or article to get a structured summary with findings, methods and conclusions.",
-        review: "Write a research question or topic. Short inputs like 'meiosis' will get context and options.",
+        review:  "Write a research question or topic. Short inputs like 'meiosis' will get context and options.",
         explain: "Write any concept and I will explain it clearly, with analogies and examples.",
         writing: "Paste your text or describe which part of your writing needs help.",
       }
     : {
+        papers:  "Pegá cualquier paper o artículo académico. Extraeré la pregunta de investigación, metodología, hallazgos clave, contribuciones y limitaciones.",
         summary: "Pegá el texto de un paper y obtené un resumen estructurado con hallazgos, métodos y conclusiones.",
-        review: "Escribí una pregunta de investigación o tema. Si escribís algo corto como 'meiosis', te daré contexto y opciones.",
+        review:  "Escribí una pregunta de investigación o tema. Si escribís algo corto como 'meiosis', te daré contexto y opciones.",
         explain: "Escribí cualquier concepto y te lo explico de forma clara, con analogías y ejemplos.",
         writing: "Pegá tu texto o describí en qué parte de tu escritura necesitás ayuda.",
       };
@@ -304,7 +337,7 @@ function buildChatContextText(
 
   // ── Priority 3: Other tabs (cross-tab fallback) ───────────────────────────
   if (parts.join("").length < 300) {
-    const ALL_TOOLS: ToolId[] = ["summary", "review", "explain", "writing"];
+    const ALL_TOOLS: ToolId[] = ["papers", "summary", "review", "explain", "writing"];
     for (const tool of ALL_TOOLS) {
       if (tool === currentTool) continue;
       const other = (allMessages[tool] ?? [])
@@ -572,7 +605,7 @@ function MarkdownMessage({ content }: { content: string }) {
 }
 
 function createEmptyMessages(): Record<ToolId, Message[]> {
-  return { summary: [], review: [], explain: [], writing: [] };
+  return { papers: [], summary: [], review: [], explain: [], writing: [] };
 }
 
 function generateSessionId(): string {
@@ -637,7 +670,7 @@ function loadHistory(): ResearchSession[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as ResearchSession[];
-    const valid: ToolId[] = ["summary", "review", "explain", "writing"];
+    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing"];
     return parsed
       .filter((item): item is ResearchSession => Boolean(item?.id))
       .map((item) => ({
