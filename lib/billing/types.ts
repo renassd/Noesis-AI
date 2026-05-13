@@ -4,7 +4,7 @@
 // business logic runs. Migration = swap provider, keep types.
 // ============================================================
 
-export type PlanId = "free" | "pro" | "enterprise";
+export type PlanId = "free" | "pro";
 
 // Re-export FeatureKey from feature-gates so types.ts is the single import point
 export type { FeatureKey } from "./feature-gates";

@@ -59,11 +59,8 @@ function resolvePlanFromPaddlePriceId(
 ): PlanId {
   const monthly = process.env.PADDLE_PRO_MONTHLY_PRICE_ID;
   const yearly  = process.env.PADDLE_PRO_YEARLY_PRICE_ID;
-  const entMonthly = process.env.PADDLE_ENTERPRISE_MONTHLY_PRICE_ID;
-  const entYearly  = process.env.PADDLE_ENTERPRISE_YEARLY_PRICE_ID;
 
-  if (priceId === monthly || priceId === yearly)         return "pro";
-  if (priceId === entMonthly || priceId === entYearly)   return "enterprise";
+  if (priceId === monthly || priceId === yearly) return "pro";
   return "free";
 }
 

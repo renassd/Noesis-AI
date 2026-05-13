@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as { planId?: PlanId; interval?: BillingInterval };
     const { planId, interval = "monthly" } = body;
 
-    if (!planId || !["pro", "enterprise"].includes(planId)) {
+    if (!planId || planId !== "pro") {
       return NextResponse.json({ error: "Invalid planId" }, { status: 400 });
     }
 

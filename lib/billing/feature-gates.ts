@@ -39,24 +39,12 @@ const PLAN_FEATURES: Record<PlanId, FeatureKey[]> = {
     "memory_engine",
     "pdf_upload",
   ],
-  enterprise: [
-    "ai_tutor",
-    "flashcards_unlimited",
-    "research",
-    "papers",
-    "smart_notes",
-    "memory_engine",
-    "pdf_upload",
-    "api_access",
-    "team_features",
-  ],
 };
 
 // Daily AI credit limits per plan ─────────────────────────────
 export const PLAN_DAILY_CREDITS: Record<PlanId, number> = {
-  free:       50,
-  pro:        500,
-  enterprise: 9999,
+  free: 50,
+  pro:  500,
 };
 
 /**
@@ -96,9 +84,9 @@ export function getAccessibleFeatures(planId: PlanId): FeatureKey[] {
  * Returns the cheapest plan that includes it.
  */
 export function requiredPlanFor(feature: FeatureKey): PlanId {
-  const order: PlanId[] = ["free", "pro", "enterprise"];
+  const order: PlanId[] = ["free", "pro"];
   for (const plan of order) {
     if (PLAN_FEATURES[plan].includes(feature)) return plan;
   }
-  return "enterprise";
+  return "pro";
 }

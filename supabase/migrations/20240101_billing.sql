@@ -21,10 +21,12 @@ create table if not exists plans (
 );
 
 -- Seed plans
-insert into plans (id, name, price_monthly, price_yearly, monthly_ai_credits, features) values
-  ('free',       'Free',       0,     0,     50,  '["ai_tutor","flashcards_basic","research"]'),
-  ('pro',        'Pro',        12,    99,    500, '["ai_tutor","flashcards_unlimited","research","papers","smart_notes","memory_engine"]'),
-  ('enterprise', 'Enterprise', 49,    399,   9999,'["ai_tutor","flashcards_unlimited","research","papers","smart_notes","memory_engine","api_access","team_features"]')
+insert into plans (id, name, price_monthly, price_yearly, monthly_ai_credits, features,
+                   paddle_monthly_price_id, paddle_yearly_price_id) values
+  ('free', 'Free', 0,  0,   50,  '["ai_tutor","flashcards_basic","research","pdf_upload"]',
+   null, null),
+  ('pro',  'Pro',  12, 99,  500, '["ai_tutor","flashcards_unlimited","research","papers","smart_notes","memory_engine","pdf_upload"]',
+   'pri_01krfkm5qkwn2dw8y2t46v17w0', 'pri_01krfkn4w8cepy4s249zggc7rp')
 on conflict (id) do nothing;
 
 -- ── Subscriptions (one row per user, always) ────────────────
