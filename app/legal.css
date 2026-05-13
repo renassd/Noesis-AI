@@ -1,0 +1,110 @@
+/* ── Legal pages (Terms, Privacy, Refunds) ─────────────────── */
+.legal-page {
+  min-height: 100vh;
+  background: #0b1326;
+  color: #dae2fd;
+  font-family: "Inter", system-ui, sans-serif;
+  padding: 64px 24px 96px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.legal-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(210, 187, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 48px;
+  transition: color 0.2s;
+}
+.legal-back:hover { color: #d2bbff; }
+
+.legal-page h1 {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.legal-date {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0 0 40px;
+}
+
+.legal-page h2 {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 40px 0 12px;
+}
+
+.legal-page h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 20px 0 8px;
+}
+
+.legal-page p {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: #ccc3d8;
+  margin: 0 0 16px;
+}
+
+.legal-page ul {
+  padding-left: 20px;
+  margin: 0 0 16px;
+}
+
+.legal-page li {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: #ccc3d8;
+  margin-bottom: 6px;
+}
+
+.legal-page a {
+  color: #d2bbff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.legal-page a:hover { color: #fff; }
+
+/* Separator between sections */
+.legal-page h2::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin-bottom: 40px;
+}
+.legal-page h2:first-of-type::before { display: none; }
+
+/* Light mode */
+html.light .legal-page {
+  background: #f8f9fc;
+  color: #1e293b;
+}
+html.light .legal-page h1,
+html.light .legal-page h2,
+html.light .legal-page h3 { color: #0f172a; }
+html.light .legal-date { color: rgba(15, 23, 42, 0.4); }
+html.light .legal-page p,
+html.light .legal-page li { color: #475569; }
+html.light .legal-back { color: #7c3aed; }
+html.light .legal-back:hover { color: #5b21b6; }
+html.light .legal-page a { color: #7c3aed; }
+html.light .legal-page h2::before { background: rgba(15, 23, 42, 0.08); }
