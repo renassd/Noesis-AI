@@ -6,8 +6,8 @@ import { MAX_UPLOAD_BYTES } from "@/lib/upload-config";
 export { MAX_UPLOAD_BYTES };
 
 const runtimeRequire = createRequire(import.meta.url);
-const MAX_EXTRACTED_CHARS = 50_000;
-const MAX_OCR_PAGES = 10;
+const MAX_EXTRACTED_CHARS = 200_000;  // ~150 pages — covers full chapters
+const MAX_OCR_PAGES = 30;             // raised from 10 for scanned PDFs
 const OCR_LANGS = process.env.TESSERACT_LANGS ?? "eng+spa";
 const TESSERACT_CACHE_DIR = path.join(process.cwd(), ".cache", "tesseract");
 const OCR_TIMEOUT_MS = 45_000;

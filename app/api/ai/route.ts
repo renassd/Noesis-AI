@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "El contenido enviado es demasiado grande." }, { status: 413 });
     }
 
-    if ((body.system?.length ?? 0) > 60_000) {
+    if ((body.system?.length ?? 0) > 140_000) {
       return NextResponse.json({ error: "El prompt del sistema es demasiado grande." }, { status: 400 });
     }
 

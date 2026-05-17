@@ -1,7 +1,6 @@
-// MAX_CONTEXT_CHARS: raised from 3 500 → 45 000 so that most PDFs
-// are sent to the model in full without any chunking needed.
-// Claude's context window handles this comfortably.
-const MAX_CONTEXT_CHARS = 45_000;
+// MAX_CONTEXT_CHARS raised to 120 000 to cover full books/long documents.
+// Claude's context window handles this easily.
+const MAX_CONTEXT_CHARS = 120_000;
 const CHUNK_SIZE = 1_200;
 
 function splitIntoChunks(text: string): string[] {
