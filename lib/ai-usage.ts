@@ -58,18 +58,21 @@ export class AiUsageError extends Error {
   }
 }
 
+// Output tokens: set high for both plans so responses are never
+// artificially cut off regardless of task length (multi-chapter
+// summaries, long analyses, etc.).
 const PLAN_CONFIG: Record<UserPlan, PlanConfig> = {
   free: {
     monthlyCredits: 50,
     rateLimitPerMinute: 5,
-    maxOutputTokens: 2000,
-    maxInputChars: 8000,
+    maxOutputTokens: 16000,
+    maxInputChars: 50000,
     model: process.env.ANTHROPIC_MODEL_FREE ?? "claude-3-5-haiku-20241022",
   },
   pro: {
     monthlyCredits: 1000,
     rateLimitPerMinute: 20,
-    maxOutputTokens: 8000,
+    maxOutputTokens: 16000,
     maxInputChars: 50000,
     model: process.env.ANTHROPIC_MODEL_PRO ?? "claude-sonnet-4-20250514",
   },

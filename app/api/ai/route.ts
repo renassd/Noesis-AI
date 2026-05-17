@@ -322,18 +322,35 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Enable extended thinking when the request includes a large document
+    // (system prompt > 1 000 chars = PDF/doc context is present).
+    // Thinking is only supported on Claude Sonnet / Opus, not Haiku.
+    const isDocumentRequest = (body.system?.length ?? 0) > 1_000;
+    const modelSupportsThinking = reservation.model.includes("sonnet") ||
+                                   reservation.model.includes("opus");
+    const useThinking = isDocumentRequest && modelSupportsThinking;
+    // budget_tokens must be < max_tokens; we reserve half for thinking,
+    // half for the actual response text.
+    const thinkingBudget = useThinking
+      ? Math.floor(reservation.maxTokens * 0.5)
+      : 0;
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
+        "anthropic-beta": "interleaved-thinking-2025-05-14",
       },
       body: JSON.stringify({
         model: reservation.model,
         max_tokens: reservation.maxTokens,
         system: body.system,
         messages: body.messages.map(toAnthropicMessage),
+        ...(useThinking && {
+          thinking: { type: "enabled", budget_tokens: thinkingBudget },
+        }),
       }),
     });
 
@@ -364,7 +381,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const text = data.content?.map((block) => block.text || "").join("") || "";
+    // Filter out thinking blocks — only show the text response to the user
+    const text = data.content
+      ?.filter((block) => block.type === "text")
+      .map((block) => block.text || "")
+      .join("") || "";
     const usage = await finalizeAiRequestSuccess({
       userId: user.id,
       eventId: reservation.eventId,
