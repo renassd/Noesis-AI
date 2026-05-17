@@ -331,8 +331,10 @@ export async function POST(req: NextRequest) {
     const useThinking = isDocumentRequest && modelSupportsThinking;
     // budget_tokens must be < max_tokens; we reserve half for thinking,
     // half for the actual response text.
+    // Use 25% for thinking, 75% for the actual response text.
+    // This ensures long summaries (7+ chapters) have enough output space.
     const thinkingBudget = useThinking
-      ? Math.floor(reservation.maxTokens * 0.5)
+      ? Math.max(1024, Math.floor(reservation.maxTokens * 0.25))
       : 0;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {

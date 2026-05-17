@@ -1109,7 +1109,6 @@ export default function ResearchMode() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          max_tokens: 1200,
           system: systemPrompt,
           messages: messagesForApi,
           // Inject relevant memories from past sessions for this query

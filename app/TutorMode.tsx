@@ -66,7 +66,7 @@ export default function TutorMode() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        max_tokens: 1000,
+        max_tokens: 16000,
         system,
         messages: msgs,
         // Inject relevant past-session memories when a topic is known
