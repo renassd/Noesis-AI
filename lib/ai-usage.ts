@@ -62,15 +62,15 @@ const PLAN_CONFIG: Record<UserPlan, PlanConfig> = {
   free: {
     monthlyCredits: 50,
     rateLimitPerMinute: 5,
-    maxOutputTokens: 500,
-    maxInputChars: 3000,
+    maxOutputTokens: 2000,
+    maxInputChars: 8000,
     model: process.env.ANTHROPIC_MODEL_FREE ?? "claude-3-5-haiku-20241022",
   },
   pro: {
     monthlyCredits: 1000,
     rateLimitPerMinute: 20,
-    maxOutputTokens: 1500,
-    maxInputChars: 12000,
+    maxOutputTokens: 8000,
+    maxInputChars: 50000,
     model: process.env.ANTHROPIC_MODEL_PRO ?? "claude-sonnet-4-20250514",
   },
 };
