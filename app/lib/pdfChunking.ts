@@ -1,5 +1,8 @@
-const MAX_CONTEXT_CHARS = 3500;
-const CHUNK_SIZE = 700;
+// MAX_CONTEXT_CHARS: raised from 3 500 → 45 000 so that most PDFs
+// are sent to the model in full without any chunking needed.
+// Claude's context window handles this comfortably.
+const MAX_CONTEXT_CHARS = 45_000;
+const CHUNK_SIZE = 1_200;
 
 function splitIntoChunks(text: string): string[] {
   const paragraphs = text.split(/\n{2,}/);
@@ -35,19 +38,25 @@ function splitIntoChunks(text: string): string[] {
 
 function scoreChunk(chunk: string, queryWords: string[]): number {
   if (queryWords.length === 0) return 0;
-
   const lower = chunk.toLowerCase();
   return queryWords.reduce((acc, word) => acc + (lower.includes(word) ? 1 : 0), 0);
 }
 
 export function getRelevantChunks(text: string, query: string): string {
-  const chunks = splitIntoChunks(text);
-  if (chunks.length === 0) return text.slice(0, MAX_CONTEXT_CHARS);
+  const trimmed = text.trim();
 
+  // Fast path: document fits entirely — send it all, no chunking
+  if (trimmed.length <= MAX_CONTEXT_CHARS) return trimmed;
+
+  // Slow path: document is very large — select most relevant chunks
+  const chunks = splitIntoChunks(trimmed);
+  if (chunks.length === 0) return trimmed.slice(0, MAX_CONTEXT_CHARS);
+
+  // Keep short words (handles "cap III", "chapter 2", roman numerals)
   const queryWords = query
     .toLowerCase()
     .split(/\s+/)
-    .filter((word) => word.length > 3);
+    .filter((word) => word.length > 2);
 
   const scored = chunks.map((chunk, i) => ({
     chunk,
@@ -56,7 +65,6 @@ export function getRelevantChunks(text: string, query: string): string {
   }));
 
   const hasMatches = scored.some((item) => item.score > 0);
-
   if (hasMatches) {
     scored.sort((a, b) => b.score - a.score || a.i - b.i);
   }
@@ -67,7 +75,7 @@ export function getRelevantChunks(text: string, query: string): string {
     result += (result ? "\n\n" : "") + chunk;
   }
 
-  return result || text.slice(0, MAX_CONTEXT_CHARS);
+  return result || trimmed.slice(0, MAX_CONTEXT_CHARS);
 }
 
 export function buildDocumentSystemContext(
@@ -76,11 +84,34 @@ export function buildDocumentSystemContext(
   query: string,
   lang: "es" | "en",
 ): string {
-  const relevant = getRelevantChunks(documentText, query);
+  const content = getRelevantChunks(documentText, query);
+  const isTruncated = documentText.trim().length > MAX_CONTEXT_CHARS;
 
-  return lang === "en"
-    ? `[DOCUMENT CONTEXT - "${documentName}"]\nUse the following relevant excerpts from the uploaded document to answer the user:\n\n${relevant}\n\n[END OF DOCUMENT CONTEXT]\n\n`
-    : `[CONTEXTO DEL DOCUMENTO - "${documentName}"]\nUsa los siguientes fragmentos relevantes del documento subido para responder al usuario:\n\n${relevant}\n\n[FIN DEL CONTEXTO]\n\n`;
+  if (lang === "en") {
+    return `[UPLOADED DOCUMENT: "${documentName}"]
+${isTruncated
+    ? "The document is very large — the most relevant sections are shown below."
+    : "The complete document content is provided below."}
+Answer the user using ONLY this content. Do NOT say you lack access to the document or any part of it — everything available is included here. If the user asks about a specific chapter or section, locate it in the content below and summarize it directly.
+
+${content}
+
+[END OF DOCUMENT]
+
+`;
+  }
+
+  return `[DOCUMENTO SUBIDO: "${documentName}"]
+${isTruncated
+    ? "El documento es muy extenso — se muestran las secciones más relevantes a continuación."
+    : "El contenido completo del documento se incluye a continuación."}
+Respondé usando ÚNICAMENTE este contenido. NO digas que no tenés acceso al documento ni a ninguna parte de él — todo lo disponible está incluido acá. Si el usuario pide un capítulo o sección específica, buscalo en el contenido de abajo y resumilo directamente.
+
+${content}
+
+[FIN DEL DOCUMENTO]
+
+`;
 }
 
 export const buildPdfSystemContext = buildDocumentSystemContext;
