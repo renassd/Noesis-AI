@@ -280,11 +280,11 @@ export async function POST(req: NextRequest) {
     }
 
     const totalTextChars = body.messages.reduce((sum, message) => sum + (message.content?.length ?? 0), 0);
-    if (totalTextChars > 20_000) {
+    if (totalTextChars > 100_000) {
       return NextResponse.json({ error: "El contenido enviado es demasiado grande." }, { status: 413 });
     }
 
-    if ((body.system?.length ?? 0) > 8_000) {
+    if ((body.system?.length ?? 0) > 60_000) {
       return NextResponse.json({ error: "El prompt del sistema es demasiado grande." }, { status: 400 });
     }
 
