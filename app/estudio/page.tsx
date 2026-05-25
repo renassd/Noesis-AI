@@ -6,6 +6,7 @@ import "../card-visual.css";
 import "../flashcard-generator.css";
 import "../flashcard-study.css";
 import "../add-more-cards.css";
+import "../exam-mode.css";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,6 +14,7 @@ import { useEffect, useState } from "react";
 import ColorModeToggle from "../ColorModeToggle";
 import AiUsageCard from "@/components/AiUsageCard";
 import { useAiUsage } from "@/context/AiUsageContext";
+import ExamMode from "../ExamMode";
 import FlashcardGenerator from "../FlashcardGenerator";
 import FlashcardStudy from "../FlashcardStudy";
 import LangToggle from "../LangToggle";
@@ -25,7 +27,7 @@ import type { Deck, Flashcard } from "../types";
 import { useDecks } from "../useDecks";
 import { useAuth } from "@/context/AuthContext";
 
-type Tool = "generate" | "manual" | "study" | "tutor" | "decks";
+type Tool = "generate" | "manual" | "study" | "exam" | "tutor" | "decks";
 
 export default function EstudioPage() {
   const { t } = useLang();
@@ -54,6 +56,13 @@ export default function EstudioPage() {
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
         <path d="M5 7.5h6M5 10.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+    )},
+    { id: "exam", label: s.exam, icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+        <path d="M5 5.5h6M5 8h6M5 10.5h3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M10.5 10l1.5 1.5L14 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     )},
     { id: "tutor", label: s.tutor, icon: (
@@ -194,6 +203,13 @@ export default function EstudioPage() {
               onSaveDeck={handleSaveDeck}
               onAppendCards={appendCards}
               defaultDeckId={activeDeck?.id}
+            />
+          )}
+          {tool === "exam" && (
+            <ExamMode
+              deck={activeDeck}
+              decks={decks}
+              onSelectDeck={(deck) => setActiveDeck(deck)}
             />
           )}
           {tool === "study" && (
