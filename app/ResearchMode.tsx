@@ -29,14 +29,25 @@ type GeneratedCardsData = {
   preview: Array<{ question: string; answer: string }>;
 };
 
+interface PaperResult {
+  id: string;
+  title: string;
+  authors: string[];
+  year?: number | null;
+  abstract: string;
+  url: string;
+  summary?: string;
+}
+
 type Message = {
   role: "user" | "assistant";
   content: string;
   imageDataUrl?: string;
   attachment?: Omit<AttachedDocument, "content">;
   generatedCards?: GeneratedCardsData;
+  paperResults?: PaperResult[];
 };
-type ToolId = "summary" | "review" | "explain" | "writing" | "papers";
+type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
 
 interface ResearchSession {
@@ -155,6 +166,8 @@ If only a title, abstract or DOI is provided, analyse what is available and ask 
 If no specific question is asked, produce the full structured analysis above.
 
 ${base}`;
+    case "findpapers":
+      return base;
   }
 }
 
@@ -227,54 +240,60 @@ ${baseInstructions(langHint)}`;
 function getTools(lang: "es" | "en") {
   return lang === "en"
     ? [
-        { id: "papers"  as ToolId, label: "Analyze paper" },
-        { id: "summary" as ToolId, label: "Summarize text" },
-        { id: "review"  as ToolId, label: "Literature review" },
-        { id: "explain" as ToolId, label: "Explain concept" },
-        { id: "writing" as ToolId, label: "Structure writing" },
+        { id: "papers"     as ToolId, label: "Analyze paper" },
+        { id: "summary"    as ToolId, label: "Summarize text" },
+        { id: "review"     as ToolId, label: "Literature review" },
+        { id: "findpapers" as ToolId, label: "Find papers" },
+        { id: "explain"    as ToolId, label: "Explain concept" },
+        { id: "writing"    as ToolId, label: "Structure writing" },
       ]
     : [
-        { id: "papers"  as ToolId, label: "Analizar paper" },
-        { id: "summary" as ToolId, label: "Resumir texto" },
-        { id: "review"  as ToolId, label: "Revisión de literatura" },
-        { id: "explain" as ToolId, label: "Explicar concepto" },
-        { id: "writing" as ToolId, label: "Estructurar escritura" },
+        { id: "papers"     as ToolId, label: "Analizar paper" },
+        { id: "summary"    as ToolId, label: "Resumir texto" },
+        { id: "review"     as ToolId, label: "Revisión de literatura" },
+        { id: "findpapers" as ToolId, label: "Buscar papers" },
+        { id: "explain"    as ToolId, label: "Explicar concepto" },
+        { id: "writing"    as ToolId, label: "Estructurar escritura" },
       ];
 }
 
 function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
   return lang === "en"
     ? {
-        papers:  "Paste a research paper, article or abstract — I'll extract methodology, findings, contributions and limitations...",
-        summary: "Paste the paper or article text you want to summarize...",
-        review:  "Write your topic, research question or what you want to explore...",
-        explain: "What concept would you like explained? (e.g. meiosis, Bayes...)",
-        writing: "Paste your text or describe what part of your writing needs help...",
+        papers:     "Paste a research paper, article or abstract — I'll extract methodology, findings, contributions and limitations...",
+        summary:    "Paste the paper or article text you want to summarize...",
+        review:     "Write your topic, research question or what you want to explore...",
+        findpapers: "Enter a topic or research question to find relevant papers with AI summaries...",
+        explain:    "What concept would you like explained? (e.g. meiosis, Bayes...)",
+        writing:    "Paste your text or describe what part of your writing needs help...",
       }
     : {
-        papers:  "Pegá un paper, artículo o abstract — extraeré metodología, hallazgos, contribuciones y limitaciones...",
-        summary: "Pegá el texto del paper o artículo que querés resumir...",
-        review:  "Escribí tu tema, pregunta de investigación o lo que querés explorar...",
-        explain: "¿Qué concepto querés que te explique? (ej: meiosis, Bayes...)",
-        writing: "Pegá tu texto o describí qué parte de tu escritura necesita organizarse...",
+        papers:     "Pegá un paper, artículo o abstract — extraeré metodología, hallazgos, contribuciones y limitaciones...",
+        summary:    "Pegá el texto del paper o artículo que querés resumir...",
+        review:     "Escribí tu tema, pregunta de investigación o lo que querés explorar...",
+        findpapers: "Escribí un tema o pregunta de investigación para encontrar papers con resúmenes IA...",
+        explain:    "¿Qué concepto querés que te explique? (ej: meiosis, Bayes...)",
+        writing:    "Pegá tu texto o describí qué parte de tu escritura necesita organizarse...",
       };
 }
 
 function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
   return lang === "en"
     ? {
-        papers:  "Paste any research paper or academic article. I'll extract the research question, methodology, key findings, contributions and limitations.",
-        summary: "Paste the text of a paper or article to get a structured summary with findings, methods and conclusions.",
-        review:  "Write a research question or topic. Short inputs like 'meiosis' will get context and options.",
-        explain: "Write any concept and I will explain it clearly, with analogies and examples.",
-        writing: "Paste your text or describe which part of your writing needs help.",
+        papers:     "Paste any research paper or academic article. I'll extract the research question, methodology, key findings, contributions and limitations.",
+        summary:    "Paste the text of a paper or article to get a structured summary with findings, methods and conclusions.",
+        review:     "Write a research question or topic. Short inputs like 'meiosis' will get context and options.",
+        findpapers: "Type any topic or research question. I'll find relevant academic papers and summarize each one so you can choose what to read.",
+        explain:    "Write any concept and I will explain it clearly, with analogies and examples.",
+        writing:    "Paste your text or describe which part of your writing needs help.",
       }
     : {
-        papers:  "Pegá cualquier paper o artículo académico. Extraeré la pregunta de investigación, metodología, hallazgos clave, contribuciones y limitaciones.",
-        summary: "Pegá el texto de un paper y obtené un resumen estructurado con hallazgos, métodos y conclusiones.",
-        review:  "Escribí una pregunta de investigación o tema. Si escribís algo corto como 'meiosis', te daré contexto y opciones.",
-        explain: "Escribí cualquier concepto y te lo explico de forma clara, con analogías y ejemplos.",
-        writing: "Pegá tu texto o describí en qué parte de tu escritura necesitás ayuda.",
+        papers:     "Pegá cualquier paper o artículo académico. Extraeré la pregunta de investigación, metodología, hallazgos clave, contribuciones y limitaciones.",
+        summary:    "Pegá el texto de un paper y obtené un resumen estructurado con hallazgos, métodos y conclusiones.",
+        review:     "Escribí una pregunta de investigación o tema. Si escribís algo corto como 'meiosis', te daré contexto y opciones.",
+        findpapers: "Escribí cualquier tema o pregunta. Voy a buscar papers académicos relevantes y resumir cada uno para que elijas qué leer.",
+        explain:    "Escribí cualquier concepto y te lo explico de forma clara, con analogías y ejemplos.",
+        writing:    "Pegá tu texto o describí en qué parte de tu escritura necesitás ayuda.",
       };
 }
 
@@ -337,7 +356,7 @@ function buildChatContextText(
 
   // ── Priority 3: Other tabs (cross-tab fallback) ───────────────────────────
   if (parts.join("").length < 300) {
-    const ALL_TOOLS: ToolId[] = ["papers", "summary", "review", "explain", "writing"];
+    const ALL_TOOLS: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers"];
     for (const tool of ALL_TOOLS) {
       if (tool === currentTool) continue;
       const other = (allMessages[tool] ?? [])
@@ -598,6 +617,44 @@ function FlashcardBubble({ data, lang }: { data: GeneratedCardsData; lang: "es" 
   );
 }
 
+function PaperResultsMessage({ papers, lang }: { papers: PaperResult[]; lang: "es" | "en" }) {
+  if (papers.length === 0) {
+    return (
+      <p className="ri-paper-empty">
+        {lang === "en" ? "No papers found. Try a different search term." : "No se encontraron papers. Probá con otro término."}
+      </p>
+    );
+  }
+  return (
+    <div className="ri-paper-list">
+      {papers.map((paper, i) => (
+        <div key={paper.id || i} className="ri-paper-card">
+          <div className="ri-paper-card-top">
+            <span className="ri-paper-num">{i + 1}</span>
+            <div className="ri-paper-meta">
+              {paper.url ? (
+                <a className="ri-paper-title" href={paper.url} target="_blank" rel="noopener noreferrer">
+                  {paper.title}
+                </a>
+              ) : (
+                <span className="ri-paper-title">{paper.title}</span>
+              )}
+              <span className="ri-paper-byline">
+                {paper.authors.slice(0, 3).join(", ")}
+                {paper.authors.length > 3 ? " et al." : ""}
+                {paper.year ? ` · ${paper.year}` : ""}
+              </span>
+            </div>
+          </div>
+          {paper.summary && (
+            <p className="ri-paper-summary">{paper.summary}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MarkdownMessage({ content }: { content: string }) {
@@ -605,7 +662,7 @@ function MarkdownMessage({ content }: { content: string }) {
 }
 
 function createEmptyMessages(): Record<ToolId, Message[]> {
-  return { papers: [], summary: [], review: [], explain: [], writing: [] };
+  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [] };
 }
 
 function generateSessionId(): string {
@@ -670,7 +727,7 @@ function loadHistory(): ResearchSession[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as ResearchSession[];
-    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing"];
+    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers"];
     return parsed
       .filter((item): item is ResearchSession => Boolean(item?.id))
       .map((item) => ({
@@ -914,6 +971,117 @@ export default function ResearchMode() {
     const messagesForApi = updated.length > MAX_SEND_MSGS
       ? updated.slice(updated.length - MAX_SEND_MSGS)
       : updated;
+
+    // ── Find papers tool ─────────────────────────────────────────────────────
+    if (activeTool === "findpapers") {
+      const nextSessionId =
+        activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
+      setLoading(true);
+      setError("");
+      setSessionState((prev) => ({
+        activeSessionId: nextSessionId,
+        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+          ...session,
+          id: nextSessionId,
+          messages: { ...session.messages, findpapers: updated },
+          input: "",
+          savedAt: Date.now(),
+        })),
+      }));
+      setPastedImage(null);
+
+      try {
+        const searchRes = await fetch(`/api/paper-search?q=${encodeURIComponent(trimmed)}`);
+        const searchData = (await searchRes.json()) as { papers?: PaperResult[]; error?: string };
+
+        if (!searchRes.ok || !searchData.papers) {
+          throw new Error(searchData.error ?? "Search failed");
+        }
+
+        const rawPapers = searchData.papers.filter((p) => p.abstract?.trim().length > 50).slice(0, 6);
+
+        let papersWithSummaries: PaperResult[] = rawPapers;
+
+        if (rawPapers.length > 0 && hasCredits) {
+          const summaryItems = rawPapers
+            .map((p, i) =>
+              `${i + 1}. ${lang === "en" ? "Title" : "Título"}: ${p.title}\n${lang === "en" ? "Abstract" : "Abstract"}: ${p.abstract.slice(0, 600)}`,
+            )
+            .join("\n\n");
+
+          const summaryPrompt =
+            lang === "es"
+              ? `Tenés ${rawPapers.length} papers académicos. Para cada uno escribí un resumen de 2-3 oraciones que explique qué estudia, cuál es el hallazgo o contribución principal, y por qué puede ser relevante. Devolvé ÚNICAMENTE este JSON sin texto adicional:\n{"summaries":["resumen 1","resumen 2"]}\n\nPapers:\n${summaryItems}`
+              : `You have ${rawPapers.length} academic papers. For each one write a 2-3 sentence summary explaining what it studies, the main finding or contribution, and why it might be relevant. Return ONLY this JSON with no additional text:\n{"summaries":["summary 1","summary 2"]}\n\nPapers:\n${summaryItems}`;
+
+          const aiRes = await fetchWithSupabaseAuth("/api/ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              system:
+                lang === "es"
+                  ? "Eres un asistente académico. Devuelve SOLO JSON válido, sin texto adicional."
+                  : "You are an academic assistant. Return ONLY valid JSON, no additional text.",
+              messages: [{ role: "user", content: summaryPrompt }],
+              max_tokens: 1600,
+            }),
+          });
+          const aiData = (await aiRes.json()) as { text?: string; usage?: unknown };
+          applyUsage(aiData.usage as Parameters<typeof applyUsage>[0]);
+
+          let summaries: string[] = [];
+          const raw = (aiData.text ?? "").trim();
+          try {
+            const parsed = JSON.parse(raw) as { summaries: string[] };
+            summaries = parsed.summaries ?? [];
+          } catch {
+            const match = raw.match(/\{[\s\S]*\}/);
+            if (match) {
+              try {
+                const parsed = JSON.parse(match[0]) as { summaries: string[] };
+                summaries = parsed.summaries ?? [];
+              } catch { /* leave summaries empty */ }
+            }
+          }
+
+          papersWithSummaries = rawPapers.map((p, i) => ({ ...p, summary: summaries[i] ?? "" }));
+        }
+
+        const noResults = papersWithSummaries.length === 0;
+        const assistantMsg: Message = {
+          role: "assistant",
+          content: noResults
+            ? (lang === "en"
+                ? `No papers found for **"${trimmed}"**. Try a more specific or different search term.`
+                : `No se encontraron papers para **"${trimmed}"**. Probá con un término más específico.`)
+            : (lang === "en"
+                ? `Found **${papersWithSummaries.length} papers** on "${trimmed}".`
+                : `Encontré **${papersWithSummaries.length} papers** sobre "${trimmed}".`),
+          paperResults: papersWithSummaries,
+        };
+
+        setSessionState((prev) => ({
+          ...prev,
+          sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
+            const next = {
+              ...session,
+              messages: {
+                ...session.messages,
+                findpapers: [...(session.messages.findpapers ?? []), assistantMsg],
+              },
+              savedAt: Date.now(),
+            };
+            return { ...next, title: deriveSessionTitle(next, lang) };
+          }),
+        }));
+      } catch (err) {
+        console.error("[ResearchMode] paper search failed:", err);
+        setError(lang === "en" ? "Paper search failed. Try again." : "Error al buscar papers. Intentá de nuevo.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     // ── Flashcard intent detection ────────────────────────────────────────────
     if (detectFlashcardIntent(messageContent)) {
@@ -1280,6 +1448,9 @@ export default function ResearchMode() {
                           <MarkdownMessage content={message.content} />
                           {message.generatedCards && (
                             <FlashcardBubble data={message.generatedCards} lang={lang} />
+                          )}
+                          {message.paperResults !== undefined && (
+                            <PaperResultsMessage papers={message.paperResults} lang={lang} />
                           )}
                         </>
                       ) : (
