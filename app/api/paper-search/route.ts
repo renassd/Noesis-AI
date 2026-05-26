@@ -1,113 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 
-type OpenAlexAuthor = {
-  author?: {
-    display_name?: string;
-  };
-};
-
-type OpenAlexWork = {
-  id?: string;
-  display_name?: string;
-  publication_year?: number | null;
-  abstract_inverted_index?: Record<string, number[]>;
-  primary_location?: {
-    landing_page_url?: string | null;
-    pdf_url?: string | null;
-    source?: {
-      homepage_url?: string | null;
-    } | null;
-  } | null;
-  authorships?: OpenAlexAuthor[];
-};
-
-type OpenAlexResponse = {
-  results?: OpenAlexWork[];
-};
-
-function normalizeQuery(query: string) {
-  return query.replace(/\s+/g, " ").trim().slice(0, 180);
-}
-
-function decodeAbstract(index?: Record<string, number[]>) {
-  if (!index) return "";
-
-  const entries = Object.entries(index);
-  if (entries.length === 0) return "";
-
-  let maxPosition = -1;
-  for (const [, positions] of entries) {
-    for (const position of positions) {
-      if (position > maxPosition) maxPosition = position;
-    }
-  }
-
-  if (maxPosition < 0) return "";
-
-  const words = new Array<string>(maxPosition + 1).fill("");
-  for (const [word, positions] of entries) {
-    for (const position of positions) {
-      words[position] = word;
-    }
-  }
-
-  return words.join(" ").replace(/\s+/g, " ").trim();
-}
-
-function pickUrl(work: OpenAlexWork) {
-  return (
-    work.primary_location?.landing_page_url ||
-    work.primary_location?.pdf_url ||
-    work.primary_location?.source?.homepage_url ||
-    ""
-  );
+interface S2Paper {
+  paperId: string;
+  title?: string;
+  authors?: Array<{ name: string }>;
+  year?: number;
+  abstract?: string;
+  url?: string;
+  externalIds?: { DOI?: string };
 }
 
 export async function GET(req: NextRequest) {
-  const query = normalizeQuery(req.nextUrl.searchParams.get("q") || "");
-
-  if (!query) {
-    return NextResponse.json({ error: "Query is required." }, { status: 400 });
+  const query = req.nextUrl.searchParams.get("q");
+  if (!query?.trim()) {
+    return NextResponse.json({ error: "Missing query" }, { status: 400 });
   }
 
   try {
-    const url = new URL("https://api.openalex.org/works");
-    url.searchParams.set("search", query);
-    url.searchParams.set("per-page", "8");
-    url.searchParams.set("sort", "relevance_score:desc");
-    url.searchParams.set("mailto", "neuvraai@gmail.com");
+    const apiUrl =
+      `https://api.semanticscholar.org/graph/v1/paper/search` +
+      `?query=${encodeURIComponent(query)}` +
+      `&limit=8&fields=title,authors,year,abstract,url,externalIds`;
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "NeuvraAI/1.0 (paper search)",
-      },
-      cache: "no-store",
+    const res = await fetch(apiUrl, {
+      headers: { "User-Agent": "Neuvra/1.0" },
+      next: { revalidate: 3600 },
     });
 
-    if (!response.ok) {
-      const body = await response.text();
-      console.error("[/api/paper-search] OpenAlex error", response.status, body);
-      return NextResponse.json({ error: "Paper search provider failed." }, { status: 502 });
+    if (!res.ok) {
+      return NextResponse.json({ error: "Paper search failed" }, { status: 502 });
     }
 
-    const data = (await response.json()) as OpenAlexResponse;
-    const papers = (data.results ?? [])
-      .map((work) => ({
-        id: work.id || work.display_name || crypto.randomUUID(),
-        title: work.display_name || "Untitled paper",
-        authors: (work.authorships ?? [])
-          .map((entry) => entry.author?.display_name?.trim())
-          .filter((name): name is string => Boolean(name)),
-        year: work.publication_year ?? null,
-        abstract: decodeAbstract(work.abstract_inverted_index),
-        url: pickUrl(work),
-      }))
-      .filter((paper) => paper.title.trim().length > 0);
+    const data = (await res.json()) as { data?: S2Paper[] };
+    const papers = (data.data ?? []).map((p) => ({
+      id: p.paperId,
+      title: p.title ?? "Untitled",
+      authors: (p.authors ?? []).map((a) => a.name),
+      year: p.year ?? null,
+      abstract: p.abstract ?? "",
+      url:
+        p.url ??
+        (p.externalIds?.DOI ? `https://doi.org/${p.externalIds.DOI}` : ""),
+    }));
 
     return NextResponse.json({ papers });
-  } catch (error) {
-    console.error("[/api/paper-search] Unexpected error", error);
-    return NextResponse.json({ error: "Paper search failed." }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Network error" }, { status: 502 });
   }
 }
