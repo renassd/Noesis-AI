@@ -1,0 +1,2551 @@
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\shorthandoff{><}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{tikz}
+\usetikzlibrary{calc,intersections}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{lmodern}
+\usepackage{tocloft}
+\usepackage[hidelinks]{hyperref}
+\usetikzlibrary{babel}
+\usepackage{siunitx}
+
+\geometry{margin=2.5cm}
+
+\setstretch{1.15}
+\linespread{1.05}
+
+\setlength{\parskip}{0.35em}
+\setlength{\parindent}{0pt}
+\setlength{\headheight}{25pt}
+
+\titlespacing*{\section}{0pt}{1.2em}{0.8em}
+\titlespacing*{\subsection}{0pt}{1em}{0.5em}
+
+\titleformat{\section}
+{\LARGE\bfseries\color{azulEureka}}
+{\thesection.}
+{0.5em}
+{}
+[\vspace{0.3em}\color{azulEureka}\hrule\vspace{0.3em}]
+
+\titleformat{\subsection}
+{\large\bfseries\color{black!80}}
+{}
+{0pt}
+{}
+
+\setlist[itemize]{topsep=4pt, itemsep=2pt, parsep=0pt, partopsep=0pt}
+\setlist[enumerate]{topsep=4pt, itemsep=2pt, parsep=0pt, partopsep=0pt}
+
+\renewcommand{\contentsname}{Índice}
+\setlength{\cftbeforesecskip}{6pt}
+\renewcommand{\cftsecfont}{\bfseries\color{azulEureka}}
+\renewcommand{\cftsecpagefont}{\bfseries\color{azulEureka}}
+
+\definecolor{azulEureka}{RGB}{0,60,100}
+\definecolor{grisOxford}{RGB}{70,70,80}
+\definecolor{verdeEureka}{RGB}{30,90,70}
+\definecolor{naranjaEureka}{RGB}{180,70,20}
+\definecolor{fondoGris}{RGB}{250,250,252}
+\definecolor{celesteTenue}{RGB}{240,245,250}
+\definecolor{rosaEureka}{RGB}{230,80,120}
+\definecolor{lilaSuave}{RGB}{235,220,245}
+\definecolor{amarilloSuave}{RGB}{255,245,210}
+\definecolor{grisSuave}{RGB}{245,245,245}
+
+\tcbset{
+    enhanced,
+    sharp corners,
+    boxrule=0pt,
+    leftrule=3pt,
+    fonttitle=\bfseries\small,
+    before skip=8pt,
+    after skip=8pt,
+    left=8pt,
+    right=8pt,
+    top=6pt,
+    bottom=6pt
+}
+
+\newtcolorbox{idea}{
+    colback=celesteTenue,
+    colframe=azulEureka,
+    title=IDEA CLAVE,
+    coltitle=azulEureka,
+    detach title,
+    before upper={\textcolor{azulEureka}{\textbf{\tcbtitle}}\par\smallskip}
+}
+
+\newtcolorbox{ejemplo}{
+    colback=lilaSuave,
+    colframe=grisOxford!60,
+    title=EJEMPLO,
+    coltitle=grisOxford,
+    detach title,
+    before upper={\textcolor{grisOxford}{\textbf{\tcbtitle}}\par\smallskip},
+    borderline west={1.5pt}{0pt}{grisOxford!40}
+}
+
+\newtcolorbox{problema}{
+    colback=fondoGris,
+    colframe=naranjaEureka,
+    title=PROBLEMA,
+    coltitle=naranjaEureka,
+    detach title,
+    before upper={\textcolor{naranjaEureka}{\textbf{\tcbtitle}}\par\smallskip}
+}
+
+\newtcolorbox{error}{
+    colback=red!5,
+    colframe=red!70!black,
+    title=ERROR COMÚN,
+    coltitle=red!80!black,
+    detach title,
+    before upper={\textcolor{red!80!black}{\textbf{\tcbtitle}}\par\smallskip}
+}
+
+\newtcolorbox{desafio}{
+    colback=amarilloSuave,
+    colframe=azulEureka!70,
+    title=DESAFÍO,
+    coltitle=azulEureka,
+    detach title,
+    breakable,
+    before upper={\textcolor{azulEureka}{\textbf{\tcbtitle}}\par\smallskip}
+}
+\newtcolorbox{doneurekacaja}{
+    colback=white,
+    colframe=grisOxford!25,
+    boxrule=0.5pt,
+    arc=0pt,
+    sidebyside,
+    lefthand width=2.7cm,
+    segmentation style={solid, draw=grisOxford!25},
+    fonttitle=\bfseries\color{grisOxford},
+    title=Don Eureka dice:
+}
+
+\newenvironment{doneureka}{
+\begin{doneurekacaja}
+\centering
+\includegraphics[width=2.4cm,height=2.4cm,keepaspectratio]{don_eurekam.png}
+\tcblower
+}{
+\end{doneurekacaja}
+}
+
+\newtcolorbox{doñaeurekacaja}{
+    colback=white,
+    colframe=grisOxford!25,
+    boxrule=0.5pt,
+    arc=0pt,
+    sidebyside,
+    lefthand width=2.7cm,
+    segmentation style={solid, draw=grisOxford!25},
+    fonttitle=\bfseries\color{grisOxford},
+    title=Doña Eureka dice:
+}
+
+\newenvironment{doñaeureka}{
+    \begin{doñaeurekacaja}
+    \centering
+    \includegraphics[width=2.4cm,height=2.4cm,keepaspectratio]{doñaeureka.png}
+    \tcblower
+}{
+    \end{doñaeurekacaja}
+}
+
+\newtcolorbox{eurekascaja}{
+    colback=white,
+    colframe=grisOxford!25,
+    boxrule=0.5pt,
+    arc=0pt,
+    sidebyside,
+    lefthand width=3.5cm,
+    segmentation style={solid, draw=grisOxford!25},
+    fonttitle=\bfseries\color{grisOxford},
+    title=Los Eurekas dicen:
+}
+
+\newenvironment{eurekas}{
+    \begin{eurekascaja}
+    \centering
+    \includegraphics[width=4cm]{doneurekaydoña.png}
+    \tcblower
+}{
+    \end{eurekascaja}
+}
+
+\newcommand{\fichanombre}{
+    \begin{center}
+    \begin{tcolorbox}[
+        enhanced,
+        width=0.85\textwidth,
+        colback=white,
+        colframe=azulEureka!30,
+        arc=0pt,
+        boxrule=0.5pt,
+        title={ESTE MATERIAL PERTENECE A:},
+        coltitle=azulEureka,
+        fonttitle=\bfseries\small,
+        colbacktitle=white,
+        attach boxed title to top left={xshift=5mm, yshift=-2mm},
+        boxed title style={boxrule=0pt, colframe=white}
+    ]
+        \vspace{5pt}
+        \setstretch{1.5}
+        \textbf{Nombre y Apellido:} \dotfill
+
+        \textbf{Institución:} \dotfill
+
+        \textbf{Curso / Año:} \dotfill \quad \textbf{Sección:} \dotfill
+        \vspace{2pt}
+    \end{tcolorbox}
+    \end{center}
+    \vspace{1cm}
+}
+
+\newcommand{\observa}[1]{%
+    \begin{tcolorbox}[colback=amarilloSuave, colframe=naranjaEureka, title=Observa y piensa]
+    #1
+    \end{tcolorbox}
+}
+
+\newcommand{\propiedadtxt}[1]{%
+    \par\smallskip
+    \noindent{\small\textbf{\textcolor{azulEureka}{Propiedad:}} #1}\par\smallskip
+}
+
+\newcommand{\contextotxt}[1]{%
+    \par\smallskip
+    \noindent{\small\textbf{\textcolor{verdeEureka}{¿Para qué sirve?}} #1}\par\smallskip
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{azulEureka}{\textbf{Eureka}}}
+\fancyhead[C]{\textcolor{black!55}{\small Descubriendo las Matemáticas}}
+\fancyhead[R]{\textcolor{azulEureka}{\thepage}}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{azulEureka}\leaders\hrule height \headrulewidth\hfill}}
+
+\begin{document}
+
+\begin{center}
+\vspace*{1.5cm}
+
+\includegraphics[width=0.25\textwidth]{eureka.png}
+
+\vspace{1.2cm}
+
+{\Huge\bfseries\color{azulEureka} Descubriendo las Matemáticas}
+
+\vspace{0.5cm}
+
+{\Large Nivel 2 -- Edición 2026}
+
+\vspace{0.3cm}
+
+{\large Paraguay}
+
+\vspace{0.3cm}
+
+{\large \textit{Por: Eureka}}
+
+\vfill
+\end{center}
+
+\thispagestyle{empty}
+\newpage
+
+\fichanombre
+
+\vspace{1cm}
+
+\vspace{8cm}
+
+\begin{center}
+\begin{minipage}{0.75\textwidth}
+    \centering
+    \color{grisOxford!80}
+    \itshape\small
+    ``La matemática no es un camino de reglas que seguir, sino un lenguaje para descubrir el orden del mundo. En este material, vos sos el explorador y tu curiosidad es el mapa.''
+
+    \vspace{0.3cm}
+    \textbf{\color{azulEureka}--- Equipo Eureka}
+\end{minipage}
+\end{center}
+
+\vfill
+
+\begin{eurekas}
+    ¡Bienvenido, chamigo/a! Escribí tu nombre con orgullo. Recordá que frente a cada desafío y en la vida, el papel más importante lo tenés vos cuando te animás a pensar diferente. ¡Estamos acá para acompañarte en cada descubrimiento!
+\end{eurekas}
+
+\newpage
+
+\tableofcontents
+\thispagestyle{empty}
+\newpage
+
+\section{¡Hola, joven matemático!}
+La matemática está en todas partes, aunque a veces no nos demos cuenta.
+
+Nos ayuda a pensar mejor, a resolver problemas y a entender situaciones de la vida cotidiana, desde repartir cosas hasta descubrir patrones.
+
+En este material vamos a aprender a observar, razonar y encontrar soluciones de una forma clara y divertida.
+
+No se trata solo de hacer cuentas, sino de aprender a pensar.
+
+\begin{center}
+    \includegraphics[width=0.6\textwidth]{Lvl 2-mid(12-15años)/mate.jpg}
+\end{center}
+
+\begin{ejemplo}
+    La matemática aparece cuando repartís dulces con tus amigos,
+    cuando organizás cosas o cuando tratás de descubrir una regla
+    en una lista de números.
+\end{ejemplo}
+
+\begin{doneureka}
+   ¡Qué tal, chamigo! Me presento, soy \textbf{Don Eureka}. Me gusta encontrarle sentido a todo lo que parece complicado.
+    En este libro voy a acompañarte paso a paso para que la matemática no te parezca difícil, sino interesante.
+
+    Si algo no te sale a la primera, no pasa nada
+    eso significa que estás aprendiendo.
+
+    A veces no hace falta hacer muchas cuentas, ¡solo hay que pensar un poco mejor!
+\end{doneureka}
+
+\begin{doñaeureka}
+    ¡Y yo soy \textbf{Doña Eureka}! Me alegra que estés acá.
+
+    Antes de empezar, un consejo que siempre le doy a mis estudiantes:
+    leé cada problema dos veces antes de escribir cualquier cosa.
+
+    La primera lectura es para entender de qué trata.
+    La segunda, para preguntarte: ¿qué me están pidiendo exactamente?
+
+    Con eso solo, ya vas un paso adelante.
+\end{doñaeureka}
+
+\newpage
+\section{Álgebra: descubrir lo que no sabemos}
+    En matemática, a veces conocemos algunos datos, pero nos falta encontrar un valor escondido.
+    Para eso usamos las letras, expresiones y ecuaciones.
+
+    Eso es justamente una parte muy importante del álgebra.
+
+    \begin{idea}
+        El álgebra nos ayuda a representar situaciones con letras y operaciones, para descubrir valores desconocidos.
+    \end{idea}
+
+    \contextotxt{En olímpiadas y en muchos problemas, el álgebra sirve para ordenar la información, traducirla a ecuaciones y llegar a una conclusión de manera clara.}
+
+    \begin{center}
+        \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/algebraa.jpg}
+    \end{center}
+
+    \begin{doneureka}
+    Chamigo, el álgebra puede parecer rara al principio, letras, símbolos y todo eso.
+
+    Pero en realidad es como tener una pista para encontrar algo que no sabés.
+    Es como cuando sabés algunas cosas de un problema, pero te falta descubrir el dato escondido.
+
+    Mi consejo: no le tengas miedo a las letras.
+    Pensalas como números que todavía no conocemos.
+
+    Una vez que entendés eso, todo empieza a tener sentido
+\end{doneureka}
+
+    \newpage
+    \subsection{¿Para qué sirve el álgebra?}
+        Podemos pensar que en matemática hay varias grandes áreas:
+        \begin{itemize}
+            \item \textbf{Geometría:} trabaja con figuras y formas.
+            \item \textbf{Combinatoria:} ayuda a contar y organizar posibilidades.
+            \item \textbf{Álgebra:} usa letras, expresiones y ecuaciones para representar relaciones.
+        \end{itemize}
+
+        En esta parte vamos a ver ideas fundamentales del álgebra de una forma práctica y cercana.
+
+        \begin{center}
+        \shorthandoff{<>}
+        \begin{tikzpicture}
+            \node (a) at (0,0) {Problema};
+            \node (b) at (4,0) {Ecuación};
+            \node (c) at (8,0) {Solución};
+
+            \draw[->] (a) -- (b);
+            \draw[->] (b) -- (c);
+        \end{tikzpicture}
+        \shorthandon{<>}
+        \end{center}
+
+        \begin{doñaeureka}
+            ¡Fijate bien! El álgebra es como un idioma nuevo. Una vez que aprendés a traducir las palabras a símbolos, los problemas se resuelven casi solos!
+        \end{doñaeureka}
+
+    \section{Herramienta 1: traducir un problema a una ecuación}
+        Muchas veces un problema se vuelve más fácil cuando lo escribimos con letras.
+
+        \begin{doneureka}
+            Esto es de lo más importante del álgebra
+
+            Muchas veces el problema parece difícil, pero es porque está escrito en palabras.
+            Cuando lo pasás a ecuaciones, todo se vuelve más claro.
+
+            Es como traducir un idioma:
+            del lenguaje "normal" al lenguaje matemático.
+
+            Mi consejo: leé con calma y preguntate
+            "¿qué me están diciendo realmente?"
+
+            Si entendés eso, ya ganaste medio problema.
+        \end{doneureka}
+
+        \begin{center}
+            \includegraphics[width=0.75\textwidth]{Lvl 2-mid(12-15años)/edadess.png}
+        \end{center}
+
+        \newpage
+        \subsection{Ejemplo: edades de Sofía y Alex}
+        La edad de Sofía es hoy la mitad de la edad de su padre, Alex. Hace 8 años, la edad de Alex era el triple de la edad que tenía Sofía en ese momento.
+
+        \begin{desafio}
+            ¿Qué edad tiene Sofía hoy?
+        \end{desafio}
+
+        \subsection{Solución guiada}
+            Llamemos:
+            \[
+                S=\text{edad actual de Sofía}, \qquad A=\text{edad actual de Alex}
+            \]
+
+            Del enunciado obtenemos que Sofía tiene la mitad de la edad de su padre, lo que es igual a decir que:
+            \[
+                A=2S
+            \]
+
+            Hace 8 años, sus edades eran $(A-8)$ y $(S-8)$. Según el problema:
+            \[
+                A-8=3(S-8)
+            \]
+
+            Ahora reemplazamos \(A=2S\) en la ecuación:
+            \[
+                2S-8=3(S-8)
+            \]
+
+            Aplicamos la propiedad distributiva:
+            \[
+                2S-8=3S-24
+            \]
+
+            Despejamos la incógnita:
+            \[
+                24-8=3S-2S
+            \]
+
+            \[
+                16=S
+            \]
+
+            Entonces:
+            \[
+                S=16
+            \]
+
+            Y como \(A=2S\), la edad de Alex es:
+            \[
+                A=32
+            \]
+
+            \begin{ejemplo}
+                Sofía tiene 16 años y su padre, Alex, tiene 32 años.
+            \end{ejemplo}
+
+            \begin{idea}
+                El paso más importante fue transformar la información escrita en ecuaciones.
+            \end{idea}
+
+            \section{Herramienta 2: tanteo inteligente}
+            No todos los problemas se usan con fórmulas difíciles. ¡A veces solo hay que usar la cabeza y probar!
+
+            \subsection{Ejemplo: la bolsa de golosinas}
+            En una bolsa hay 10 golosinas entre caramelos y chupetines. Si contamos cuánto costó todo, la bolsa vale 70 pesos.
+            Sabemos que cada caramelo cuesta 5 pesos y cada chupetín cuesta 10 pesos.
+
+            \begin{desafio}
+                ¿Cuántos caramelos y cuántos chupetines hay en la bolsa?
+            \end{desafio}
+
+            \subsection{Solución guiada}
+            Vamos a usar el tanteo inteligente!
+
+            Si tenemos $c$ caramelos, entonces los chupetines son $10 - c$.
+            El total de dinero es 70:
+            \[
+                5c + 10(10 - c) = 70
+            \]
+
+            \textbf{Probemos valores (Tanteo):}
+            \begin{itemize}
+                \item \textbf{¿Y si hay 5 y 5?} Serían: $(5 \times 5) + (5 \times 10) = 25 + 50 = 75$. ¡Casi! Nos pasamos por poco.
+                \item \textbf{¿Y si hay 6 caramelos?} Serían 6 caramelos y 4 chupetines: $(6 \times 5) + (4 \times 10) = 30 + 40 = 70$. \textbf{¡Exacto!}
+            \end{itemize}
+
+            \begin{ejemplo}
+                En la bolsa hay \textbf{6 caramelos} y \textbf{4 chupetines}.
+            \end{ejemplo}
+
+            \begin{idea}
+                ¿Viste? No siempre hace falta terminar toda la cuenta difícil. Si probás con un número y te acercás, ¡el siguiente intento seguro es el correcto!
+            \end{idea}
+            \begin{center}
+            \includegraphics[width=0.55\textwidth]{Lvl 2-mid(12-15años)/bolsa_caramelos (2).png}
+        \end{center}
+
+        Probemos con algunos valores razonables para encontrar los 70 pesos:
+
+        Si probamos con $c=5$ caramelos (y por lo tanto 5 chupetines):
+        \[
+        5(5) + 10(5) = 25 + 50 = 75
+        \]
+        \textit{Nos pasamos un poquito! El total debe ser 70.}
+
+        Si probamos con $c=6$ caramelos (y por lo tanto 4 chupetines):
+        \[
+        5(6) + 10(4) = 30 + 40 = 70
+        \]
+
+        \observa{¿Viste qué fácil? Al probar con 5 vimos que el precio era muy alto, así que probamos con un caramelo más (que es más barato que el chupetín) para bajar el total.}
+
+        \begin{doneureka}
+            No siempre el tanteo es probar al azar.
+
+            Un buen tanteo es probar un valor, mirar si el resultado es más grande o más chico de lo que buscamos, y ajustar el siguiente paso.
+
+            ¡Es como un juego de pistas! No se trata de adivinar, sino de pensar con cuidado hacia dónde ir.
+        \end{doneureka}
+
+        \begin{doñaeureka}
+            ¡Y no te olvides de verificar!
+
+            Una vez que encontrás el valor, reemplazalo en el problema original
+            y comprobá que todo cierre.
+
+            Si con 6 caramelos y 4 chupetines llegamos a 70 pesos, ¡perfecto!
+            Ese paso final es el que te asegura que no te equivocaste.
+
+            Verificar no es desconfiar de uno mismo.
+            Es ser prolija/o y estar segura/o antes de dar la respuesta.
+        \end{doñaeureka}
+
+        \begin{idea}
+            Tantear es una herramienta súper poderosa cuando las ecuaciones parecen difíciles. ¡Te ayuda a entender cómo funcionan los números!
+        \end{idea}
+
+    \section{Herramienta 3: factorizar}
+        Factorizar significa reescribir una expresión de una forma más simple o más útil.
+
+         \begin{doneureka}
+            Ahora viene algo que al principio puede parecer medio raro
+
+            Factorizar no es más que "ordenar" una expresión.
+            Es como cuando tenés todo desordenado, y lo agrupás para entender mejor.
+
+            No intentes memorizar todo de una.
+            Primero tratá de ver patrones.
+
+            Con práctica, tu cabeza va a empezar a reconocerlos sola.
+        \end{doneureka}
+
+        \begin{idea}
+            En vez de trabajar con una expresión larga y desordenada, a veces conviene convertirla en un producto más fácil de entender.
+        \end{idea}
+
+        \subsection{Casos básicos}
+            \textbf{1. Factor común}
+            \[
+            ax+ay=a(x+y)
+            \]
+
+            \textbf{2. Agrupación}
+            \[
+            xy+2x+3y+6=x(y+2)+3(y+2)=(x+3)(y+2)
+            \]
+
+            \textbf{3. Diferencia de cuadrados}
+            \[
+            a^2-b^2=(a+b)(a-b)
+            \]
+
+            \textbf{4. Trinomio simple}
+            \[
+            x^2+bx+c=(x+p)(x+q)
+            \]
+            cuando \(p+q=b\) y \(pq=c\).
+
+            \observa{No hace falta memorizar todos los casos de golpe. Lo importante es reconocer patrones.}
+
+    \newpage
+    \section{Ejercicios de práctica}
+        \subsection{Ejercicios iniciales}
+            \begin{desafio}
+                Resolvé los siguientes problemas:
+                \begin{enumerate}
+                    \item ¿Para qué valor de \(x\) se cumple?
+                    \[
+                    x\cdot 2011=1021+2086+915
+                    \]
+
+                    \item Calculá:
+                    \[
+                    (214-213)+(999-998)+1\cdot 200+0\cdot 100
+                    \]
+
+                    \item Clara escribe siete números enteros consecutivos.
+                    La suma de los tres menores es 33.
+                    ¿Cuál es la suma de los tres mayores?
+
+                    \item Paco reparte 100 kg de papas en 25 bolsas iguales.
+                    ¿Cuánto pesan 11 de esas bolsas?
+
+                    \item Si
+                    \[
+                    3^x\cdot 7^y=3969
+                    \]
+                    ¿cuánto vale \(x-y\)?
+                \end{enumerate}
+            \end{desafio}
+
+        \subsection{Un poco más}
+            \begin{desafio}
+                Intentá también estos:
+                \begin{enumerate}
+                    \item Si al sumar los pesos de tres bolsas de dos en dos se obtiene:
+                    \[
+                    1,8\text{ kg},\quad 2,4\text{ kg},\quad 2,6\text{ kg}
+                    \]
+                    ¿cuánto pesa la bolsa más pesada?
+
+                    \item En el producto
+                    \[
+                    (2x+Nx-15)(5x-9)
+                    \]
+                    el resultado es
+                    \[
+                    10x^2+17x-138x+135
+                    \]
+                    ¿cuál es el valor de \(N\)?
+
+                    \item El producto de 59 números enteros positivos es 59.
+                    ¿Cuál es la suma de esos factores?
+                \end{enumerate}
+            \end{desafio}
+
+    \newpage
+    \section{Respuestas}
+        \begin{itemize}
+            \item 1) \(x=2\)
+            \item 2) \(202\)
+            \item 3) \(48\)
+            \item 4) \(44\)
+            \item 5) \(2\)
+            \item Bolsa más pesada: \(1,6\) kg
+            \item \(N=7\)
+            \item Suma de los factores: \(117\)
+        \end{itemize}
+
+    \newpage
+    \section{Descubriendo patrones: sucesiones}
+        En matemática, muchas veces aparecen listas de números que siguen una regla.
+        A esas listas las llamamos \textbf{sucesiones}.
+
+        \begin{center}
+            \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/sucesiones.png}
+        \end{center}
+
+        \observa{Una sucesión es como una historia de números.
+
+            Cada número depende del anterior.
+            Si descubrís la regla, podés predecir el futuro.}
+
+        Por ejemplo:
+        \[
+        2,4,6,8,10,\dots
+        \]
+
+        o también:
+        \[
+        3,6,12,24,\dots
+        \]
+
+        En cada caso, los números siguen un patrón.
+        La idea es descubrir cómo se forma cada término y poder calcular los siguientes.
+
+        \begin{doneureka}
+            Chamigo, acá empieza algo muy interesante
+
+            Las sucesiones son como juegos de patrones.
+            Te muestran números y vos tenés que descubrir la regla.
+
+            Es como ser detective
+
+            Mirá bien, compará, probá ideas
+            y poco a poco vas a empezar a ver lo que antes no se notaba
+        \end{doneureka}
+
+        \begin{idea}
+            Una sucesión es una lista ordenada de números que sigue una regla.
+        \end{idea}
+
+        En esta parte vamos a estudiar dos tipos de sucesiones muy importantes:
+
+        \begin{itemize}
+            \item la \textbf{progresión aritmética},
+            \item la \textbf{progresión geométrica}.
+        \end{itemize}
+
+    \section{Progresión aritmética}
+        Una \textbf{progresión aritmética} es una sucesión en la que cada término se obtiene sumando siempre la misma cantidad.
+
+        Por ejemplo:
+        \[
+        0,2,4,6,8,\dots
+        \]
+
+        Acá siempre sumamos 2.
+
+        \begin{ejemplo}
+            En la sucesión
+            \[
+            5,8,11,14,17,\dots
+            \]
+            la diferencia entre un término y el siguiente es siempre 3.
+        \end{ejemplo}
+
+        A esa cantidad fija la llamamos \textbf{razón} o \textbf{diferencia común}.
+
+        Si el primer término es \(a_1\) y la razón es \(r\), entonces el término número \(n\) se calcula con:
+
+        \[
+        a_n=a_1+(n-1)r
+        \]
+
+        \observa{Esto significa:
+        \begin{itemize}
+        \item empezás en el primer número,
+        \item y sumás la misma cantidad varias veces.
+        \end{itemize}}
+
+        \begin{idea}
+            En una progresión aritmética, siempre se suma o se resta la misma cantidad.
+        \end{idea}
+
+        \begin{error}
+            Pensar que siempre hay que usar la fórmula.
+
+            Muchas veces podés resolver mirando el patrón.
+        \end{error}
+
+        \subsection{Tres números en progresión aritmética}
+            Si tres números \(a\), \(b\) y \(c\) están en progresión aritmética, entonces el del medio es el promedio de los otros dos:
+
+            \[
+            b=\frac{a+c}{2}
+            \]
+
+        \subsection{Suma de los primeros términos}
+            Si queremos sumar los primeros \(n\) términos de una progresión aritmética, usamos:
+
+            \[
+            S=\frac{n(a_1+a_n)}{2}
+            \]
+
+            \observa{Esta fórmula dice que la suma es igual a la cantidad de términos multiplicada por el promedio entre el primero y el último.}
+
+            \begin{doñaeureka}
+                ¿Querés entender por qué funciona esa fórmula y no solo usarla?
+
+                Escribí la suma de adelante hacia atrás y también de atrás hacia adelante.
+                Al sumarlas, cada par da siempre lo mismo: el primero más el último.
+
+                Como hay $n$ pares, la suma doble es $n \times (a_1 + a_n)$.
+                Dividís por 2 y llegás a la fórmula.
+
+                Cuando entendés de dónde viene una fórmula,
+                es mucho más fácil acordarse de ella!
+            \end{doñaeureka}
+
+    \section{Problemas de progresión aritmética}
+        \subsection*{Problema 1}
+
+        Dada la progresión aritmética:
+        \[
+        3,7,11,15,\dots
+        \]
+
+        \begin{desafio}
+        Encontrá:
+
+        \begin{enumerate}
+            \item el término número 10,
+            \item la suma de los primeros 15 términos.
+        \end{enumerate}
+        \end{desafio}
+
+        \subsection*{Problema 2}
+            Una progresión aritmética tiene:
+            \[
+            a_1=2 \qquad \text{y} \qquad r=4
+            \]
+
+            \begin{desafio}
+                Encontrá:
+
+                \begin{enumerate}
+                    \item el término número 7,
+                    \item la suma de los primeros 10 términos.
+                \end{enumerate}
+            \end{desafio}
+
+        \subsection*{Problema 3}
+            En una progresión aritmética, el quinto término es 16 y la razón es 3.
+
+            \begin{desafio}
+                Encontrá:
+
+                \begin{enumerate}
+                    \item el primer término,
+                    \item la suma de los primeros 10 términos.
+                \end{enumerate}
+            \end{desafio}
+
+    \newpage
+    \section{Progresión geométrica}
+        Una \textbf{progresión geométrica} es una sucesión en la que cada término se obtiene multiplicando siempre por la misma cantidad.
+
+        \begin{center}
+            \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/progresion_geo.png}
+        \end{center}
+
+        Por ejemplo:
+        \[
+        2,6,18,54,\dots
+        \]
+
+        Acá cada término se obtiene multiplicando por 3.
+
+        \begin{doneureka}
+            Chamigo,
+
+            En vez de sumar siempre lo mismo
+            ahora multiplicamos.
+
+            Eso hace que los números crezcan MUCHO más rápido
+
+            Mi consejo: fijate bien cuál es la razón.
+        \end{doneureka}
+
+        \begin{ejemplo}
+            En la sucesión
+            \[
+            4,8,16,32,\dots
+            \]
+            cada término es el anterior multiplicado por 2.
+        \end{ejemplo}
+
+        A esa cantidad fija la llamamos \textbf{razón}.
+
+        \newpage
+        Si el primer término es \(c_1\) y la razón es \(r\), entonces el término número \(n\) se calcula con:
+
+        \[
+        c_n=c_1\cdot r^{n-1}
+        \]
+
+        \begin{idea}
+            En una progresión geométrica, siempre se multiplica o se divide por la misma cantidad.
+        \end{idea}
+
+        \subsection{Tres números en progresión geométrica}
+            Si tres números \(a\), \(b\) y \(c\) están en progresión geométrica, entonces el del medio cumple:
+
+            \[
+            b^2=a\cdot c
+            \]
+
+            o también, si trabajamos con números positivos:
+
+            \[
+            b=\sqrt{a\cdot c}
+            \]
+
+        \subsection{Suma de los primeros términos}
+            La suma de los primeros \(n\) términos de una progresión geométrica es:
+
+            \[
+            S=c_1\cdot \frac{r^n-1}{r-1}
+            \]
+
+            \observa{Esta fórmula vale cuando \(r\neq 1\).}
+
+        \newpage
+        \section{Problemas de progresión geométrica}
+            \subsection{Problema 1}
+
+            Se tiene una progresión geométrica con:
+            \[
+            c_1=2 \qquad \text{y} \qquad r=3
+            \]
+
+            \begin{desafio}
+                Encontrá:
+
+                \begin{enumerate}
+                    \item el quinto término,
+                    \item la suma de los primeros 4 términos.
+                \end{enumerate}
+            \end{desafio}
+
+            \subsection{Problema 2}
+                En una progresión geométrica, el tercer término es 12 y la razón es 2.
+
+                \begin{desafio}
+                    Encontrá:
+
+                    \begin{enumerate}
+                        \item el primer término,
+                        \item la suma de los primeros 5 términos.
+                    \end{enumerate}
+                \end{desafio}
+
+            \subsection{Problema 3}
+                Se tiene una progresión geométrica con:
+                \[
+                c_1=4 \qquad \text{y} \qquad r=\frac{1}{2}
+                \]
+
+                \begin{desafio}
+                    Encontrá:
+
+                    \begin{enumerate}
+                        \item el tercer término,
+                        \item la suma de los primeros 6 términos.
+                    \end{enumerate}
+                \end{desafio}
+
+    \newpage
+    \section{El arte de contar}
+    ¿Alguna vez te preguntaste cuántas formas hay de hacer algo?
+    Por ejemplo:
+    \begin{itemize}
+        \item ¿Cuántas combinaciones de ropa podés armar?
+        \item ¿De cuántas formas podés ordenar libros?
+        \item ¿Cuántos caminos diferentes existen?
+    \end{itemize}
+
+    Todo eso es \textbf{combinatoria}.
+
+    \begin{doneureka}
+        Este tema es clave, chamigo
+
+        Mucha gente piensa que combinatoria es difícil
+        pero en realidad es solo saber pensar bien.
+
+        Antes de hacer cuentas, preguntate:
+        ¿estoy eligiendo o combinando?
+        ¿importa el orden?
+
+        Si respondés bien eso
+        ya sabés qué hacer
+    \end{doneureka}
+
+    \begin{idea}
+        La combinatoria es la parte de la matemática que nos ayuda a \textbf{contar, organizar y elegir} de manera inteligente.
+    \end{idea}
+
+    \contextotxt{En olimpíadas de matemática, muchas veces no se trata de hacer cuentas difíciles, sino de encontrar la mejor forma de contar.}
+
+    \section{Las dos ideas clave}
+    \subsection{Principio aditivo}
+    Usamos la suma cuando tenemos opciones separadas.
+
+    \begin{ejemplo}
+        Tenés 3 remeras y 2 buzos.
+        Si querés elegir \textbf{una sola prenda}, tenés:
+        \[
+        3 + 2 = 5 \text{ opciones}
+        \]
+    \end{ejemplo}
+
+    \begin{idea}
+        Sumamos cuando elegimos entre opciones distintas.
+    \end{idea}
+
+    \subsection{Principio multiplicativo}
+    Usamos la multiplicación cuando combinamos elecciones.
+
+    \begin{ejemplo}
+        Tenés 3 remeras y 2 pantalones.
+        Si querés armar un conjunto:
+        \[
+        3 \times 2 = 6 \text{ combinaciones}
+        \]
+    \end{ejemplo}
+
+    \begin{idea}
+        Multiplicamos cuando una elección depende de otra.
+    \end{idea}
+
+    \section{Una herramienta muy útil: el factorial}
+    \begin{ejemplo}
+        \[
+        5! = 5 \times 4 \times 3 \times 2 \times 1 = 120
+        \]
+    \end{ejemplo}
+
+    \observa{El factorial de un número es el producto de todos los números desde 1 hasta ese número.}
+
+    \section{Elegir la mejor estrategia}
+    \begin{idea}
+        Hacete estas preguntas:
+    \end{idea}
+
+    \begin{itemize}
+        \item ¿Estoy eligiendo o combinando cosas?
+        \item ¿El orden importa?
+        \item ¿Uso todos los elementos o solo algunos?
+        \item ¿Se pueden repetir?
+    \end{itemize}
+
+    \observa{Responder estas preguntas te ayuda a decidir cómo contar.}
+
+    \newpage
+    \section{Formas de contar}
+    Hasta ahora estuvimos contando de forma intuitiva.
+    Ahora vamos a conocer herramientas más poderosas para contar de manera más rápida y ordenada.
+
+    \begin{idea}
+        Estas herramientas aparecen mucho en problemas de olimpíadas.
+    \end{idea}
+
+    \begin{doneureka}
+        Chamigo, acá empieza la parte donde muchos se confunden
+
+        Pero tranqui, no es difícil si pensás bien.
+
+        Antes de usar fórmulas, preguntate:
+        ¿importa el orden?
+        ¿se repiten?
+        ¿uso todos los elementos?
+    \end{doneureka}
+
+    \subsection{Permutaciones}
+    Se usan cuando queremos \textbf{ordenar elementos}.
+
+    \begin{center}
+        \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/permutaciones.png}
+    \end{center}
+
+    \subsubsection*{Sin repetición}
+
+    \begin{idea}
+        Importa el orden y no se repiten elementos.
+    \end{idea}
+
+    \[
+    P(n) = n!
+    \]
+
+    \begin{ejemplo}
+        Ordenar 5 libros distintos:
+        \[
+        5! = 120
+        \]
+    \end{ejemplo}
+
+    \subsubsection*{Con repetición}
+    \begin{idea}
+        Hay elementos que se repiten.
+    \end{idea}
+
+    \[
+    \frac{n!}{n_1! \cdot n_2! \cdots n_k!}
+    \]
+    \begin{ejemplo}
+        \textbf{¿De cuántas formas podemos mezclar las letras de MATEMATICA?}
+
+        Como hay letras que se repiten (la \textbf{M}, la \textbf{A} y la \textbf{T}), no todas las mezclas se ven distintas. Para no contar de más, usamos esta cuenta:
+
+        \[
+        \frac{10!}{2! \cdot 3! \cdot 2!}
+        \]
+
+        \begin{itemize}
+            \item \textbf{10!} es por el total de letras.
+            \item \textbf{2!} porque la \textbf{M} se repite 2 veces.
+            \item \textbf{3!} porque la \textbf{A} está 3 veces.
+            \item \textbf{2!} porque la \textbf{T} está 2 veces.
+        \end{itemize}
+
+        \textbf{Resultado:} Hay \textbf{151.200} formas diferentes de acomodarlas!
+    \end{ejemplo}
+
+    \subsubsection*{Circular}
+    \begin{idea}
+        Los elementos están en círculo.
+    \end{idea}
+
+    \[
+    (n-1)!
+    \]
+
+    \begin{ejemplo}
+        5 personas en mesa redonda:
+        \[
+        4! = 24
+        \]
+    \end{ejemplo}
+
+    \newpage
+    \subsection{Variaciones}
+    Se usan cuando:
+    \begin{itemize}
+        \item importa el orden
+        \item usamos solo algunos elementos
+    \end{itemize}
+
+    \subsubsection*{Sin repetición}
+    \[
+    V(n,r) = \frac{n!}{(n-r)!}
+    \]
+
+    \begin{ejemplo}
+        Elegir y ordenar 3 de 5 libros:
+        \[
+        60
+        \]
+    \end{ejemplo}
+
+    \subsubsection*{Con repetición}
+    \[
+    V(n,r) = n^r
+    \]
+
+    \begin{ejemplo}
+        Helados con 3 sabores y 4 bolas:
+        \[
+        3^4
+        \]
+    \end{ejemplo}
+
+    \subsection{Combinaciones}
+    \begin{idea}
+        No importa el orden.
+    \end{idea}
+
+    \subsubsection*{Sin repetición}
+    \[
+    \binom{n}{r} = \frac{n!}{r!(n-r)!}
+    \]
+
+    \begin{ejemplo}
+        Elegir 2 de 5 libros:
+        Para saber cuántas parejas de libros podemos armar, usamos combinaciones:
+        \[
+            \binom{5}{2} = \frac{5 \cdot 4}{2 \cdot 1} = \frac{20}{2} = 10
+        \]
+    \end{ejemplo}
+
+    \subsubsection*{Con repetición}
+    ¿Qué pasa si podemos repetir? Por ejemplo, si en una bolsa de dulces podemos elegir varios del mismo sabor. Usamos esta fórmula:
+    \[
+        \binom{n+r-1}{r}
+    \]
+
+    \begin{ejemplo}
+        Elegir 5 dulces de 3 tipos diferentes:
+        Aquí $n=3$ (los tipos de dulces) y $r=5$ (cuántos vamos a elegir).
+        \[
+            \binom{3+5-1}{5} = \binom{7}{5}
+        \]
+        Calculamos:
+        \[
+            \binom{7}{5} = \binom{7}{2} = \frac{7 \cdot 6}{2 \cdot 1} = \frac{42}{2} = 21
+        \]
+    \end{ejemplo}
+
+    \begin{doñaeureka}
+        Cuando dudes entre variación y combinación, probá con un ejemplo chico.
+
+        Elegir presidente y vicepresidente entre 3 personas:
+        ¿es lo mismo que elegir un comité de 2? ¡No!
+        En el primer caso el orden importa; en el segundo, no.
+
+        Si el orden importa $\to$ variación o permutación.
+        Si el orden no importa $\to$ combinación.
+
+        Esa pregunta simple te ahorra muchos errores.
+    \end{doñaeureka}
+
+    \section{¿Cuál usar?}
+    \begin{idea}
+        Para elegir bien, hacete estas preguntas:
+    \end{idea}
+
+    \begin{itemize}
+        \item ¿Importa el orden?
+        \item ¿Uso todos los elementos?
+        \item ¿Se pueden repetir?
+    \end{itemize}
+
+    \observa{Responder esto te dice exactamente qué fórmula usar.}
+
+    \newpage
+    \section{Jugar, pensar y descubrir}
+    La matemática no aparece solo en cuentas. También está en juegos, patrones y desafíos.
+
+    \begin{idea}
+        Resolver problemas es aprender a observar, buscar patrones y tomar decisiones inteligentes.
+    \end{idea}
+
+    \contextotxt{Muchos problemas empiezan como juegos. Lo importante no es solo la respuesta, sino cómo llegás a ella.}
+
+    \section{Puntajes en el blanco}
+    Cuatro chicos participaron en un juego de tiro al blanco. Cada uno lanzó tres veces.
+
+    \begin{desafio}
+        Si todos hicieron la misma cantidad de puntos, respondé:
+        \begin{enumerate}
+            \item ¿Cuántos puntos hizo cada jugador?
+            \item ¿Qué combinaciones de tres tiros pudo haber hecho?
+        \end{enumerate}
+
+        \begin{center}
+            \includegraphics[width=0.7\textwidth]{Lvl 2-mid(12-15años)/dardos2.png}
+        \end{center}
+    \end{desafio}
+
+    \newpage
+    \section{El juego de las monedas}
+    \begin{desafio}
+        Hay 11 monedas sobre la mesa. Dos jugadores se turnan para retirar \textbf{1 o 2 monedas}. Gana el que se lleva la última moneda. Si vos empezás, ¿cómo podés asegurar la victoria?
+
+        \begin{center}
+            \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/Captura de pantalla 2026-04-09 220031.png}
+        \end{center}
+    \end{desafio}
+
+    \begin{idea}
+        \textbf{La clave no es cuánto sacás, sino cuánto dejás.} Para ganar, tenés que obligar a tu oponente a dejarte el camino libre hacia los ``números seguros''.
+    \end{idea}
+
+    \subsection*{Estrategia Ganadora}
+    Para ganar siempre en este juego, debés dejarle a tu oponente un número de monedas que sea \textbf{múltiplo de 3}.
+
+    \begin{itemize}
+        \item \textbf{Paso 1:} Como hay 11 monedas, retirá \textbf{2 monedas}. Así dejás 9 (múltiplo de 3).
+        \item \textbf{Paso 2:} No importa cuántas saque tu oponente (1 o 2), vos debés completar el ``par'' para que vuelvan a quedar múltiplos de 3 (6, luego 3).
+        \item \textbf{Paso 3:} Cuando queden 3 monedas, cualquier cosa que haga el otro te dejará la victoria. Si saca 1, vos sacás 2. Si saca 2, vos sacás la última.
+    \end{itemize}
+
+    \newpage
+    \section{Casillas ganadoras}
+    \begin{desafio}
+        En un tablero de 13 casillas, ¿quién gana si se puede avanzar entre 1 y 5?
+
+        \begin{center}
+            \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/casillas_ganadoras.png}
+        \end{center}
+    \end{desafio}
+
+    \begin{idea}
+        Existen posiciones ganadoras y perdedoras.
+    \end{idea}
+
+    \section{La torre en el tablero}
+    \begin{desafio}
+        ¿Quién gana llevando la torre de \(a1\) a \(h8\)?
+
+        \begin{center}
+            \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/torre_tab.png}
+        \end{center}
+    \end{desafio}
+
+    \newpage
+    \section{Misiones para seguir explorando}
+    \begin{desafio}
+        \begin{enumerate}
+            \item Juego con 38 monedas
+            \item Juego con potencias de 2
+            \item Juego con bolitas
+            \item Juego con dos pilas
+        \end{enumerate}
+    \end{desafio}
+
+    \section{Claves para pensar mejor}
+    \begin{idea}
+        En muchos problemas, la clave no es calcular más, sino pensar mejor.
+    \end{idea}
+
+    \observa{Buscar patrones y analizar desde el final suele ser más útil que hacer cuentas largas.}
+
+    \section{Soluciones guiadas}
+
+    \subsection{Puntajes en el blanco}
+    Para resolver el misterio del tablero, primero debemos encontrar el promedio. Si sumamos todos los dardos del tablero y el total es 40, y sabemos que hay 4 jugadores que empataron, hacemos:
+    \[
+    \frac{40}{4} = 10
+    \]
+    Esto nos dice que cada jugador hizo exactamente 10 puntos.
+
+    \subsubsection*{¿Cómo se repartieron los puntos?}
+    Buscamos combinaciones de 3 números que sumen 10 para cada caso:
+
+    \begin{description}
+        \item[Opción 1:] 6, 2 y 2 puntos.
+        \item[Opción 2:] 5, 3 y 2 puntos.
+        \item[Opción 3:] 4, 4 y 2 puntos.
+        \item[Opción 4:] 4, 3 y 3 puntos.
+    \end{description}
+
+    \subsection{El juego de las monedas}
+    \begin{idea}
+        Dejar ``números clave'' asegura la victoria.
+    \end{idea}
+
+    En este juego, ganar depende de las matemáticas, no del azar. La estrategia es dejarle al rival un número de monedas que sea múltiplo de 3.
+
+    \subsection{Casillas ganadoras}
+    Si lográs que al terminar tu turno queden:
+    \[
+    3, 6, 9, 12, 18, \dots
+    \]
+    ¡Estás en una posición ganadora! Para tu rival, estas son \textbf{posiciones perdedoras}, porque no importa si saca 1 o 2 monedas, vos siempre podrás volver a dejarle otro múltiplo de 3 hasta llevarte la última.
+
+    \subsection{La torre}
+    Analizando el juego de la torre, descubrimos que si ambos jugadores conocen la estrategia, la posición inicial es perdedora para el que empieza, siempre que el rival juegue sin errores.
+
+    \newpage
+    \section{Desafíos de razonamiento}
+    Ahora es tu turno.
+    Poné en práctica todo lo que venimos viendo.
+
+\begin{desafio}
+    \begin{itemize}
+        \item \textbf{Desafío 1: El código secreto} \\[4pt]
+        Imaginá que sos un experto en criptografía. Tu misión es ordenar los números del 1 al 9 de modo que cada par de números vecinos forme un número de dos cifras divisible por 7 o por 13. ¿Podés verificar si este código es correcto?
+        \[
+        784913526
+        \]
+        \vspace{8pt}
+
+        \item \textbf{Desafío 2: El tren puntual} \\[4pt]
+        Un tren de carga sale de la estación siguiendo un horario muy estricto basado en una ecuación de movimiento. Si el tiempo de retraso se define por la variable $x$, encontrá el momento exacto en que el tren llega sin demora:
+        \[
+        x = 0
+        \]
+        \vspace{8pt}
+
+        \item \textbf{Desafío 3: El depósito de cajas} \\[4pt]
+        En un depósito logístico, se organizan cajas en distintos niveles. El capataz necesita saber el total de unidades si hay una base de 13 cajas y 7 columnas con 22 niveles cada una. ¿Es correcto el siguiente cálculo?
+        \[
+        13 + 7 \cdot 22 = 167
+        \]
+        \vspace{8pt}
+
+        \item \textbf{Desafío 4: Detectives de datos} \\[4pt]
+        \textbf{Investigá:} ¿Qué es un diagrama de Venn? Usalo para representar a un grupo de 20 estudiantes donde a 12 les gusta la robótica, a 10 la programación y a 5 les gustan ambas cosas. ¿A cuántos no les gusta ninguna?
+        \vspace{8pt}
+
+        \item \textbf{Desafío 5: La moneda impostora} \\[4pt]
+        Tenés 9 monedas que parecen idénticas, pero una es falsa y pesa un poquito menos que las demás. Si solo tenés una balanza de dos platillos, ¿cuál es la menor cantidad de \textbf{pesajes} que necesitás hacer para encontrarla? \textit{(Pista: con solo 2 es posible!)}
+    \end{itemize}
+\end{desafio}
+
+   \section{Misiones finales}
+    \begin{desafio}
+        Llegaste a la etapa final! Poné a prueba tu ingenio con estas cuatro misiones:
+
+        \begin{enumerate}
+            \item \textbf{El enigma de los 2 pesajes:} Tenés un grupo de 9 monedas y sabés que una es falsa. Explicá detalladamente cómo encontrarla usando una balanza de dos platillos realizando únicamente \textbf{dos pesajes}.
+
+            \item \textbf{La moneda más liviana:} Si en lugar de 9 monedas tuvieras 27, ¿cuántos pesajes creés que serían necesarios para identificar la moneda más liviana? ¿Existe un patrón matemático aquí?
+
+            \item \textbf{Secuencias cuadradas:} Observá la siguiente serie de números y descubrí el patrón oculto. ¿Podés predecir cuáles son los próximos tres números de la secuencia y explicar por qué se llaman ``cuadradas''?
+
+            \item \textbf{El tablero especial:} Imaginá un tablero de ajedrez donde algunas casillas tienen valores especiales. Si un caballo se mueve siguiendo sus reglas tradicionales, ¿cuál es la ruta para sumar el mayor puntaje posible en solo 4 movimientos?
+        \end{enumerate}
+    \end{desafio}
+
+    \section{Descubriendo los números}
+    ¿Alguna vez te preguntaste por qué algunos números se pueden dividir fácilmente y otros no?
+
+    \begin{center}
+        \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/teoria_numeros.png}
+    \end{center}
+
+    \begin{doneureka}
+        Los números tienen más secretos de los que parecen
+
+        No es solo sumar o dividir
+        también hay patrones escondidos.
+
+        Si aprendés a verlos
+        podés resolver problemas sin hacer cuentas larga
+    \end{doneureka}
+
+    \begin{idea}
+        La teoría de números es la parte de la matemática que estudia las propiedades de los números, especialmente los enteros.
+    \end{idea}
+
+    \contextotxt{Muchos de estos conceptos ya los viste en el colegio (como divisiones, múltiplos o números primos), pero ahora los vamos a usar para resolver problemas más interesantes.}
+
+    \section{Reglas para dividir sin calcular}
+    A veces no hace falta hacer toda la cuenta para saber si un número es divisible.
+
+    \begin{idea}
+        Los criterios de divisibilidad nos permiten saber si un número es divisible por otro de forma rápida.
+    \end{idea}
+
+    \begin{doneureka}
+        Esto es un truco de oro
+
+        No siempre hace falta hacer toda la división.
+        Hay formas más rápidas de saber la respuesta.
+
+        Aprendé estos criterios
+        y te vas a ahorrar muchísimo tiempo
+    \end{doneureka}
+
+    \subsection*{Divisible por 2}
+    Un número es divisible por 2 si termina en $0, 2, 4, 6$ u $8$.
+
+    \begin{ejemplo}
+        $428$ es divisible por $2$.
+    \end{ejemplo}
+
+    \subsection*{Divisible por 3}
+    Si la suma de sus cifras es múltiplo de 3.
+
+    \begin{ejemplo}
+        $123 \Rightarrow 1+2+3=6$
+    \end{ejemplo}
+
+    \subsection*{Divisible por 5}
+    Termina en $0$ o $5$.
+
+    \subsection*{Divisible por 7}
+    Restamos el doble del último dígito al resto del número.
+
+    \begin{ejemplo}
+        $203 \Rightarrow 20 - 2\cdot3 = 14$
+    \end{ejemplo}
+
+    \subsection*{Divisible por 9}
+    Si la suma de cifras es múltiplo de 9.
+
+    \subsection*{Divisible por 11}
+    Diferencia entre suma de posiciones alternadas.
+
+    \begin{ejemplo}
+        $2728 \Rightarrow (2+2)-(7+8)=-11$
+    \end{ejemplo}
+
+    \section{Desafíos}
+    \begin{desafio}
+        \begin{enumerate}
+            \item ¿$12345$ es divisible por $3$?
+            \item ¿$301$ es divisible por $7$?
+            \item ¿$819$ es divisible por $9$?
+            \item ¿$102030$ es divisible por $5$ y por $9$?
+            \item ¿$5678$ es divisible por $2$ y por $3$?
+        \end{enumerate}
+    \end{desafio}
+
+    \newpage
+    \section{¿Cuántos divisores tiene un número?}
+    \begin{idea}
+        Podemos saber cuántos divisores tiene un número sin listarlos todos.
+    \end{idea}
+
+    \subsection*{Paso 1: Factorizar}
+    Escribimos el número como producto de primos:
+
+    \[
+    n = p_1^{a_1} \cdot p_2^{a_2} \cdots p_k^{a_k}
+    \]
+
+    \subsection*{Paso 2: Aplicar fórmula}
+    \[
+    d(n) = (a_1+1)(a_2+1)\cdots(a_k+1)
+    \]
+
+    \begin{ejemplo}
+        \[
+        360 = 2^3 \cdot 3^2 \cdot 5
+        \]
+
+        \[
+        d(360) = (3+1)(2+1)(1+1) = 24
+        \]
+    \end{ejemplo}
+
+    \begin{idea}
+    Cada exponente genera opciones… ¡como en combinatoria!
+    \end{idea}
+
+    \begin{doñaeureka}
+        ¿Por qué sumamos 1 al exponente?
+
+        Pensalo así: si el primo 2 aparece 3 veces en la factorización,
+        cada divisor puede usar el 2 exactamente 0, 1, 2 o 3 veces.
+        Eso son 4 opciones, y $3 + 1 = 4$.
+
+        Lo mismo pasa con cada primo.
+        Como las elecciones son independientes, se multiplican.
+
+        ¡Es exactamente el principio multiplicativo que vimos en combinatoria!
+    \end{doñaeureka}
+
+    \section{Más desafíos}
+    \begin{desafio}
+        \begin{enumerate}
+            \item ¿Cuántos divisores tiene $1000$?
+            \item ¿Cuántos divisores tiene $945$?
+            \item ¿$97$ es primo?
+            \item ¿Cuántos divisores tiene $5040$?
+        \end{enumerate}
+    \end{desafio}
+
+    \newpage
+    \section{La suma de divisores}
+    Hasta ahora vimos cómo encontrar divisores pero ahora vamos a responder otra pregunta:
+
+    \begin{idea}
+        ¿Cómo sumar todos los divisores de un número sin listarlos uno por uno?
+    \end{idea}
+
+    La idea clave:
+    Si un número se escribe como:
+    \[
+    n = p_1^{a_1} \cdot p_2^{a_2} \cdots p_k^{a_k}
+    \]
+
+   entonces la suma de sus divisores se calcula con:
+
+\[
+\sigma(n) = \frac{p_1^{a_1+1} - 1}{p_1 - 1} \cdot \frac{p_2^{a_2+1} - 1}{p_2 - 1} \cdots \frac{p_k^{a_k+1} - 1}{p_k - 1}
+\]
+
+\begin{idea}
+    \textbf{En simples palabras:} Para cada factor primo del número, sumamos uno a su exponente, calculamos esa potencia, le restamos uno y lo dividimos por el primo menos uno. Al multiplicar todo obtenemos la suma total!
+\end{idea}
+
+\begin{ejemplo}
+    Para el número $12 = 2^2 \cdot 3^1$:
+    \[
+    \sigma(12) = \left( \frac{2^{2+1} - 1}{2 - 1} \right) \cdot \left( \frac{3^{1+1} - 1}{3 - 1} \right) = \left( \frac{7}{1} \right) \cdot \left( \frac{8}{2} \right) = 7 \cdot 4 = 28
+    \]
+    Divisores de 12: 1, 2, 3, 4, 6, 12. Suma: $1+2+3+4+6+12 = 28$. Funciona!
+\end{ejemplo}
+
+    \begin{idea}
+        Cada factor representa todas las potencias posibles de cada primo.
+    \end{idea}
+
+    \begin{ejemplo}
+        Calculemos la suma de divisores de $180$.
+
+        \textbf{Paso 1: Factorizar}
+        \[
+        180 = 2^2 \cdot 3^2 \cdot 5
+        \]
+
+        \textbf{Paso 2: Aplicar la fórmula}
+        \[
+        \sigma(180) =
+        \frac{2^{3}-1}{2-1}
+        \cdot
+        \frac{3^{3}-1}{3-1}
+        \cdot
+        \frac{5^{2}-1}{5-1}
+        \]
+
+        \[
+        = 7 \cdot 13 \cdot 6 = 546
+        \]
+    \end{ejemplo}
+
+    \observa{Sin listar todos los divisores!}
+
+    \begin{desafio}
+        Probá vos ahora!
+        \begin{enumerate}
+            \item $\sigma(100)$
+            \item $\sigma(48)$
+            \item $\sigma(75)$
+        \end{enumerate}
+    \end{desafio}
+
+    \section{Más práctica}
+    \begin{desafio}
+        \begin{enumerate}
+            \item Hallar el MCD de $54$ y $24$
+            \item ¿$97$ es primo?
+            \item Encontrar los primeros 6 múltiplos de $5$
+            \item Hallar el MCM de $12$ y $15$
+            \item Descomponer $90$ en factores primos
+            \item Encontrar los divisores de $36$
+            \item ¿$3456$ es divisible por $6$?
+            \item Escribir los primeros 10 números primos
+            \item $\sigma(24)$
+            \item Resto de $5678 \div 9$
+        \end{enumerate}
+    \end{desafio}
+
+    \newpage
+    \section{Descubriendo la geometría}
+    La \textbf{geometría} es una de las áreas más visuales y divertidas de la matemática.
+    Acá no solo hacemos cuentas también imaginamos, dibujamos y descubrimos patrones.
+
+    \begin{idea}
+        La geometría nos ayuda a entender formas, figuras y espacios.
+    \end{idea}
+
+    \contextotxt{En olímpiadas, muchas veces la clave no es calcular, sino observar bien y encontrar relaciones entre figuras.}
+
+    \begin{doneureka}
+        La geometría es distinta, chamigo
+
+        Acá no todo es cuentas
+        también hay que mirar, imaginar y dibujar.
+
+        Muchas veces la solución no está en calcular más,
+        sino en observar mejor.
+
+        Si entendés la figura
+        el problema se resuelve casi solo.
+    \end{doneureka}
+
+    \section{Los ángulos}
+    Uno de los conceptos más importantes en geometría son los \textbf{ángulos}.
+
+    \begin{idea}
+        Un ángulo representa la abertura entre dos líneas que parten de un mismo punto.
+    \end{idea}
+
+   Se miden en grados (\unit{\degree}) o radianes (\unit{rad}).
+
+    \section{Ángulos principales}
+    Los tipos de ángulos más importantes son:
+
+   \begin{itemize}
+        \item \textbf{Ángulo agudo:} mide menos de $90^\circ$ o $\frac{\pi}{2} \text{ rad}$.
+        \item \textbf{Ángulo recto:} mide exactamente $90^\circ$ o $\frac{\pi}{2} \text{ rad}$.
+        \item \textbf{Ángulo obtuso:} mide más de $90^\circ$ o $\frac{\pi}{2} \text{ rad}$ pero menos de $180^\circ$ o $\pi \text{ rad}$.
+        \item \textbf{Ángulo llano:} mide $180^\circ$ o $\pi \text{ rad}$.
+        \item \textbf{Ángulo completo:} mide $360^\circ$ o $2\pi \text{ rad}$.
+    \end{itemize}
+
+    \begin{center}
+        \begin{tabular}{ccc}
+            \begin{tikzpicture}[scale=0.8, thick]
+                \draw (0,1) -- (0,0) -- (1,0);
+                \draw (0,0.2) -- (0.2,0.2) -- (0.2,0);
+            \end{tikzpicture} &
+            \begin{tikzpicture}[scale=0.8, thick]
+                \draw (60:1) -- (0,0) -- (1,0);
+            \end{tikzpicture} &
+            \begin{tikzpicture}[scale=0.8, thick]
+                \draw (120:1) -- (0,0) -- (1,0);
+            \end{tikzpicture} \\
+            Ángulo Recto (90°) & Ángulo Agudo ($<90^\circ$) & Ángulo Obtuso ($>90^\circ$) \\[1cm]
+
+            \begin{tikzpicture}[scale=0.8, thick]
+                \draw (-1,0) -- (1,0);
+                \filldraw (0,0) circle (1.5pt);
+            \end{tikzpicture} &
+            &
+            \begin{tikzpicture}[scale=0.8, thick]
+                \draw (0,0) -- (1,0);
+                \draw (0,0) circle (0.3);
+                \filldraw (0,0) circle (1.5pt);
+            \end{tikzpicture} \\
+            Ángulo Llano (180°) & & Ángulo Completo (360°) \\
+        \end{tabular}
+    \end{center}
+
+    \observa{Los ángulos aparecen en todas partes: en triángulos, polígonos, relojes y hasta en la vida cotidiana.}
+
+    \begin{desafio}
+        \begin{enumerate}
+            \item Clasificá los siguientes ángulos: $45^\circ$, $120^\circ$, $180^\circ$, $270^\circ$, $90^\circ$
+            \item Dibujá un ángulo de $60^\circ$ y uno de $150^\circ$
+            \item ¿Cuál es agudo y cuál es obtuso?
+        \end{enumerate}
+    \end{desafio}
+
+    \begin{idea}
+        Un buen truco es comparar siempre con $90^\circ$ y $180^\circ$.
+    \end{idea}
+
+    \section{Ángulos en un triángulo}
+    Ahora vamos a ver una de las reglas más importantes de toda la geometría:
+
+    \begin{idea}
+        En cualquier triángulo, la suma de los ángulos interiores siempre es:
+        \[
+        180^\circ
+        \]
+    \end{idea}
+
+    \observa{No importa la forma del triángulo: siempre se cumple.}
+
+    \newpage
+    \section{Tipos de triángulos}
+    Los triángulos se pueden clasificar según sus ángulos y lados.
+
+    \subsection*{Triángulo equilátero}
+    \begin{itemize}
+        \item Todos sus lados son iguales
+        \item Todos sus ángulos son iguales
+    \end{itemize}
+
+    \begin{ejemplo}
+        \[
+        60^\circ,\ 60^\circ,\ 60^\circ
+        \]
+
+        \begin{center}
+            \includegraphics[width=0.4\textwidth]{Lvl 2-mid(12-15años)/equilateral-triangle.jpg}
+        \end{center}
+    \end{ejemplo}
+
+    \subsection*{Triángulo isósceles}
+    \begin{itemize}
+        \item Tiene dos lados iguales
+        \item Tiene dos ángulos iguales
+    \end{itemize}
+
+    \subsection*{Triángulo escaleno}
+    \begin{itemize}
+        \item Todos sus lados son diferentes
+        \item Todos sus ángulos son diferentes
+    \end{itemize}
+
+    \begin{center}
+        \begin{tabular}{ccc}
+            \begin{tikzpicture}[scale=1]
+                \draw (0,0) -- (1,0) -- (0.5,0.866) -- cycle;
+            \end{tikzpicture}
+            &
+            \begin{tikzpicture}[scale=1]
+                \draw (0,0) -- (1,0) -- (0.5,1) -- cycle;
+                \draw (0.25,0.5) -- (0.35,0.5);
+                \draw (0.75,0.5) -- (0.65,0.5);
+            \end{tikzpicture}
+            &
+            \begin{tikzpicture}[scale=1]
+                \draw (0,0) -- (1.3,0) -- (0.4,0.9) -- cycle;
+            \end{tikzpicture}
+            \\
+
+        Equilátero ($60^\circ,60^\circ,60^\circ$)
+        &
+        Isósceles
+        &
+        Escaleno
+
+        \end{tabular}
+    \end{center}
+
+    \begin{desafio}
+        \begin{enumerate}
+            \item Calculá el tercer ángulo de un triángulo si los otros dos miden $50^\circ$ y $70^\circ$
+            \item Dibujá un triángulo isósceles con ángulos $45^\circ,\ 45^\circ,\ 90^\circ$
+            \item ¿Cuáles son los ángulos de un triángulo equilátero?
+        \end{enumerate}
+    \end{desafio}
+
+    \begin{idea}
+        Si conocés dos ángulos, podés encontrar el tercero usando que todo suma $180^\circ$.
+    \end{idea}
+
+    \section{Ángulos en rectas paralelas}
+    Cuando una recta corta a otras dos, se forman ángulos con relaciones que nos ayudan a resolver muchos problemas.
+
+    \begin{idea}
+        Cuando una recta corta a otras dos rectas paralelas, se forman ángulos con relaciones especiales.
+    \end{idea}
+
+    A esa recta la llamamos \textbf{transversal}.
+
+    \subsection*{Tipos de ángulos}
+    \textbf{Ángulos correspondientes}
+
+    \begin{idea}
+        Están en la misma posición en cada intersección.
+    \end{idea}
+
+    \observa{Si las rectas son paralelas, son iguales.}
+
+    \textbf{Ángulos alternos internos}
+
+    \begin{idea}
+        Están en lados opuestos de la transversal y dentro de las rectas.
+    \end{idea}
+
+    \observa{Si las rectas son paralelas, son iguales.}
+
+    \textbf{Ángulos alternos externos}
+
+    \begin{idea}
+        Están en lados opuestos de la transversal y fuera de las rectas.
+    \end{idea}
+
+    \observa{También son iguales si las rectas son paralelas.}
+
+    \textbf{Ángulos conjugados (internos y externos)}
+
+    \begin{idea}
+        Están del mismo lado de la transversal.
+    \end{idea}
+
+    \observa{Si las rectas son paralelas:
+        \[
+        \text{suman } 180^\circ
+        \]}
+
+  \begin{center}
+    \begin{tikzpicture}[scale=1.5, thick]
+        \draw (-2.5, 1) -- (2.5, 1) node[right] {$L_1$};
+        \draw (-2.5, -1) -- (2.5, -1) node[right] {$L_2$};
+
+        \draw (-1.5, -1.8) -- (1.5, 1.8);
+
+        \begin{scope}[shift={(1,1)}]
+            \draw[blue] (0.4,0) arc (0:50:0.4) node[pos=0.6, right] {$\beta$};
+            \draw[red] (-0.4,0) arc (180:50:0.4) node[pos=0.5, above left] {$\alpha$};
+            \draw (0.4,0.5) node {$\gamma$};
+        \end{scope}
+
+        \begin{scope}[shift={(-1,-1)}]
+            \draw[blue] (0.4,0) arc (0:50:0.4) node[pos=0.6, right] {$\beta$};
+            \draw[red] (-0.4,0) arc (180:50:0.4) node[pos=0.5, above left] {$\alpha$};
+            \draw (0.6, -0.3) node {$\delta$};
+            \draw (-0.6, -0.4) node {$\delta$};
+        \end{scope}
+    \end{tikzpicture}
+
+    \vspace{0.3cm}
+    \textbf{Ángulos en rectas paralelas}
+    \end{center}
+
+    \begin{desafio}
+    \begin{enumerate}
+        \item Si $\alpha = 50^\circ$ y $\beta$ es correspondiente, ¿cuánto vale $\beta$?
+        \item Si $\gamma = 120^\circ$, ¿cuánto vale $\delta$?
+        \item Si $(3x + 15)^\circ$ y $(2x + 45)^\circ$ son correspondientes, encontrá $x$
+    \end{enumerate}
+    \end{desafio}
+
+    \begin{idea}
+        La clave siempre es identificar si los ángulos son iguales o si suman $180^\circ$.
+    \end{idea}
+
+    \newpage
+    \section{Semejanza y congruencia de triángulos}
+    Existen dos formas importantes de comparar triángulos: cuando son exactamente iguales y cuando solo mantienen la misma forma.
+
+    \begin{center}
+        \includegraphics[width=0.65\textwidth]{Lvl 2-mid(12-15años)/congru.png}
+    \end{center}
+
+    \begin{idea}
+        Los triángulos pueden ser iguales o tener la misma forma pero no siempre el mismo tamaño.
+    \end{idea}
+
+    \subsection{Congruencia de triángulos}
+    \begin{idea}
+        Dos triángulos son \textbf{congruentes} cuando tienen exactamente la misma forma y el mismo tamaño.
+    \end{idea}
+
+    Esto significa que:
+    \begin{itemize}
+        \item todos sus lados correspondientes son iguales en longitud.
+        \item todos sus ángulos correspondientes son iguales en medida.
+    \end{itemize}
+
+    \subsubsection*{Criterios de congruencia}
+    \textbf{LLL (lado-lado-lado)}
+    \observa{Si los tres lados de un triángulo son iguales a los del otro, los triángulos son congruentes.}
+
+     \textbf{LAL (lado-ángulo-lado)}
+    \observa{Si dos lados y el ángulo entre ellos son iguales, los triángulos son congruentes.}
+
+    \textbf{ALA (ángulo-lado-ángulo)}
+    \observa{Si dos ángulos y el lado entre ellos son iguales, los triángulos son congruentes.}
+
+    \begin{ejemplo}
+        Si $AB = DE$, $BC = EF$ y $\angle ABC = \angle DEF$, entonces los triángulos son congruentes por LAL.
+    \end{ejemplo}
+
+    \begin{center}
+        \begin{tikzpicture}[scale=1, thick]
+
+        \coordinate (A) at (0,0);
+        \coordinate (B) at (2,0);
+        \coordinate (C) at (1,2);
+
+        \draw (A) -- (B) -- (C) -- cycle;
+
+        \node[below left] at (A) {$A$};
+        \node[below right] at (B) {$B$};
+        \node[above] at (C) {$C$};
+
+        \node[left] at ($(A)!0.5!(C)$) {$CA$};
+        \node[right] at ($(B)!0.5!(C)$) {$BC$};
+        \node[below] at ($(A)!0.5!(B)$) {$AB$};
+
+        \coordinate (D) at (4,0);
+        \coordinate (E) at (6,0);
+        \coordinate (F) at (5,2);
+
+        \draw (D) -- (E) -- (F) -- cycle;
+
+        \node[below left] at (D) {$D$};
+        \node[below right] at (E) {$E$};
+        \node[above] at (F) {$F$};
+
+        \node[left] at ($(D)!0.5!(F)$) {$FD$};
+        \node[right] at ($(E)!0.5!(F)$) {$EF$};
+        \node[below] at ($(D)!0.5!(E)$) {$DE$};
+
+        \end{tikzpicture}
+
+        \vspace{0.5cm}
+
+        Dado que $AB = DE$, $BC = EF$ y $\angle ABC = \angle DEF$, los triángulos $\triangle ABC$ y $\triangle DEF$ son congruentes por el criterio LAL.
+    \end{center}
+
+    \subsection{Semejanza de triángulos}
+    \begin{idea}
+        Dos triángulos son \textbf{semejantes} cuando tienen la misma forma, pero pueden tener distinto tamaño.
+    \end{idea}
+
+    Esto significa que:
+    \begin{itemize}
+        \item sus ángulos son iguales
+        \item sus lados son proporcionales
+    \end{itemize}
+
+    \subsubsection*{Criterios de semejanza}
+    \textbf{AA (ángulo-ángulo)}
+
+    \observa{Si dos ángulos son iguales, los triángulos son semejantes.}
+
+    \textbf{LLL (lado-lado-lado)}
+    \observa{Si los lados son proporcionales, los triángulos son semejantes.}
+
+    \textbf{LAL (lado-ángulo-lado)}
+
+    \observa{Si dos lados son proporcionales y el ángulo entre ellos es igual, son semejantes.}
+
+    \begin{ejemplo}
+        Si dos triángulos tienen los mismos ángulos, entonces son semejantes por el criterio AA.
+    \end{ejemplo}
+
+    \begin{center}
+        \begin{tikzpicture}[scale=1, thick]
+
+        \coordinate (G) at (0,0);
+        \coordinate (H) at (2,0);
+        \coordinate (I) at (1,1.8);
+
+        \draw (G) -- (H) -- (I) -- cycle;
+
+        \node[below left] at (G) {$G$};
+        \node[below right] at (H) {$H$};
+        \node[above] at (I) {$I$};
+
+        \node[left] at ($(G)!0.5!(I)$) {$IG$};
+        \node[right] at ($(H)!0.5!(I)$) {$HI$};
+        \node[below] at ($(G)!0.5!(H)$) {$GH$};
+
+        \coordinate (J) at (4,0);
+        \coordinate (K) at (8,0);
+        \coordinate (L) at (6,3);
+
+        \draw (J) -- (K) -- (L) -- cycle;
+
+        \node[below left] at (J) {$J$};
+        \node[below right] at (K) {$K$};
+        \node[above] at (L) {$L$};
+
+        \node[left] at ($(J)!0.5!(L)$) {$LJ$};
+        \node[right] at ($(K)!0.5!(L)$) {$KL$};
+        \node[below] at ($(J)!0.5!(K)$) {$JK$};
+
+        \end{tikzpicture}
+    \end{center}
+
+    \vspace{0.5cm}
+    Dado que dos ángulos correspondientes son iguales
+    ($\angle GHI = \angle JKL$ y $\angle HIG = \angle KLJ$),
+    los triángulos $\triangle GHI$ y $\triangle JKL$ son semejantes por el criterio AA.
+
+    \begin{desafio}
+        \begin{enumerate}
+            \item ¿Son congruentes dos triángulos si sus tres lados son iguales?
+            \item Si dos triángulos son semejantes y un lado de uno mide el doble que el del otro, ¿qué pasa con los demás lados?
+            \item Dados dos triángulos con lados:
+            $5, 7, 10$ y $10, 14, 20$, ¿son semejantes?
+            \item Si un triángulo tiene lados $3$, $4$ y $5$, y otro tiene lados $9$, $12$ y $15$, ¿qué relación tienen?
+            \item Dibujá dos triángulos congruentes y explicá qué criterio usaste.
+            \item Dibujá dos triángulos semejantes y explicá qué criterio usaste.
+        \end{enumerate}
+    \end{desafio}
+
+    \begin{idea}
+        Si todo es igual $\to$ congruencia.
+        Si solo mantienen proporciones $\to$ semejanza.
+    \end{idea}
+
+    \begin{doñaeureka}
+        Para no confundirlos, pensá en fotos.
+
+        Congruencia es como imprimir la misma foto dos veces al mismo tamaño:
+        todo coincide exactamente.
+
+        Semejanza es como la foto y su versión en miniatura:
+        la forma es igual, pero el tamaño es distinto.
+
+        Esa imagen te va a servir para toda la geometría.
+    \end{doñaeureka}
+
+    \newpage
+    \section{Puntos notables en un triángulo}
+    En un triángulo aparecen ciertos puntos especiales que tienen propiedades muy interesantes y útiles en geometría.
+
+    \begin{idea}
+        Existen puntos especiales que aparecen cuando trazamos ciertas rectas dentro del triángulo.
+    \end{idea}
+
+    Estos puntos son:
+    \begin{itemize}
+        \item Baricentro
+        \item Ortocentro
+        \item Incentro
+        \item Circuncentro
+    \end{itemize}
+
+    \begin{doneureka}
+    Parece que hay muchos nombres raros acá
+
+    Pero todos estos puntos tienen algo en común:
+    aparecen cuando trazás líneas importantes en el triángulo.
+
+    No memorices todo de golpe
+    tratá de entender qué hace cada uno
+    \end{doneureka}
+
+    \newpage
+    \section{Baricentro}
+    El baricentro es el punto donde se intersectan las \textbf{medianas}.
+
+    \observa{Una mediana es el segmento que une un vértice con el punto medio del lado opuesto.}
+
+    \begin{idea}
+        El baricentro es el \textbf{centro de equilibrio} del triángulo.
+    \end{idea}
+
+    \observa{Divide cada mediana en razón $2:1$ (la parte más larga está del lado del vértice).}
+
+    \section{Alturas y ortocentro}
+    Las alturas son segmentos que van desde un vértice y caen de forma perpendicular al lado opuesto.
+
+    \begin{idea}
+        El punto donde se cruzan las alturas se llama \textbf{ortocentro}.
+    \end{idea}
+
+    \observa{El ortocentro puede:
+        \begin{itemize}
+            \item estar dentro del triángulo (si es agudo)
+            \item estar en el vértice (si es rectángulo)
+            \item estar fuera (si es obtuso)
+        \end{itemize}}
+
+    \section{Bisectrices e incentro}
+    Las bisectrices dividen cada ángulo en dos partes iguales.
+
+    \begin{idea}
+        El punto donde se cruzan se llama \textbf{incentro}.
+    \end{idea}
+
+    \observa{El incentro es el centro del círculo que toca los tres lados del triángulo.}
+
+    \section{Mediatrices y circuncentro}
+    Las mediatrices son rectas perpendiculares a cada lado que pasan por su punto medio.
+
+    \begin{idea}
+        El punto donde se cruzan se llama \textbf{circuncentro}.
+    \end{idea}
+
+    \observa{\begin{itemize}
+            \item Está a la misma distancia de los tres vértices
+            \item Es el centro de la circunferencia que pasa por los tres vértices
+        \end{itemize}}
+
+    \section{¿Para qué sirve todo esto?}
+    \begin{idea}
+        Estos puntos aparecen MUCHÍSIMO en problemas de geometría.
+    \end{idea}
+
+    \contextotxt{Si un problema menciona alguno de estos puntos, probablemente                tengas que usar sus propiedades.
+                Dibujar bien el triángulo puede ayudarte a descubrir la solución.}
+
+    \begin{desafio}
+        \begin{enumerate}
+            \item Demostrá que en un triángulo equilátero todos los puntos notables coinciden.
+            \item Demostrá que en un triángulo isósceles los puntos notables están alineados.
+        \end{enumerate}
+    \end{desafio}
+
+    \newpage
+    \section{Ángulos en la circunferencia}
+    En geometría, una circunferencia es el conjunto de puntos que están a la misma distancia de un punto fijo llamado \textbf{centro}.
+
+    \begin{idea}
+        Muchos problemas de geometría aparecen dentro de circunferencias, así que entender sus ángulos es clave.
+    \end{idea}
+
+    \begin{doneureka}
+        Este tema parece complicado pero tiene una lógica simple
+
+        Todo gira alrededor del arco.
+
+        Si entendés qué arco estás mirando
+        ya sabés cuánto mide el ángulo
+    \end{doneureka}
+
+    \subsection{Ángulo central}
+        Un ángulo central es aquel cuyo vértice está en el centro de la circunferencia.
+
+    Sus lados son radios de la circunferencia.
+
+    \observa{La medida del ángulo central es igual a la medida del arco que                intercepta:
+            \[
+            \text{ángulo central} = \text{arco interceptado}
+            \]}
+
+    \begin{center}
+        \begin{tikzpicture}[scale=1.2, thick]
+
+        \coordinate (O) at (0,0);
+
+        \coordinate (A) at (40:2);
+        \coordinate (B) at (-40:2);
+
+        \draw (O) circle (2);
+
+        \draw (O) -- (A);
+        \draw (O) -- (B);
+
+        \filldraw (O) circle (1.5pt);
+        \node[below left] at (O) {$O$};
+
+        \node[right] at (A) {$A$};
+        \node[right] at (B) {$B$};
+
+        \draw (0.6,0) arc (0:40:0.6);
+        \node at (0.9,0.3) {$\angle AOB$};
+
+        \end{tikzpicture}
+    \end{center}
+
+    \newpage
+    \subsection{Ángulo inscrito}
+    Un \textbf{ángulo inscrito} es aquel cuyo vértice está sobre la circunferencia.
+
+    Sus lados son cuerdas de la circunferencia.
+
+    \observa{La medida del ángulo inscrito es la mitad del arco que intercepta:
+        \[
+        \text{ángulo inscrito} = \frac{1}{2} \times \text{arco interceptado}
+        \]}
+
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{Lvl 2-mid(12-15años)/angulo_inscrito.png}
+    \end{center}
+
+    \subsection{Ángulo semiinscrito}
+    Un \textbf{ángulo semiinscrito} tiene un vértice sobre la circunferencia.
+
+    Uno de sus lados es una tangente y el otro lado es una cuerda.
+
+    \observa{La medida de un ángulo semiinscrito es la mitad del arco que                  intercepta:
+            \[
+            \text{ángulo semiinscrito} = \frac{1}{2}\times \text{arco interceptado}
+            \]}
+
+    \newpage
+    \section{Cuadriláteros cíclicos}
+    Un \textbf{cuadrilátero} es cíclico cuando sus cuatro vértices están sobre una misma circunferencia.
+
+    \begin{idea}
+        En un cuadrilátero cíclico, los ángulos opuestos son suplementarios.
+    \end{idea}
+
+    Eso significa que:
+    \[
+    \angle A + \angle C = 180^\circ
+    \qquad \text{y} \qquad
+    \angle B + \angle D = 180^\circ
+    \]
+
+    \begin{center}
+        \begin{tikzpicture}[scale=1.2, thick]
+            \draw (0,0) circle (2);
+
+            \coordinate (A) at (60:2);
+            \coordinate (B) at (120:2);
+            \coordinate (C) at (240:2);
+            \coordinate (D) at (300:2);
+
+            \draw (B)--(A)--(D)--(C)--cycle;
+
+            \filldraw (A) circle (1.5pt);
+            \filldraw (B) circle (1.5pt);
+            \filldraw (C) circle (1.5pt);
+            \filldraw (D) circle (1.5pt);
+
+            \node[above right] at (A) {$A$};
+            \node[above left] at (B) {$B$};
+            \node[below left] at (C) {$C$};
+            \node[below right] at (D) {$D$};
+
+            \node at (0,1.2) {$\angle A$};
+            \node at (0,-1.2) {$\angle C$};
+        \end{tikzpicture}
+
+        Cuadrilátero cíclico
+    \end{center}
+
+    \observa{Si conocés un ángulo de un cuadrilátero cíclico, podés encontrar el opuesto restando a $180^\circ$.}
+
+    \section{Teorema de las tangentes}
+
+    \begin{idea}
+        Una \textbf{recta tangente} a una circunferencia es aquella que la toca en un único punto, llamado \textit{punto de tangencia}. En ese punto, la recta es siempre perpendicular al radio.
+    \end{idea}
+
+    Si desde un punto exterior $P$ se trazan dos tangentes a una circunferencia, entonces los segmentos desde $P$ hasta los puntos de tangencia ($A$ y $B$) tienen la misma longitud.
+
+    \[ PA = PB \]
+
+    \begin{center}
+        \begin{tikzpicture}[scale=1.2, thick]
+            \coordinate (O) at (0,0);
+            \draw (O) circle (1.5);
+            \filldraw (O) circle (1.5pt) node[below] {$O$};
+
+            \coordinate (P) at (4,0);
+            \filldraw (P) circle (1.5pt) node[right] {$P$};
+
+            \coordinate (A) at ({1.5*1.5/4}, {1.5*sqrt(1-(1.5/4)^2)});
+            \coordinate (B) at ({1.5*1.5/4}, {-1.5*sqrt(1-(1.5/4)^2)});
+
+            \draw (P) -- (A);
+            \draw (P) -- (B);
+
+            \filldraw (A) circle (1.5pt) node[above right] {$A$};
+            \filldraw (B) circle (1.5pt) node[below right] {$B$};
+
+            \draw[dashed, gray] (O) -- (A);
+            \draw[dashed, gray] (O) -- (B);
+        \end{tikzpicture}
+    \end{center}
+
+    \begin{idea}
+        \textbf{Idea clave:} Las tangentes trazadas desde un mismo punto exterior son siempre iguales.
+    \end{idea}
+
+    \begin{desafio}
+        \begin{enumerate}
+            \item Si un ángulo central mide $100^\circ$, ¿cuánto mide un ángulo inscrito que intercepta el mismo arco?
+
+            \item En un cuadrilátero cíclico, si $\angle A = 110^\circ$, ¿cuánto mide $\angle C$?
+
+            \item Si desde un punto exterior $P$ se trazan dos tangentes a una circunferencia, ¿qué relación existe entre $PA$ y $PB$?
+
+            \item Si un ángulo central mide $120^\circ$, ¿cuánto mide un ángulo semiinscrito que intercepta el mismo arco?
+        \end{enumerate}
+    \end{desafio}
+
+    \begin{idea}
+        En circunferencias aparecen muchas veces estas tres reglas:
+        \begin{itemize}
+            \item ángulo central = arco
+            \item ángulo inscrito = mitad del arco
+            \item ángulo semiinscrito = mitad del arco
+        \end{itemize}
+    \end{idea}
+
+    \section{Teoremas útiles de geometría}
+    En esta parte reunimos algunas herramientas muy importantes que aparecen una y otra vez en problemas de geometría.
+
+    \begin{idea}
+        No hace falta memorizar mil fórmulas.
+        Con pocos teoremas bien entendidos, podés resolver muchísimos problemas.
+    \end{idea}
+
+    \begin{doñaeureka}
+        Antes de aplicar cualquier teorema, dibujá el problema.
+
+        No tiene que quedar perfecto, pero el dibujo te muestra
+        qué información tenés y qué necesitás encontrar.
+
+        Marcá los lados iguales con rayitas y los ángulos iguales con arcos.
+        Muchas veces la solución aparece sola cuando ves el dibujo bien marcado.
+
+        Un dibujo claro vale más que diez fórmulas memorizadas.
+    \end{doñaeureka}
+
+    \subsection*{Teorema del punto medio}
+
+    \begin{idea}
+        Si $M$ es el punto medio del lado $AB$ y $N$ es el punto medio del lado $AC$ en un triángulo $ABC$, se cumplen dos condiciones:
+        \[
+        MN \parallel BC \quad \text{y} \quad MN = \frac{1}{2}BC
+        \]
+    \end{idea}
+
+    \observa{Esto significa que el segmento $MN$ es \textbf{paralelo} ($\parallel$) al tercer lado y su longitud es exactamente la mitad de dicho lado.}
+
+    \begin{center}
+        \begin{tikzpicture}[scale=1.2, thick]
+            \coordinate (A) at (1.5, 3);
+            \coordinate (B) at (0, 0);
+            \coordinate (C) at (4, 0);
+
+            \draw (B) -- (A) -- (C) -- cycle;
+
+            \coordinate (M) at ($(A)!0.5!(B)$);
+            \coordinate (N) at ($(A)!0.5!(C)$);
+
+            \draw[blue, thick] (M) -- (N);
+
+            \node[above] at (A) {$A$};
+            \node[below left] at (B) {$B$};
+            \node[below right] at (C) {$C$};
+
+            \filldraw (M) circle (1.5pt) node[left] {$M$};
+            \filldraw (N) circle (1.5pt) node[right] {$N$};
+
+            \draw[gray] ($(A)!0.25!(B)$)+(0.1,0) -- +(-0.1,0);
+            \draw[gray] ($(M)!0.5!(B)$)+(0.1,0) -- +(-0.1,0);
+
+            \draw[gray] ($(A)!0.25!(C)$)+(-0.1,0.1) -- +(0.1,-0.1);
+            \draw[gray] ($(A)!0.25!(C)$)+(-0.05,0.15) -- +(0.15,-0.05);
+            \draw[gray] ($(N)!0.5!(C)$)+(-0.1,0.1) -- +(0.1,-0.1);
+            \draw[gray] ($(N)!0.5!(C)$)+(-0.05,0.15) -- +(0.15,-0.05);
+        \end{tikzpicture}
+    \end{center}
+
+    \subsection*{Teorema de Thales}
+
+    \begin{idea}
+        Si una recta paralela a un lado de un triángulo corta los otros dos lados, forma segmentos proporcionales.
+    \end{idea}
+
+    \begin{ejemplo}
+        Si $DE \parallel BC$:
+        \[
+        \frac{AD}{DB} = \frac{AE}{EC}
+        \]
+
+        Si $AD = 3$, $DB = 6$, $AE = 2$:
+        \[
+        \frac{3}{6} = \frac{2}{EC} \Rightarrow EC = 4
+        \]
+    \end{ejemplo}
+
+    \begin{desafio}
+        Si $AD = 5$, $DB = 15$, $AE = 4$, encontrá $EC$.
+    \end{desafio}
+
+    \subsection*{Teorema de la bisectriz}
+
+    \begin{idea}
+        La bisectriz de un ángulo divide el lado opuesto en partes proporcionales a los lados del triángulo.
+    \end{idea}
+
+    \begin{ejemplo}
+        \[
+        \frac{BD}{DC} = \frac{AB}{AC}
+        \]
+
+        Si $AB = 6$, $AC = 8$, $BD = 3$:
+        \[
+        \frac{3}{DC} = \frac{6}{8} \Rightarrow DC = 4
+        \]
+    \end{ejemplo}
+
+    \begin{desafio}
+        Si $AB = 5$, $AC = 10$, $BD = 2$, encontrá $DC$.
+    \end{desafio}
+
+
+    \subsection*{Teorema de las tangentes}
+
+    \begin{idea}
+        Desde un punto exterior a una circunferencia, las tangentes tienen la misma longitud:
+        \[
+        PQ = PR
+        \]
+    \end{idea}
+
+    \begin{ejemplo}
+        Si $PQ = 5$, entonces:
+        \[
+        PR = 5
+        \]
+    \end{ejemplo}
+
+    \begin{desafio}
+        Si $PQ = 7$, ¿cuánto mide $PR$?
+    \end{desafio}
+
+    \section{Para practicar}
+
+    \begin{desafio}
+        \begin{enumerate}
+            \item Si $D$ y $E$ son puntos medios de $AC$ y $AB$, ¿cuánto mide $DE$ si $BC = 10$?
+
+            \item Si $AD = 4$, $DB = 6$ y $AC = 15$, encontrá $EC$.
+
+            \item Si $AB = 8$, $AC = 6$ y $BD = 5$, calculá $DC$.
+
+            \item Si desde un punto exterior se trazan tangentes de longitud $9$, ¿cuánto mide cada una?
+        \end{enumerate}
+    \end{desafio}
+
+    \begin{idea}
+        Estos teoremas aparecen TODO el tiempo en problemas de geometría.
+    \end{idea}
+
+    \observa{La clave no es solo saberlos, sino reconocer cuándo usarlos.}
+
+    \contextotxt{Practicar problemas es lo que realmente te hace mejorar.
+        Mientras más veas, más rápido vas a reconocer patrones.}
+
+
+\newpage
+\vspace{1cm}
+\section*{Mis Notas Finales}
+\begin{tcolorbox}[
+    enhanced,
+    colback=white,
+    colframe=grisOxford!20,
+    sharp corners,
+    boxrule=0.5pt,
+    title=¿Qué fue lo que más me sorprendió descubrir?,
+    coltitle=grisOxford,
+    fonttitle=\small\itshape,
+    attach boxed title to top left={xshift=5mm, yshift=-2mm},
+    boxed title style={colback=white, colframe=white}
+]
+    \vspace{2.5cm}
+\end{tcolorbox}
+
+\begin{tcolorbox}[
+    enhanced,
+    colback=celesteTenue!30,
+    colframe=grisOxford!30,
+    sharp corners,
+    boxrule=0.5pt,
+    title=Nuevas herramientas:,
+    coltitle=grisOxford,
+    fonttitle=\small\itshape,
+    attach boxed title to top left={xshift=5mm, yshift=-2mm},
+    boxed title style={colback=white, colframe=white}
+]
+    \vspace{0.2cm}
+    \textit{Escribí una idea o concepto que aprendiste en este libro y que pienses que te va a servir para resolver problemas fuera de la clase de matemática.}
+    \par\vspace{2.5cm}
+\end{tcolorbox}
+
+\vfill
+
+\begin{doñaeureka}
+    ¡Y yo también me despido, chamiga/o!
+
+    Lo que aprendiste acá no se queda en el cuaderno.
+    Cada vez que analizás una situación con calma,
+    verificás tu respuesta antes de entregarla
+    o buscás el patrón detrás de algo complicado,
+    estás usando matemática.
+
+    Seguí haciendo preguntas.
+    Seguí dibujando, probando y equivocándote.
+    Eso es exactamente lo que hacen las personas que más saben.
+
+    ¡Hasta la próxima, genio!
+\end{doñaeureka}
+
+\begin{doneureka}
+    ¡Llegamos a la meta, chamigo! Completar este material de Nivel 2 es un gran paso. A esta edad, la matemática deja de ser solo hacer cuentas y se convierte en una herramienta para entender el mundo.
+
+    Espero que te lleves la satisfacción de haber vencido esos problemas que al principio parecían imposibles. Recordá que el error es parte del camino: cada vez que algo no te salió, tu cerebro estaba buscando una nueva ruta.
+
+    Este material ahora es tu guía. Usalo para repasar, desafiá a tus compañeros y nunca dejes de preguntar ``¿por qué?''. ¡El futuro de nuestra tierra necesita mentes curiosas y valientes como la tuya! ¡Hasta la próxima, genio!
+\end{doneureka}
+
+\newpage
+\section*{Referencias}
+\textit{Los problemas presentados en este material han sido seleccionados y adaptados de diversas fuentes de entrenamiento olímpico, con el fin de ofrecer los mejores desafíos a los estudiantes paraguayos.}
+\addcontentsline{toc}{section}{Bibliografía y Recursos}
+\begin{thebibliography}{9}
+
+    \bibitem{kuarahy}
+    \textbf{Kuarahy Py -- Matemáticas}.
+    \textit{Repositorio de materiales y desafíos matemáticos}.
+
+    \bibitem{ommbc}
+    \textbf{Olimpiada Mexicana de Matemáticas (Baja California)}.
+    \textit{Material de entrenamiento: Nivel Básico e Intermedio}.
+
+    \bibitem{drive_recursos}
+    \textbf{Repositorio Colaborativo de Olimpiadas}.
+    \textit{Compilación de problemas y olimpiadas internacionales}.
+
+    \bibitem{eureka}
+    \textbf{Equipo Eureka Paraguay}.
+    \textit{Descubriendo las Matemáticas: Adaptación Nivel 3}.
+    Edición 2026.
+
+\end{thebibliography}
+
+\vfill
+\begin{center}
+    \small\color{gray} © 2026 Eureka Paraguay -- Descubriendo las Matemáticas
+\end{center}
+
+\end{document}
