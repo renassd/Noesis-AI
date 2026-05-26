@@ -23,15 +23,25 @@ export async function GET(req: NextRequest) {
       `&limit=8&fields=title,authors,year,abstract,url,externalIds`;
 
     const res = await fetch(apiUrl, {
-      headers: { "User-Agent": "Neuvra/1.0" },
-      next: { revalidate: 3600 },
+      headers: {
+        "User-Agent": "Neuvra/1.0",
+        "Accept": "application/json",
+      },
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Paper search failed" }, { status: 502 });
+      const body = await res.text().catch(() => "");
+      console.error("[paper-search] S2 error:", res.status, body.slice(0, 300));
+      return NextResponse.json(
+        { error: `Semantic Scholar returned ${res.status}` },
+        { status: 502 },
+      );
     }
 
-    const data = (await res.json()) as { data?: S2Paper[] };
+    const data = (await res.json()) as { data?: S2Paper[]; total?: number };
+    console.log("[paper-search] total results:", data.total ?? "?");
+
     const papers = (data.data ?? []).map((p) => ({
       id: p.paperId,
       title: p.title ?? "Untitled",
@@ -44,7 +54,9 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json({ papers });
-  } catch {
-    return NextResponse.json({ error: "Network error" }, { status: 502 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    console.error("[paper-search] fetch failed:", msg);
+    return NextResponse.json({ error: `Network error: ${msg}` }, { status: 502 });
   }
 }

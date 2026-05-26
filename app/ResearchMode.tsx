@@ -995,7 +995,7 @@ export default function ResearchMode() {
         const searchData = (await searchRes.json()) as { papers?: PaperResult[]; error?: string };
 
         if (!searchRes.ok || !searchData.papers) {
-          throw new Error(searchData.error ?? "Search failed");
+          throw new Error(searchData.error ?? `Search failed (${searchRes.status})`);
         }
 
         const rawPapers = searchData.papers.filter((p) => p.abstract?.trim().length > 50).slice(0, 6);
@@ -1075,8 +1075,9 @@ export default function ResearchMode() {
           }),
         }));
       } catch (err) {
-        console.error("[ResearchMode] paper search failed:", err);
-        setError(lang === "en" ? "Paper search failed. Try again." : "Error al buscar papers. Intentá de nuevo.");
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("[ResearchMode] paper search failed:", msg);
+        setError(msg);
       } finally {
         setLoading(false);
       }
