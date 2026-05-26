@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 interface S2Paper {
   paperId: string;
   title?: string;
@@ -16,6 +19,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing query" }, { status: 400 });
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
     const apiUrl =
       `https://api.semanticscholar.org/graph/v1/paper/search` +
@@ -27,7 +33,8 @@ export async function GET(req: NextRequest) {
         "User-Agent": "Neuvra/1.0",
         "Accept": "application/json",
       },
-      signal: AbortSignal.timeout(10000),
+      signal: controller.signal,
+      cache: "no-store",
     });
 
     if (!res.ok) {
@@ -55,8 +62,15 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ papers });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+    const msg =
+      err instanceof Error && err.name === "AbortError"
+        ? "Request timed out"
+        : err instanceof Error
+          ? err.message
+          : "Unknown error";
     console.error("[paper-search] fetch failed:", msg);
     return NextResponse.json({ error: `Network error: ${msg}` }, { status: 502 });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
