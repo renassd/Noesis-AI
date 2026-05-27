@@ -992,34 +992,9 @@ export default function ResearchMode() {
 
       try {
         const searchRes = await fetch(`/api/paper-search?q=${encodeURIComponent(trimmed)}`);
-        const contentType = searchRes.headers.get("content-type") ?? "";
-        const rawBody = await searchRes.text();
-        let searchData: { papers?: PaperResult[]; error?: string } | null = null;
+        const searchData = (await searchRes.json()) as { papers?: PaperResult[]; error?: string };
 
-        if (contentType.includes("application/json")) {
-          try {
-            searchData = JSON.parse(rawBody) as { papers?: PaperResult[]; error?: string };
-          } catch {
-            throw new Error(
-              lang === "en"
-                ? "Paper search returned invalid JSON."
-                : "La busqueda de papers devolvio JSON invalido.",
-            );
-          }
-        } else {
-          const isHtml = rawBody.trimStart().startsWith("<!DOCTYPE") || rawBody.trimStart().startsWith("<html");
-          throw new Error(
-            isHtml
-              ? lang === "en"
-                ? `Paper search endpoint returned HTML (${searchRes.status}).`
-                : `La ruta de busqueda devolvio HTML (${searchRes.status}).`
-              : lang === "en"
-                ? `Paper search returned an unexpected response (${searchRes.status}).`
-                : `La busqueda devolvio una respuesta inesperada (${searchRes.status}).`,
-          );
-        }
-
-        if (!searchRes.ok || !searchData?.papers) {
+        if (!searchRes.ok || !searchData.papers) {
           throw new Error(searchData.error ?? `Search failed (${searchRes.status})`);
         }
 
