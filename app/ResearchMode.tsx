@@ -1413,13 +1413,19 @@ export default function ResearchMode() {
         // Step 2: Build enriched system prompt with numbered paper context
         const paperContext =
           sourcePapers.length > 0
-            ? `\n\n---\nACADEMIC SOURCES — cite these papers by number (e.g. [1], [2]) when making claims:\n\n` +
+            ? `\n\n---\n` +
+              `CITATION RULES — follow these exactly:\n` +
+              `1. Place a citation number [N] immediately after EVERY sentence or clause that states a specific fact, finding, statistic, or claim — not just at the end of paragraphs.\n` +
+              `2. Multiple sources for the same point: [1][3]. If a sentence draws on several sources, list all of them.\n` +
+              `3. Do NOT have any factual sentence without a citation. General framing sentences (e.g. "This field has grown rapidly") that you cannot attribute to a specific source may be left uncited, but specific claims must always have one.\n` +
+              `4. Example of correct inline citation style: "CAR-T cells achieve 70–90% remission rates in B-cell lymphoma [1]. The CD28 domain provides stronger early expansion [2], whereas 4-1BB improves long-term persistence [3][4]."\n\n` +
+              `AVAILABLE SOURCES:\n\n` +
               sourcePapers
                 .map(
                   (p, i) =>
                     `[${i + 1}] ${p.title} (${p.year ?? "n.d."})\n` +
                     `Authors: ${p.authors.slice(0, 3).join(", ")}${p.authors.length > 3 ? " et al." : ""}\n` +
-                    `Abstract: ${p.abstract.slice(0, 400)}`,
+                    `Abstract: ${p.abstract.slice(0, 500)}`,
                 )
                 .join("\n\n")
             : "";
