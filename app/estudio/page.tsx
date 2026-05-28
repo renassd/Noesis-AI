@@ -206,11 +206,7 @@ export default function EstudioPage() {
             />
           )}
           {tool === "exam" && (
-            <ExamMode
-              deck={activeDeck}
-              decks={decks}
-              onSelectDeck={(deck) => setActiveDeck(deck)}
-            />
+            <ExamMode />
           )}
           {tool === "study" && (
             <FlashcardStudy

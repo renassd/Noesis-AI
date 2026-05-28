@@ -1,542 +1,667 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import "./exam-mode.css";
+import { useState, useCallback } from "react";
+import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
+import { useAiUsage } from "@/context/AiUsageContext";
 import { useLang } from "./i18n";
-import type { Deck } from "./types";
+import { ImportBar, type ImportedTextFile } from "./ImportBar";
 
-type ExamType = "multiple-choice" | "written";
-type Phase = "setup" | "exam" | "grading" | "results";
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-interface ExamQuestion {
+type ExamType = "mcq" | "written" | "mixed";
+type Phase = "setup" | "generating" | "exam" | "grading" | "results";
+
+interface MCQQuestion {
   id: string;
+  type: "mcq";
   question: string;
-  correctAnswer: string;
-  options?: string[];
-  correctOptionIndex?: number;
+  options: [string, string, string, string];
+  correctIndex: number;
+  explanation?: string;
 }
 
-interface QuestionResult {
+interface WrittenQuestion {
+  id: string;
+  type: "written";
   question: string;
-  correctAnswer: string;
-  userAnswer: string;
-  correct?: boolean;
-  score?: number;
-  feedback?: string;
+  modelAnswer?: string;
 }
 
-interface Props {
-  deck: Deck | null;
-  decks: Deck[];
-  onSelectDeck: (deck: Deck) => void;
+type ExamQuestion = MCQQuestion | WrittenQuestion;
+
+interface WrittenGrade {
+  score: number;
+  feedback: string;
+  correction?: string;
 }
 
-const OPTION_LABELS = ["A", "B", "C", "D"];
-const MIN_MCQ_CARDS = 4;
+// ── Prompt builders ────────────────────────────────────────────────────────────
 
-export default function ExamMode({ deck, decks, onSelectDeck }: Props) {
-  const { t, lang } = useLang();
-  const s = t.exam;
+function buildGenerationPrompt(
+  content: string,
+  examType: ExamType,
+  count: number,
+  lang: "es" | "en",
+): string {
+  const mcqCount =
+    examType === "mcq" ? count : examType === "mixed" ? Math.ceil(count / 2) : 0;
+  const writtenCount =
+    examType === "written" ? count : examType === "mixed" ? Math.floor(count / 2) : 0;
+
+  const typeDesc =
+    examType === "mcq"
+      ? `${count} multiple choice questions (4 options each, exactly one correct)`
+      : examType === "written"
+      ? `${count} open-ended written questions`
+      : `${mcqCount} multiple choice questions and ${writtenCount} open-ended questions`;
+
+  const langNote =
+    lang === "es"
+      ? "Write every question, option, and model answer in Spanish."
+      : "Write every question, option, and model answer in English.";
+
+  return `You are an exam generator. Generate ${typeDesc} based strictly on the CONTENT below.
+
+${langNote}
+Test conceptual understanding — not trivial memorization.
+
+CONTENT:
+${content.slice(0, 6000)}
+
+Return ONLY valid JSON — no markdown, no explanation, nothing else:
+{
+  "questions": [
+    {
+      "id": "q1",
+      "type": "mcq",
+      "question": "...",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctIndex": 0,
+      "explanation": "Brief reason why that option is correct."
+    },
+    {
+      "id": "q2",
+      "type": "written",
+      "question": "...",
+      "modelAnswer": "Concise ideal answer for grading."
+    }
+  ]
+}
+
+Rules:
+- correctIndex is 0-based (0 = first option)
+- MCQ distractors must be plausible, not obviously wrong
+- Written questions require 2-4 sentence answers
+- All IDs must be unique strings like "q1", "q2", etc.`;
+}
+
+function buildGradingPrompt(
+  questions: WrittenQuestion[],
+  answers: Record<string, string>,
+  lang: "es" | "en",
+): string {
+  const pairs = questions
+    .map(
+      (q, i) =>
+        `Question ${i + 1} [${q.id}]: ${q.question}\n` +
+        `Expected: ${q.modelAnswer ?? "(judge based on content)"}\n` +
+        `Student: ${answers[q.id]?.trim() || "(no answer)"}`,
+    )
+    .join("\n\n");
+
+  const langNote =
+    lang === "es" ? "Write all feedback in Spanish." : "Write all feedback in English.";
+
+  return `Grade these student answers. ${langNote}
+
+${pairs}
+
+Return ONLY valid JSON:
+{
+  "grades": [
+    {
+      "id": "q1",
+      "score": 85,
+      "feedback": "...",
+      "correction": "A complete answer should include..."
+    }
+  ]
+}
+
+Scoring: 100 = perfect · 70-99 = mostly correct · 40-69 = partial · 0-39 = wrong or blank.`;
+}
+
+// ── Parsers ────────────────────────────────────────────────────────────────────
+
+function parseQuestions(raw: string): ExamQuestion[] {
+  const clean = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  const attempt = (s: string): ExamQuestion[] | null => {
+    try {
+      const p = JSON.parse(s) as { questions?: ExamQuestion[] };
+      if (Array.isArray(p.questions) && p.questions.length > 0) return p.questions;
+    } catch { /* */ }
+    return null;
+  };
+  return (
+    attempt(clean) ??
+    (() => {
+      const m = clean.match(/\{[\s\S]*\}/);
+      return m ? attempt(m[0]) : null;
+    })() ??
+    []
+  );
+}
+
+function parseGrades(
+  raw: string,
+): Array<{ id: string; score: number; feedback: string; correction?: string }> {
+  const clean = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  const attempt = (s: string) => {
+    try {
+      const p = JSON.parse(s) as {
+        grades?: Array<{ id: string; score: number; feedback: string; correction?: string }>;
+      };
+      return p.grades ?? null;
+    } catch {
+      return null;
+    }
+  };
+  return (
+    attempt(clean) ??
+    (() => {
+      const m = clean.match(/\{[\s\S]*\}/);
+      return m ? attempt(m[0]) : null;
+    })() ??
+    []
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function ExamMode() {
+  const { lang } = useLang();
+  const { usage, applyUsage } = useAiUsage();
 
   const [phase, setPhase] = useState<Phase>("setup");
-  const [examType, setExamType] = useState<ExamType>("multiple-choice");
-  const [questionCount, setQuestionCount] = useState<number>(10);
+  const [content, setContent] = useState("");
+  const [attachment, setAttachment] = useState<ImportedTextFile | null>(null);
+  const [examType, setExamType] = useState<ExamType>("mcq");
+  const [questionCount, setQuestionCount] = useState(10);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
-  const [currentQ, setCurrentQ] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [results, setResults] = useState<QuestionResult[]>([]);
-  const [grading, setGrading] = useState(false);
-  const [gradingError, setGradingError] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string | number>>({});
+  const [grades, setGrades] = useState<Record<string, WrittenGrade>>({});
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    setPhase("setup");
-    setQuestions([]);
-    setAnswers({});
-    setResults([]);
-    setGradingError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deck?.id]);
+  const hasCredits = (usage?.creditsRemaining ?? 0) > 0;
 
-  if (!deck) {
-    if (decks.length === 0) {
-      return (
-        <div className="ws-panel ws-panel-centered">
-          <div className="study-empty">
-            <h2 className="study-empty-title">{s.noDecksTitle}</h2>
-            <p className="study-empty-sub">{s.noDecksDesc}</p>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="ws-panel">
-        <div className="ws-panel-header">
-          <h2 className="ws-panel-title">{s.pickDeckTitle}</h2>
-          <p className="ws-panel-sub">{s.pickDeckDesc}</p>
-        </div>
-        <div className="study-deck-picker">
-          {decks.map((d) => (
-            <button key={d.id} className="study-deck-option" onClick={() => onSelectDeck(d)} type="button">
-              <div>
-                <strong>{d.name}</strong>
-                <span>{d.cards.length} {d.cards.length === 1 ? t.study.deckCard : t.study.deckCards}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const handleImportedText = useCallback((file: ImportedTextFile) => {
+    setAttachment(file);
+    setContent("");
+  }, []);
 
-  function generateMCQ(count: number): ExamQuestion[] {
-    const cards = [...deck!.cards].sort(() => Math.random() - 0.5).slice(0, count);
-    return cards.map((card) => {
-      const others = deck!.cards.filter((c) => c.id !== card.id);
-      const distractors = [...others]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3)
-        .map((c) => c.answer);
-      while (distractors.length < 3) distractors.push("—");
-
-      const shuffled = [{ text: card.answer, correct: true }, ...distractors.map((d) => ({ text: d, correct: false }))]
-        .sort(() => Math.random() - 0.5);
-
-      return {
-        id: card.id,
-        question: card.question,
-        correctAnswer: card.answer,
-        options: shuffled.map((o) => o.text),
-        correctOptionIndex: shuffled.findIndex((o) => o.correct),
-      };
-    });
-  }
-
-  function generateWritten(count: number): ExamQuestion[] {
-    return [...deck!.cards]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, count)
-      .map((card) => ({ id: card.id, question: card.question, correctAnswer: card.answer }));
-  }
-
-  const effectiveCount = Math.min(questionCount, deck.cards.length);
-
-  function startExam() {
-    const qs = examType === "multiple-choice" ? generateMCQ(effectiveCount) : generateWritten(effectiveCount);
-    setQuestions(qs);
-    setCurrentQ(0);
-    setAnswers({});
-    setResults([]);
-    setGradingError(null);
-    setPhase("exam");
-  }
-
-  async function submitExam() {
-    if (examType === "multiple-choice") {
-      setResults(
-        questions.map((q) => ({
-          question: q.question,
-          correctAnswer: q.correctAnswer,
-          userAnswer: answers[q.id] ?? "",
-          correct: answers[q.id] === q.correctAnswer,
-        })),
-      );
-      setPhase("results");
-      return;
-    }
-
-    setGrading(true);
-    setPhase("grading");
-    setGradingError(null);
-
+  // ── Generate ───────────────────────────────────────────────────────────────
+  async function generateExam() {
+    const src = attachment?.content?.trim() || content.trim();
+    if (!src || !hasCredits) return;
+    setPhase("generating");
+    setError("");
     try {
-      const gradingItems = questions.map((q) => ({
-        question: q.question,
-        expectedAnswer: q.correctAnswer,
-        userAnswer: answers[q.id] ?? "",
-      }));
-
-      const systemPrompt =
-        lang === "es"
-          ? `Eres un corrector de examenes academicos. Se te dan pares de (pregunta, respuesta esperada, respuesta del estudiante). Evalua cada respuesta del 0 al 100 y da un feedback conciso de 1-2 oraciones. Se justo: acepta respuestas correctas aunque esten redactadas distinto. Devuelve UNICAMENTE este JSON sin texto adicional:\n{"results":[{"score":85,"feedback":"Texto del feedback"}]}`
-          : `You are an academic exam grader. You receive (question, expected answer, student answer) triples. Grade each answer 0-100 and give concise 1-2 sentence feedback. Be fair: accept correct answers even if worded differently. Return ONLY this JSON with no additional text:\n{"results":[{"score":85,"feedback":"Feedback text"}]}`;
-
-      const resp = await fetch("/api/ai", {
+      const res = await fetchWithSupabaseAuth("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system: systemPrompt,
-          messages: [{ role: "user", content: JSON.stringify(gradingItems, null, 2) }],
-          max_tokens: 2000,
+          system:
+            "You are a precise exam generator. Return only valid JSON. No markdown, no extra text.",
+          messages: [
+            {
+              role: "user",
+              content: buildGenerationPrompt(src, examType, questionCount, lang),
+            },
+          ],
+          max_tokens: 4000,
         }),
       });
-
-      if (!resp.ok) {
-        const err = (await resp.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? "Grading request failed");
+      const data = await res.json();
+      applyUsage(data.usage);
+      if (!res.ok) {
+        setError(
+          data.error ||
+            (lang === "en" ? "Could not generate exam." : "No se pudo generar el examen."),
+        );
+        setPhase("setup");
+        return;
       }
-
-      const data = (await resp.json()) as { text?: string; error?: string };
-      if (!data.text) throw new Error("Empty response from AI");
-
-      let gradingResults: Array<{ score: number; feedback: string }> = [];
-      try {
-        const parsed = JSON.parse(data.text) as { results: Array<{ score: number; feedback: string }> };
-        gradingResults = parsed.results;
-      } catch {
-        const match = data.text.match(/\{[\s\S]*\}/);
-        if (match) {
-          const parsed = JSON.parse(match[0]) as { results: Array<{ score: number; feedback: string }> };
-          gradingResults = parsed.results;
-        }
+      const parsed = parseQuestions(data.text ?? "");
+      if (parsed.length === 0) {
+        setError(
+          lang === "en"
+            ? "Could not parse questions. Try again."
+            : "No se pudieron generar preguntas. Intentá de nuevo.",
+        );
+        setPhase("setup");
+        return;
       }
-
-      setResults(
-        questions.map((q, i) => ({
-          question: q.question,
-          correctAnswer: q.correctAnswer,
-          userAnswer: answers[q.id] ?? "",
-          score: gradingResults[i]?.score ?? 0,
-          feedback: gradingResults[i]?.feedback,
-        })),
+      setQuestions(parsed);
+      setAnswers({});
+      setGrades({});
+      setPhase("exam");
+    } catch {
+      setError(
+        lang === "en" ? "Network error. Try again." : "Error de red. Intentá de nuevo.",
       );
-      setPhase("results");
-    } catch (err) {
-      setGradingError(err instanceof Error ? err.message : "Grading failed");
-      setResults(
-        questions.map((q) => ({
-          question: q.question,
-          correctAnswer: q.correctAnswer,
-          userAnswer: answers[q.id] ?? "",
-        })),
-      );
-      setPhase("results");
-    } finally {
-      setGrading(false);
+      setPhase("setup");
     }
   }
 
-  function reset() {
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  async function submitExam() {
+    const writtenQs = questions.filter((q): q is WrittenQuestion => q.type === "written");
+    if (writtenQs.length === 0) {
+      setPhase("results");
+      return;
+    }
+    setPhase("grading");
+    try {
+      const writtenAnswers: Record<string, string> = {};
+      for (const q of writtenQs) writtenAnswers[q.id] = (answers[q.id] as string) ?? "";
+      const res = await fetchWithSupabaseAuth("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: "You are a strict but fair exam grader. Return only valid JSON.",
+          messages: [
+            {
+              role: "user",
+              content: buildGradingPrompt(writtenQs, writtenAnswers, lang),
+            },
+          ],
+          max_tokens: 2000,
+        }),
+      });
+      const data = await res.json();
+      applyUsage(data.usage);
+      const parsedGrades = parseGrades(data.text ?? "");
+      const map: Record<string, WrittenGrade> = {};
+      for (const g of parsedGrades)
+        map[g.id] = { score: g.score, feedback: g.feedback, correction: g.correction };
+      setGrades(map);
+    } catch {
+      /* show results without grades */
+    }
+    setPhase("results");
+  }
+
+  function resetExam() {
     setPhase("setup");
     setQuestions([]);
     setAnswers({});
-    setResults([]);
-    setGradingError(null);
+    setGrades({});
+    setError("");
+    setContent("");
+    setAttachment(null);
   }
 
-  /* ── Grading screen ─────────────────────────────────── */
-  if (phase === "grading") {
-    return (
-      <div className="ws-panel ws-panel-centered">
-        <div className="exam-grading">
-          <div className="exam-grading-spinner" aria-hidden="true" />
-          <p className="exam-grading-text">{s.grading}</p>
-        </div>
-      </div>
-    );
+  function computeScore() {
+    let correct = 0;
+    const total = questions.length;
+    for (const q of questions) {
+      if (q.type === "mcq" && answers[q.id] === (q as MCQQuestion).correctIndex) correct++;
+      else if (q.type === "written" && (grades[q.id]?.score ?? 0) >= 60) correct++;
+    }
+    return { correct, total, pct: total > 0 ? Math.round((correct / total) * 100) : 0 };
   }
 
-  /* ── Results screen ─────────────────────────────────── */
-  if (phase === "results") {
-    const isWritten = examType === "written";
-    const correctCount = results.filter((r) => r.correct === true).length;
-    const avgScore = isWritten
-      ? Math.round(results.reduce((sum, r) => sum + (r.score ?? 0), 0) / Math.max(results.length, 1))
-      : Math.round((correctCount / Math.max(results.length, 1)) * 100);
-    const scoreColor = avgScore >= 70 ? "good" : avgScore >= 50 ? "ok" : "low";
+  // ── Setup ──────────────────────────────────────────────────────────────────
+  if (phase === "setup") {
+    const src = attachment?.content?.trim() || content.trim();
+    const canGenerate = src.length >= 20 && hasCredits;
 
     return (
-      <div className="ws-panel">
-        <div className="ws-panel-header">
-          <h2 className="ws-panel-title">{s.resultsTitle}</h2>
-          <p className="ws-panel-sub">{deck.name}</p>
-        </div>
+      <div className="em2-shell">
+        <div className="em2-setup">
+          <h2 className="em2-title">
+            {lang === "en" ? "Create exam" : "Crear examen"}
+          </h2>
+          <p className="em2-subtitle">
+            {lang === "en"
+              ? "Paste notes, upload a document, or type a topic — the AI generates the exam."
+              : "Pegá apuntes, subí un documento, o escribí un tema — la IA genera el examen."}
+          </p>
 
-        {gradingError && <div className="exam-grading-error">{s.gradingError}</div>}
-
-        <div className={`exam-score-banner exam-score-${scoreColor}`}>
-          <span className="exam-score-value">{avgScore}%</span>
-          <span className="exam-score-label">
-            {isWritten
-              ? s.avgScore
-              : s.correctCount
-                  .replace("{correct}", String(correctCount))
-                  .replace("{total}", String(results.length))}
-          </span>
-        </div>
-
-        <div className="exam-results-list">
-          {results.map((r, i) => {
-            const itemClass = isWritten
-              ? r.score !== undefined
-                ? r.score >= 70
-                  ? " correct"
-                  : r.score >= 40
-                    ? " partial"
-                    : " wrong"
-                : ""
-              : r.correct
-                ? " correct"
-                : " wrong";
-
-            return (
-              <div key={i} className={`exam-result-item${itemClass}`}>
-                <div className="exam-result-qnum">{i + 1}</div>
-                <div className="exam-result-body">
-                  <p className="exam-result-question">{r.question}</p>
-                  <div className="exam-result-answers">
-                    <div className="exam-result-answer">
-                      <span className="exam-result-label">{s.yourAnswer}</span>
-                      <span className="exam-result-text">{r.userAnswer || s.noAnswer}</span>
-                    </div>
-                    {(!r.correct || isWritten) && (
-                      <div className="exam-result-answer">
-                        <span className="exam-result-label">{s.expectedAnswer}</span>
-                        <span className="exam-result-text">{r.correctAnswer}</span>
-                      </div>
-                    )}
-                  </div>
-                  {isWritten && r.score !== undefined ? (
-                    <div className="exam-result-meta">
-                      <span className="exam-result-score">{r.score}/100</span>
-                      {r.feedback && <span className="exam-result-feedback">{r.feedback}</span>}
-                    </div>
-                  ) : !isWritten ? (
-                    <div className={`exam-result-badge ${r.correct ? "correct" : "wrong"}`}>
-                      {r.correct ? s.correct : s.incorrect}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="exam-results-actions">
-          <button className="study-restart-btn" onClick={reset} type="button">
-            {s.tryAgain}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ── Exam screen ────────────────────────────────────── */
-  if (phase === "exam") {
-    const q = questions[currentQ];
-    if (!q) return null;
-
-    const isLast = currentQ === questions.length - 1;
-    const allAnswered = questions.every((qq) => !!answers[qq.id]);
-    const unansweredCount = questions.filter((qq) => !answers[qq.id]).length;
-    const progress = ((questions.length - unansweredCount) / questions.length) * 100;
-
-    return (
-      <div className="ws-panel">
-        <div className="ws-panel-header">
-          <div>
-            <h2 className="ws-panel-title">{deck.name}</h2>
-            <p className="ws-panel-sub">
-              {s.questionOf
-                .replace("{current}", String(currentQ + 1))
-                .replace("{total}", String(questions.length))}
-              {" · "}
-              {examType === "multiple-choice" ? s.typeMCQShort : s.typeWrittenShort}
-            </p>
-          </div>
-          <div className="study-header-actions">
-            <div className="study-deck-picker-inline">
-              <select
-                className="study-deck-select"
-                value={deck.id}
-                onChange={(e) => {
-                  const d = decks.find((d) => d.id === e.target.value);
-                  if (d) { onSelectDeck(d); reset(); }
-                }}
+          {attachment ? (
+            <div className="em2-attachment-chip">
+              <span className="em2-attachment-icon" aria-hidden="true">📄</span>
+              <span className="em2-attachment-name">{attachment.fileName}</span>
+              <button
+                type="button"
+                className="em2-attachment-remove"
+                onClick={() => setAttachment(null)}
+                aria-label={lang === "en" ? "Remove file" : "Quitar archivo"}
               >
-                {decks.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
+                ×
+              </button>
             </div>
-          </div>
-        </div>
-
-        <div className="study-progress-bar">
-          <div className="study-progress-fill" style={{ width: `${progress}%` }} />
-        </div>
-
-        <div className="exam-stage">
-          <div className="exam-question-text">{q.question}</div>
-
-          {examType === "multiple-choice" && q.options && (
-            <div className="exam-options">
-              {q.options.map((opt, i) => (
-                <button
-                  key={i}
-                  className={`exam-option${answers[q.id] === opt ? " selected" : ""}`}
-                  onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: opt }))}
-                  type="button"
-                >
-                  <span className="exam-option-label">{OPTION_LABELS[i]}</span>
-                  <span className="exam-option-text">{opt}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {examType === "written" && (
+          ) : (
             <textarea
-              className="exam-textarea"
-              placeholder={s.writtenPlaceholder}
-              value={answers[q.id] ?? ""}
-              onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-              rows={5}
+              className="em2-textarea"
+              placeholder={
+                lang === "en"
+                  ? 'Paste your notes, a chapter, an article… or type a topic like "French Revolution"'
+                  : 'Pegá tus apuntes, un capítulo, un artículo… o escribí un tema como "Revolución Francesa"'
+              }
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={7}
             />
           )}
-        </div>
 
-        <div className="exam-nav">
-          <button
-            className="exam-nav-btn"
-            onClick={() => setCurrentQ((n) => n - 1)}
-            disabled={currentQ === 0}
-            type="button"
-          >
-            {s.prev}
-          </button>
+          <div className="em2-import-row">
+            <ImportBar lang={lang} onTextFile={handleImportedText} onImageFile={() => {}} />
+            <span className="em2-import-hint">
+              {lang === "en" ? "Upload PDF or DOCX" : "Subir PDF o DOCX"}
+            </span>
+          </div>
 
-          {!isLast ? (
-            <button
-              className="exam-nav-btn exam-nav-next"
-              onClick={() => setCurrentQ((n) => n + 1)}
-              type="button"
-            >
-              {s.next}
-            </button>
-          ) : (
-            <button
-              className="exam-nav-btn exam-nav-submit"
-              onClick={() => void submitExam()}
-              disabled={!allAnswered || grading}
-              type="button"
-            >
-              {s.submit}
-            </button>
+          <div className="em2-options-row">
+            <div className="em2-option-group">
+              <span className="em2-option-label">
+                {lang === "en" ? "Type" : "Tipo"}
+              </span>
+              <div className="em2-chips">
+                {(["mcq", "written", "mixed"] as ExamType[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`em2-chip${examType === t ? " active" : ""}`}
+                    onClick={() => setExamType(t)}
+                  >
+                    {t === "mcq"
+                      ? lang === "en"
+                        ? "Multiple choice"
+                        : "Múltiple opción"
+                      : t === "written"
+                      ? lang === "en"
+                        ? "Written"
+                        : "Abiertas"
+                      : lang === "en"
+                      ? "Mixed"
+                      : "Mixto"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="em2-option-group">
+              <span className="em2-option-label">
+                {lang === "en" ? "Questions" : "Preguntas"}
+              </span>
+              <div className="em2-chips">
+                {[5, 10, 15, 20].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`em2-chip${questionCount === n ? " active" : ""}`}
+                    onClick={() => setQuestionCount(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <p className="em2-error" role="alert">
+              {error}
+            </p>
           )}
-        </div>
 
-        {isLast && !allAnswered && (
-          <p className="exam-incomplete-hint">
-            {s.incompleteHint.replace("{n}", String(unansweredCount))}
-          </p>
-        )}
+          <button
+            type="button"
+            className={`em2-primary-btn${!canGenerate ? " disabled" : ""}`}
+            onClick={generateExam}
+            disabled={!canGenerate}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path
+                d="M8 2l1.5 4H14l-3.5 2.5 1.5 4L8 10l-4 2.5 1.5-4L2 6h4.5L8 2z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {lang === "en" ? "Generate exam" : "Generar examen"}
+          </button>
+        </div>
       </div>
     );
   }
 
-  /* ── Setup screen ───────────────────────────────────── */
-  const mcqDisabled = examType === "multiple-choice" && deck.cards.length < MIN_MCQ_CARDS;
-  const countOptions = [5, 10, 15].filter((n) => n < deck.cards.length);
-
-  return (
-    <div className="ws-panel">
-      <div className="ws-panel-header">
-        <div>
-          <h2 className="ws-panel-title">{s.title}</h2>
-          <p className="ws-panel-sub">{s.desc}</p>
-        </div>
-        <div className="study-header-actions">
-          <div className="study-deck-picker-inline">
-            <select
-              className="study-deck-select"
-              value={deck.id}
-              onChange={(e) => {
-                const d = decks.find((d) => d.id === e.target.value);
-                if (d) onSelectDeck(d);
-              }}
-            >
-              {decks.map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
-          </div>
+  // ── Loading ────────────────────────────────────────────────────────────────
+  if (phase === "generating" || phase === "grading") {
+    return (
+      <div className="em2-shell">
+        <div className="em2-loading-state">
+          <div className="em2-spinner" aria-hidden="true" />
+          <p className="em2-loading-text">
+            {phase === "generating"
+              ? lang === "en"
+                ? "Generating exam questions…"
+                : "Generando preguntas…"
+              : lang === "en"
+              ? "Grading your answers…"
+              : "Corrigiendo respuestas…"}
+          </p>
         </div>
       </div>
+    );
+  }
 
-      <div className="exam-setup">
-        <div className="exam-setup-section">
-          <label className="exam-setup-label">{s.typeLabel}</label>
-          <div className="exam-type-grid">
-            <button
-              type="button"
-              className={`exam-type-card${examType === "multiple-choice" ? " selected" : ""}`}
-              onClick={() => setExamType("multiple-choice")}
-            >
-              <span className="exam-type-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="5" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M8.5 6h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  <circle cx="5" cy="10" r="1.5" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M8.5 10h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  <circle cx="5" cy="14" r="1.5" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M8.5 14h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
-              </span>
-              <div className="exam-type-card-body">
-                <strong>{s.typeMCQ}</strong>
-                <span>{s.typeMCQDesc}</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              className={`exam-type-card${examType === "written" ? " selected" : ""}`}
-              onClick={() => setExamType("written")}
-            >
-              <span className="exam-type-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M6 7h8M6 10h8M6 13h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
-              </span>
-              <div className="exam-type-card-body">
-                <strong>{s.typeWritten}</strong>
-                <span>{s.typeWrittenDesc}</span>
-              </div>
-            </button>
-          </div>
-          {mcqDisabled && <p className="exam-mcq-warning">{s.mcqMinWarning}</p>}
+  // ── Exam ───────────────────────────────────────────────────────────────────
+  if (phase === "exam") {
+    const answeredCount = questions.filter(
+      (q) => answers[q.id] !== undefined && answers[q.id] !== "",
+    ).length;
+    const allAnswered = answeredCount === questions.length;
+
+    return (
+      <div className="em2-shell">
+        <div className="em2-exam-topbar">
+          <span className="em2-exam-progress">
+            {answeredCount}/{questions.length}{" "}
+            {lang === "en" ? "answered" : "respondidas"}
+          </span>
+          <button type="button" className="em2-ghost-btn" onClick={resetExam}>
+            {lang === "en" ? "← Back" : "← Volver"}
+          </button>
         </div>
 
-        <div className="exam-setup-section">
-          <label className="exam-setup-label">{s.countLabel}</label>
-          <div className="exam-count-pills">
-            {countOptions.map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={`exam-count-pill${questionCount === n ? " selected" : ""}`}
-                onClick={() => setQuestionCount(n)}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              className={`exam-count-pill${questionCount === deck.cards.length ? " selected" : ""}`}
-              onClick={() => setQuestionCount(deck.cards.length)}
-            >
-              {s.allCards.replace("{n}", String(deck.cards.length))}
-            </button>
-          </div>
+        <div className="em2-questions">
+          {questions.map((q, i) => (
+            <div key={q.id} className="em2-question-card">
+              <div className="em2-question-meta">
+                <span className="em2-question-num">
+                  {lang === "en" ? `Question ${i + 1}` : `Pregunta ${i + 1}`}
+                </span>
+                <span className="em2-question-type-badge">
+                  {q.type === "mcq"
+                    ? lang === "en"
+                      ? "MCQ"
+                      : "Opción múltiple"
+                    : lang === "en"
+                    ? "Written"
+                    : "Abierta"}
+                </span>
+              </div>
+              <p className="em2-question-text">{q.question}</p>
+
+              {q.type === "mcq" && (
+                <div className="em2-options">
+                  {(q as MCQQuestion).options.map((opt, j) => (
+                    <button
+                      key={j}
+                      type="button"
+                      className={`em2-option${answers[q.id] === j ? " selected" : ""}`}
+                      onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: j }))}
+                    >
+                      <span className="em2-option-letter">{String.fromCharCode(65 + j)}</span>
+                      <span className="em2-option-text">{opt}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {q.type === "written" && (
+                <textarea
+                  className="em2-written-textarea"
+                  placeholder={
+                    lang === "en" ? "Write your answer here…" : "Escribí tu respuesta acá…"
+                  }
+                  value={(answers[q.id] as string) ?? ""}
+                  onChange={(e) =>
+                    setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                  }
+                  rows={3}
+                />
+              )}
+            </div>
+          ))}
         </div>
 
-        <button
-          className="exam-start-btn"
-          type="button"
-          onClick={startExam}
-          disabled={mcqDisabled || deck.cards.length === 0}
-        >
-          {s.start}
+        <div className="em2-exam-footer">
+          <button
+            type="button"
+            className={`em2-primary-btn${!allAnswered ? " disabled" : ""}`}
+            onClick={submitExam}
+            disabled={!allAnswered}
+          >
+            {lang === "en" ? "Submit exam" : "Entregar examen"}
+          </button>
+          {!allAnswered && (
+            <p className="em2-footer-hint">
+              {lang === "en"
+                ? `${questions.length - answeredCount} question(s) remaining`
+                : `Faltan ${questions.length - answeredCount} pregunta(s)`}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Results ────────────────────────────────────────────────────────────────
+  const score = computeScore();
+  const passed = score.pct >= 60;
+
+  return (
+    <div className="em2-shell">
+      <div className={`em2-score-banner${passed ? " pass" : " fail"}`}>
+        <span className="em2-score-pct">{score.pct}%</span>
+        <span className="em2-score-detail">
+          {lang === "en"
+            ? `${score.correct} of ${score.total} correct`
+            : `${score.correct} de ${score.total} correctas`}
+        </span>
+        <span className="em2-score-label">
+          {passed
+            ? lang === "en"
+              ? "Great job!"
+              : "¡Muy bien!"
+            : lang === "en"
+            ? "Keep studying"
+            : "Seguí estudiando"}
+        </span>
+      </div>
+
+      <div className="em2-results">
+        {questions.map((q, i) => {
+          const isMCQ = q.type === "mcq";
+          const mcq = q as MCQQuestion;
+          const isCorrectMCQ = isMCQ && answers[q.id] === mcq.correctIndex;
+          const grade = grades[q.id];
+          const isCorrectWritten = !isMCQ && (grade?.score ?? 0) >= 60;
+          const isCorrect = isMCQ ? isCorrectMCQ : isCorrectWritten;
+
+          return (
+            <div
+              key={q.id}
+              className={`em2-result-card${isCorrect ? " correct" : " incorrect"}`}
+            >
+              <div className="em2-result-header">
+                <span className="em2-result-num">
+                  {lang === "en" ? `Q${i + 1}` : `P${i + 1}`}
+                </span>
+                <span className={`em2-result-badge${isCorrect ? " correct" : " incorrect"}`}>
+                  {isCorrect ? "✓" : "✗"}
+                </span>
+              </div>
+
+              <p className="em2-result-question">{q.question}</p>
+
+              {isMCQ && (
+                <div className="em2-result-mcq">
+                  <p
+                    className={`em2-result-your-answer${isCorrectMCQ ? " right" : " wrong"}`}
+                  >
+                    <strong>
+                      {lang === "en" ? "Your answer: " : "Tu respuesta: "}
+                    </strong>
+                    {mcq.options[answers[q.id] as number] ??
+                      (lang === "en" ? "(none)" : "(sin responder)")}
+                  </p>
+                  {!isCorrectMCQ && (
+                    <p className="em2-result-correct-answer">
+                      <strong>{lang === "en" ? "Correct: " : "Correcta: "}</strong>
+                      {mcq.options[mcq.correctIndex]}
+                    </p>
+                  )}
+                  {mcq.explanation && (
+                    <p className="em2-result-explanation">{mcq.explanation}</p>
+                  )}
+                </div>
+              )}
+
+              {!isMCQ && (
+                <div className="em2-result-written">
+                  <p className="em2-result-your-answer">
+                    <strong>
+                      {lang === "en" ? "Your answer: " : "Tu respuesta: "}
+                    </strong>
+                    {(answers[q.id] as string) ||
+                      (lang === "en" ? "(none)" : "(sin responder)")}
+                  </p>
+                  {grade && (
+                    <>
+                      <div className="em2-score-bar-wrap">
+                        <div className="em2-score-bar">
+                          <div
+                            className={`em2-score-bar-fill${grade.score >= 60 ? " good" : " bad"}`}
+                            style={{ width: `${grade.score}%` }}
+                          />
+                        </div>
+                        <span className="em2-score-bar-label">{grade.score}/100</span>
+                      </div>
+                      <p className="em2-result-feedback">{grade.feedback}</p>
+                      {grade.correction && (
+                        <p className="em2-result-correction">
+                          <strong>
+                            {lang === "en" ? "Model answer: " : "Respuesta ideal: "}
+                          </strong>
+                          {grade.correction}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="em2-results-footer">
+        <button type="button" className="em2-primary-btn" onClick={resetExam}>
+          {lang === "en" ? "New exam" : "Nuevo examen"}
         </button>
       </div>
     </div>
