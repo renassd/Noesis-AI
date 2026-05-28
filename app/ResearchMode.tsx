@@ -46,6 +46,8 @@ type Message = {
   attachment?: Omit<AttachedDocument, "content">;
   generatedCards?: GeneratedCardsData;
   paperResults?: PaperResult[];
+  /** "results" = find-papers card list · "sources" = literature review citations */
+  paperResultsMode?: "results" | "sources";
 };
 type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
@@ -651,6 +653,45 @@ function PaperResultsMessage({ papers, lang }: { papers: PaperResult[]; lang: "e
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+function PaperSourcesList({ papers, lang }: { papers: PaperResult[]; lang: "es" | "en" }) {
+  const [open, setOpen] = useState(false);
+  if (papers.length === 0) return null;
+  return (
+    <div className="ri-sources">
+      <button type="button" className="ri-sources-toggle" onClick={() => setOpen((o) => !o)}>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+        {lang === "en" ? `${papers.length} sources` : `${papers.length} fuentes`}
+        <span className={`ri-sources-chevron${open ? " open" : ""}`} aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <ol className="ri-sources-list">
+          {papers.map((p, i) => (
+            <li key={p.id || i} className="ri-source-item">
+              <span className="ri-source-num">[{i + 1}]</span>
+              <div className="ri-source-body">
+                {p.url ? (
+                  <a className="ri-source-title" href={p.url} target="_blank" rel="noopener noreferrer">
+                    {p.title}
+                  </a>
+                ) : (
+                  <span className="ri-source-title">{p.title}</span>
+                )}
+                <span className="ri-source-byline">
+                  {p.authors.slice(0, 3).join(", ")}
+                  {p.authors.length > 3 ? " et al." : ""}
+                  {p.year ? ` · ${p.year}` : ""}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }
@@ -1270,6 +1311,125 @@ export default function ResearchMode() {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ── Literature review with paper sources ──────────────────────────────────
+    if (activeTool === "review" && trimmed) {
+      const nextSessionId =
+        activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
+
+      setLoading(true);
+      setError("");
+
+      // Commit user message & clear input immediately
+      setSessionState((prev) => ({
+        activeSessionId: nextSessionId,
+        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+          ...session,
+          id: nextSessionId,
+          messages: { ...session.messages, review: updated },
+          input: "",
+          attachment: null,
+          savedAt: Date.now(),
+        })),
+      }));
+      setPastedImage(null);
+
+      try {
+        // Step 1: Fetch relevant papers for citation context (best-effort)
+        let sourcePapers: PaperResult[] = [];
+        try {
+          const searchRes = await fetch(`/api/paper-search?q=${encodeURIComponent(trimmed)}`);
+          if (searchRes.ok) {
+            const searchData = (await searchRes.json()) as { papers?: PaperResult[] };
+            sourcePapers = (searchData.papers ?? [])
+              .filter((p) => (p.abstract?.trim().length ?? 0) > 80)
+              .slice(0, 5);
+          }
+        } catch {
+          /* proceed without papers — review still works */
+        }
+
+        // Step 2: Build enriched system prompt with numbered paper context
+        const paperContext =
+          sourcePapers.length > 0
+            ? `\n\n---\nACADEMIC SOURCES — cite these papers by number (e.g. [1], [2]) when making claims:\n\n` +
+              sourcePapers
+                .map(
+                  (p, i) =>
+                    `[${i + 1}] ${p.title} (${p.year ?? "n.d."})\n` +
+                    `Authors: ${p.authors.slice(0, 3).join(", ")}${p.authors.length > 3 ? " et al." : ""}\n` +
+                    `Abstract: ${p.abstract.slice(0, 400)}`,
+                )
+                .join("\n\n")
+            : "";
+
+        const intent = detectIntent(messageContent);
+        const enrichedSystem =
+          documentContext + buildReviewPrompt(intent, messageContent, langHint) + paperContext;
+
+        // Step 3: Call AI
+        const aiRes = await fetchWithSupabaseAuth("/api/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system: enrichedSystem,
+            messages: messagesForApi,
+            useMemory: true,
+            memoryQuery: trimmed,
+          }),
+        });
+        const data = await aiRes.json();
+        applyUsage(data.usage);
+
+        if (!aiRes.ok) {
+          setError(data.error || (lang === "en" ? "Could not send the message." : "No se pudo enviar el mensaje."));
+          return;
+        }
+
+        const text = (data.text || "").trim();
+        const assistantMsg: Message = {
+          role: "assistant",
+          content: text,
+          paperResults: sourcePapers.length > 0 ? sourcePapers : undefined,
+          paperResultsMode: "sources",
+        };
+
+        setSessionState((prev) => ({
+          ...prev,
+          sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
+            const next = {
+              ...session,
+              messages: {
+                ...session.messages,
+                review: [...(session.messages.review ?? []), assistantMsg],
+              },
+              savedAt: Date.now(),
+            };
+            return { ...next, title: deriveSessionTitle(next, lang) };
+          }),
+        }));
+
+        // Memory extraction (fire-and-forget)
+        if (auth.signedIn && text.length > 200) {
+          void fetchWithSupabaseAuth("/api/memory/extract", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: `Pregunta: ${trimmed}\n\nRespuesta:\n${text}`,
+              source_type: "research",
+              source_label: "Research: review",
+            }),
+          });
+        }
+      } catch (err) {
+        console.error("[ResearchMode] review with sources failed:", err);
+        setError(lang === "en" ? "Network error. Try again." : "Error de red. Intenta de nuevo.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     setLoading(true);
     setError("");
 
@@ -1451,7 +1611,9 @@ export default function ResearchMode() {
                             <FlashcardBubble data={message.generatedCards} lang={lang} />
                           )}
                           {message.paperResults !== undefined && (
-                            <PaperResultsMessage papers={message.paperResults} lang={lang} />
+                            message.paperResultsMode === "sources"
+                              ? <PaperSourcesList papers={message.paperResults} lang={lang} />
+                              : <PaperResultsMessage papers={message.paperResults} lang={lang} />
                           )}
                         </>
                       ) : (

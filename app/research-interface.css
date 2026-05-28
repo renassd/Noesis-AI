@@ -890,3 +890,91 @@ a.ri-paper-title:hover {
   color: var(--ri-muted, #66768f);
   margin: 0.5rem 0 0;
 }
+
+/* ── Literature review sources ──────────────────────────────────────────────── */
+.ri-sources {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ri-line, #dbe4f1);
+}
+
+.ri-sources-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid var(--ri-line, #dbe4f1);
+  border-radius: 20px;
+  padding: 4px 11px 4px 9px;
+  font-size: 0.7rem;
+  font-family: var(--ri-font-body);
+  color: var(--ri-muted, #66768f);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+
+.ri-sources-toggle:hover {
+  background: var(--ri-surface-alt, #f7f9fc);
+  color: var(--ri-ink, #10203a);
+  border-color: #b8c9e4;
+}
+
+.ri-sources-chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-style: normal;
+  font-size: 0.65rem;
+}
+
+.ri-sources-chevron.open {
+  transform: rotate(180deg);
+}
+
+.ri-sources-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ri-source-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ri-source-num {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--ri-blue-700, #3b6de0);
+  padding-top: 2px;
+  min-width: 20px;
+}
+
+.ri-source-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ri-source-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ri-ink, #10203a);
+  text-decoration: none;
+  line-height: 1.35;
+}
+
+a.ri-source-title:hover {
+  color: var(--ri-blue-700, #3b6de0);
+  text-decoration: underline;
+}
+
+.ri-source-byline {
+  font-size: 0.68rem;
+  color: var(--ri-muted, #66768f);
+}
