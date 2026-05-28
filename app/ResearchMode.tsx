@@ -240,48 +240,61 @@ ${baseInstructions(langHint)}`;
 }
 
 /**
- * Call the Semantic Scholar public API directly from the browser.
- * Their CORS policy allows unauthenticated browser requests, so no server
- * proxy is needed.  Returns up to `limit` papers with a non-empty abstract.
+ * Reconstruct a plain-text abstract from OpenAlex's inverted index format.
+ * { "word": [pos1, pos2], ... }  →  sorted by position  →  joined string
+ */
+function reconstructAbstract(idx: Record<string, number[]> | null | undefined): string {
+  if (!idx) return "";
+  const entries: Array<[number, string]> = [];
+  for (const [word, positions] of Object.entries(idx)) {
+    for (const pos of positions) entries.push([pos, word]);
+  }
+  return entries.sort((a, b) => a[0] - b[0]).map(([, w]) => w).join(" ");
+}
+
+/**
+ * Search academic papers via OpenAlex (https://openalex.org).
+ * OpenAlex is free, requires no API key, and explicitly supports CORS from browsers.
+ * Returns up to `limit` papers that have a reconstructed abstract.
  */
 async function searchSemanticScholar(query: string, limit: number): Promise<PaperResult[]> {
   const url =
-    `https://api.semanticscholar.org/graph/v1/paper/search` +
-    `?query=${encodeURIComponent(query)}` +
-    `&limit=${limit + 3}&fields=title,authors,year,abstract,url,externalIds`;
+    `https://api.openalex.org/works` +
+    `?search=${encodeURIComponent(query)}` +
+    `&per-page=${limit + 4}` +
+    `&select=id,title,authorships,publication_year,abstract_inverted_index,doi,primary_location` +
+    `&mailto=neuvra@neuvra.app`;
 
   const res = await fetch(url, {
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(12000),
   });
 
-  if (!res.ok) throw new Error(`Semantic Scholar ${res.status}`);
+  if (!res.ok) throw new Error(`OpenAlex ${res.status}`);
 
   const data = (await res.json()) as {
-    data?: Array<{
-      paperId: string;
+    results?: Array<{
+      id: string;
       title?: string;
-      authors?: Array<{ name: string }>;
-      year?: number;
-      abstract?: string;
-      url?: string;
-      externalIds?: { DOI?: string };
+      authorships?: Array<{ author?: { display_name?: string } }>;
+      publication_year?: number;
+      abstract_inverted_index?: Record<string, number[]> | null;
+      doi?: string;
+      primary_location?: { landing_page_url?: string };
     }>;
   };
 
-  return (data.data ?? [])
-    .filter((p) => (p.abstract?.trim().length ?? 0) > 50)
-    .slice(0, limit)
-    .map((p) => ({
-      id: p.paperId,
-      title: p.title ?? "Untitled",
-      authors: (p.authors ?? []).map((a) => a.name),
-      year: p.year ?? null,
-      abstract: p.abstract ?? "",
-      url:
-        p.url ??
-        (p.externalIds?.DOI ? `https://doi.org/${p.externalIds.DOI}` : ""),
-    }));
+  return (data.results ?? [])
+    .map((w) => ({
+      id: w.id,
+      title: w.title ?? "Untitled",
+      authors: (w.authorships ?? []).map((a) => a.author?.display_name ?? "").filter(Boolean),
+      year: w.publication_year ?? null,
+      abstract: reconstructAbstract(w.abstract_inverted_index),
+      url: w.primary_location?.landing_page_url ?? (w.doi ? w.doi : ""),
+    }))
+    .filter((p) => p.abstract.length > 50)
+    .slice(0, limit);
 }
 
 /**
