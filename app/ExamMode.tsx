@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { useLang } from "./i18n";
@@ -33,6 +33,17 @@ interface WrittenGrade {
   score: number;
   feedback: string;
   correction?: string;
+}
+
+interface SavedExam {
+  id: string;
+  title: string;
+  exam_type: string;
+  score: number;
+  questions: ExamQuestion[];
+  answers: Record<string, string | number>;
+  grades: Record<string, WrittenGrade>;
+  created_at: string;
 }
 
 // ── Prompt builders ────────────────────────────────────────────────────────────
@@ -191,9 +202,20 @@ export default function ExamMode() {
   const [answers, setAnswers] = useState<Record<string, string | number>>({});
   const [grades, setGrades] = useState<Record<string, WrittenGrade>>({});
   const [error, setError] = useState("");
+  const [savedExams, setSavedExams] = useState<SavedExam[]>([]);
+  const [savedIndicator, setSavedIndicator] = useState(false);
+  const saveCalledRef = useRef(false);
 
   // Optimistic while loading — only disable if we *know* credits = 0
   const hasCredits = usageLoading || !usage || (usage.creditsRemaining ?? 0) > 0;
+
+  // Load history on mount
+  useEffect(() => {
+    fetchWithSupabaseAuth("/api/exams")
+      .then((r) => r.json())
+      .then((d: { exams?: SavedExam[] }) => setSavedExams(d.exams ?? []))
+      .catch(() => {});
+  }, []);
 
   const handleImportedText = useCallback((file: ImportedTextFile) => {
     setAttachment(file);
@@ -292,6 +314,64 @@ export default function ExamMode() {
     setPhase("results");
   }
 
+  // Auto-save exam to Supabase when entering results phase
+  useEffect(() => {
+    if (phase !== "results" || questions.length === 0 || saveCalledRef.current) return;
+    saveCalledRef.current = true;
+
+    const score = (() => {
+      let correct = 0;
+      for (const q of questions) {
+        if (q.type === "mcq" && answers[q.id] === (q as MCQQuestion).correctIndex) correct++;
+        else if (q.type === "written" && (grades[q.id]?.score ?? 0) >= 60) correct++;
+      }
+      return Math.round((correct / questions.length) * 100);
+    })();
+
+    const src = attachment?.content?.trim() || content.trim();
+    const rawTitle = src.split("\n")[0].slice(0, 80).trim() || (lang === "en" ? "Exam" : "Examen");
+
+    fetchWithSupabaseAuth("/api/exams", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: rawTitle,
+        exam_type: examType,
+        questions,
+        answers,
+        grades,
+        score,
+      }),
+    })
+      .then((r) => r.json())
+      .then((d: { id?: string }) => {
+        if (d.id) {
+          setSavedIndicator(true);
+          setTimeout(() => setSavedIndicator(false), 3000);
+          // Refresh history list
+          fetchWithSupabaseAuth("/api/exams")
+            .then((r) => r.json())
+            .then((data: { exams?: SavedExam[] }) => setSavedExams(data.exams ?? []))
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function loadSavedExam(exam: SavedExam) {
+    setQuestions(exam.questions);
+    setAnswers(exam.answers);
+    setGrades(exam.grades);
+    setExamType(exam.exam_type as ExamType);
+    setPhase("results");
+    saveCalledRef.current = true; // don't re-save when viewing a past exam
+  }
+
+  async function deleteSavedExam(id: string) {
+    await fetchWithSupabaseAuth(`/api/exams/${id}`, { method: "DELETE" }).catch(() => {});
+    setSavedExams((prev) => prev.filter((e) => e.id !== id));
+  }
+
   function resetExam() {
     setPhase("setup");
     setQuestions([]);
@@ -300,6 +380,7 @@ export default function ExamMode() {
     setError("");
     setContent("");
     setAttachment(null);
+    saveCalledRef.current = false;
   }
 
   function computeScore() {
@@ -433,6 +514,46 @@ export default function ExamMode() {
             </svg>
             {lang === "en" ? "Generate exam" : "Generar examen"}
           </button>
+
+          {savedExams.length > 0 && (
+            <div className="em2-history">
+              <p className="em2-history-heading">
+                {lang === "en" ? "Past exams" : "Exámenes anteriores"}
+              </p>
+              <div className="em2-history-list">
+                {savedExams.map((exam) => (
+                  <div key={exam.id} className="em2-history-item">
+                    <button
+                      type="button"
+                      className="em2-history-btn"
+                      onClick={() => loadSavedExam(exam)}
+                    >
+                      <span className="em2-history-title">{exam.title}</span>
+                      <span className="em2-history-meta">
+                        <span className={`em2-history-score${exam.score >= 60 ? " pass" : " fail"}`}>
+                          {exam.score}%
+                        </span>
+                        <span className="em2-history-date">
+                          {new Date(exam.created_at).toLocaleDateString(
+                            lang === "es" ? "es-AR" : "en-US",
+                            { day: "numeric", month: "short" },
+                          )}
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="em2-history-delete"
+                      onClick={() => deleteSavedExam(exam.id)}
+                      aria-label={lang === "en" ? "Delete" : "Eliminar"}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -664,6 +785,11 @@ export default function ExamMode() {
         <button type="button" className="em2-primary-btn" onClick={resetExam}>
           {lang === "en" ? "New exam" : "Nuevo examen"}
         </button>
+        {savedIndicator && (
+          <span className="em2-saved-indicator">
+            ✓ {lang === "en" ? "Saved" : "Guardado"}
+          </span>
+        )}
       </div>
     </div>
   );

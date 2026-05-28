@@ -525,4 +525,110 @@
   padding-top: 24px;
   border-top: 1px solid var(--line, #dbe4f1);
   margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.em2-saved-indicator {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+/* ── History ──────────────────────────────────────────────────────────────────── */
+
+.em2-history {
+  border-top: 1px solid var(--line, #dbe4f1);
+  padding-top: 20px;
+  margin-top: 4px;
+}
+
+.em2-history-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted, #66768f);
+  margin: 0 0 10px;
+}
+
+.em2-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.em2-history-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.em2-history-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line, #dbe4f1);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.12s, background 0.12s;
+  min-width: 0;
+}
+.em2-history-btn:hover {
+  border-color: var(--blue-700, #3b6de0);
+  background: var(--blue-soft, #dfe9ff);
+}
+
+.em2-history-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink, #10203a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.em2-history-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.em2-history-score {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.em2-history-score.pass { background: #c8e6c9; color: #1b5e20; }
+.em2-history-score.fail { background: #ffcdd2; color: #b71c1c; }
+
+.em2-history-date {
+  font-size: 0.75rem;
+  color: var(--muted, #66768f);
+}
+
+.em2-history-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--muted, #66768f);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.em2-history-delete:hover {
+  background: #ffebee;
+  color: #c62828;
 }
