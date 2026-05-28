@@ -315,7 +315,7 @@ export default function ExamMode() {
   // ── Setup ──────────────────────────────────────────────────────────────────
   if (phase === "setup") {
     const src = attachment?.content?.trim() || content.trim();
-    const canGenerate = src.length >= 20 && hasCredits;
+    const canGenerate = src.length >= 3 && hasCredits;
 
     return (
       <div className="em2-shell">
