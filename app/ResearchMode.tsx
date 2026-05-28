@@ -293,7 +293,7 @@ async function searchSemanticScholar(query: string, limit: number): Promise<Pape
       abstract: reconstructAbstract(w.abstract_inverted_index),
       url: w.primary_location?.landing_page_url ?? (w.doi ? w.doi : ""),
     }))
-    .filter((p) => p.abstract.length > 50)
+    .filter((p) => p.abstract.length > 20)
     .slice(0, limit);
 }
 
@@ -729,7 +729,6 @@ function PaperResultsMessage({ papers, lang }: { papers: PaperResult[]; lang: "e
 }
 
 function PaperSourcesList({ papers, lang }: { papers: PaperResult[]; lang: "es" | "en" }) {
-  if (papers.length === 0) return null;
   return (
     <div className="ri-sources">
       <p className="ri-sources-heading">
@@ -738,27 +737,35 @@ function PaperSourcesList({ papers, lang }: { papers: PaperResult[]; lang: "es" 
         </svg>
         {lang === "en" ? "Academic sources" : "Fuentes académicas"}
       </p>
-      <ol className="ri-sources-list">
-        {papers.map((p, i) => (
-          <li key={p.id || i} className="ri-source-item">
-            <span className="ri-source-num">[{i + 1}]</span>
-            <div className="ri-source-body">
-              {p.url ? (
-                <a className="ri-source-title" href={p.url} target="_blank" rel="noopener noreferrer">
-                  {p.title}
-                </a>
-              ) : (
-                <span className="ri-source-title">{p.title}</span>
-              )}
-              <span className="ri-source-byline">
-                {p.authors.slice(0, 3).join(", ")}
-                {p.authors.length > 3 ? " et al." : ""}
-                {p.year ? ` · ${p.year}` : ""}
-              </span>
-            </div>
-          </li>
-        ))}
-      </ol>
+      {papers.length === 0 ? (
+        <p className="ri-sources-empty">
+          {lang === "en"
+            ? "No academic papers found for this topic."
+            : "No se encontraron papers académicos para este tema."}
+        </p>
+      ) : (
+        <ol className="ri-sources-list">
+          {papers.map((p, i) => (
+            <li key={p.id || i} className="ri-source-item">
+              <span className="ri-source-num">[{i + 1}]</span>
+              <div className="ri-source-body">
+                {p.url ? (
+                  <a className="ri-source-title" href={p.url} target="_blank" rel="noopener noreferrer">
+                    {p.title}
+                  </a>
+                ) : (
+                  <span className="ri-source-title">{p.title}</span>
+                )}
+                <span className="ri-source-byline">
+                  {p.authors.slice(0, 3).join(", ")}
+                  {p.authors.length > 3 ? " et al." : ""}
+                  {p.year ? ` · ${p.year}` : ""}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }
@@ -1444,7 +1451,8 @@ export default function ResearchMode() {
         const assistantMsg: Message = {
           role: "assistant",
           content: text,
-          paperResults: sourcePapers.length > 0 ? sourcePapers : undefined,
+          // Always attach paperResults (even empty) so the sources section renders
+          paperResults: sourcePapers,
           paperResultsMode: "sources",
         };
 
@@ -1665,10 +1673,11 @@ export default function ResearchMode() {
                           {message.generatedCards && (
                             <FlashcardBubble data={message.generatedCards} lang={lang} />
                           )}
-                          {message.paperResults !== undefined && (
-                            message.paperResultsMode === "sources"
-                              ? <PaperSourcesList papers={message.paperResults} lang={lang} />
-                              : <PaperResultsMessage papers={message.paperResults} lang={lang} />
+                          {message.paperResultsMode === "sources" && message.paperResults !== undefined && (
+                            <PaperSourcesList papers={message.paperResults} lang={lang} />
+                          )}
+                          {message.paperResultsMode !== "sources" && message.paperResults !== undefined && (
+                            <PaperResultsMessage papers={message.paperResults} lang={lang} />
                           )}
                         </>
                       ) : (

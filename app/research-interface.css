@@ -957,3 +957,10 @@ a.ri-source-title:hover {
   font-size: 0.68rem;
   color: var(--ri-muted, #66768f);
 }
+
+.ri-sources-empty {
+  font-size: 0.72rem;
+  color: var(--ri-muted, #66768f);
+  margin: 0;
+  font-style: italic;
+}
