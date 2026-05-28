@@ -13,9 +13,16 @@ interface S2Paper {
   externalIds?: { DOI?: string };
 }
 
-export async function GET(req: NextRequest) {
-  const query = req.nextUrl.searchParams.get("q");
-  if (!query?.trim()) {
+export async function POST(req: NextRequest) {
+  let query = "";
+  try {
+    const body = (await req.json()) as { q?: string };
+    query = body.q?.trim() ?? "";
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  if (!query) {
     return NextResponse.json({ error: "Missing query" }, { status: 400 });
   }
 

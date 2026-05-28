@@ -1041,7 +1041,11 @@ export default function ResearchMode() {
       setPastedImage(null);
 
       try {
-        const searchRes = await fetch(`/api/paper-search?q=${encodeURIComponent(trimmed)}`);
+        const searchRes = await fetch("/api/paper-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ q: trimmed }),
+        });
         const searchData = (await searchRes.json()) as { papers?: PaperResult[]; error?: string };
 
         if (!searchRes.ok || !searchData.papers) {
@@ -1347,7 +1351,11 @@ export default function ResearchMode() {
         let sourcePapers: PaperResult[] = [];
         try {
           const searchQuery = cleanReviewQuery(trimmed);
-          const searchRes = await fetch(`/api/paper-search?q=${encodeURIComponent(searchQuery)}`);
+          const searchRes = await fetch("/api/paper-search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ q: searchQuery }),
+          });
           if (searchRes.ok) {
             const searchData = (await searchRes.json()) as { papers?: PaperResult[] };
             sourcePapers = (searchData.papers ?? [])
