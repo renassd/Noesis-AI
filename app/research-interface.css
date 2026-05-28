@@ -898,37 +898,16 @@ a.ri-paper-title:hover {
   border-top: 1px solid var(--ri-line, #dbe4f1);
 }
 
-.ri-sources-toggle {
-  display: inline-flex;
+.ri-sources-heading {
+  display: flex;
   align-items: center;
-  gap: 5px;
-  background: none;
-  border: 1px solid var(--ri-line, #dbe4f1);
-  border-radius: 20px;
-  padding: 4px 11px 4px 9px;
+  gap: 6px;
   font-size: 0.7rem;
-  font-family: var(--ri-font-body);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--ri-muted, #66768f);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  line-height: 1;
-}
-
-.ri-sources-toggle:hover {
-  background: var(--ri-surface-alt, #f7f9fc);
-  color: var(--ri-ink, #10203a);
-  border-color: #b8c9e4;
-}
-
-.ri-sources-chevron {
-  display: inline-block;
-  transition: transform 0.2s;
-  font-style: normal;
-  font-size: 0.65rem;
-}
-
-.ri-sources-chevron.open {
-  transform: rotate(180deg);
+  margin: 0 0 8px;
 }
 
 .ri-sources-list {

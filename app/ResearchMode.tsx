@@ -239,6 +239,19 @@ ${baseInstructions(langHint)}`;
   }
 }
 
+/**
+ * Strip Spanish filler words from a search query so Semantic Scholar
+ * (which works best with English terms) returns better results.
+ * e.g. "Revisión de CAR-T Cell Therapy en Tumores" → "CAR-T Cell Therapy Tumores"
+ */
+function cleanReviewQuery(query: string): string {
+  const fillers =
+    /\b(revisión|revision|review|análisis|analisis|resumen|sobre|acerca|de|del|la|el|los|las|un|una|y|e|o|u|en|para|con|por|sin|entre|desde|hasta|como|cuando|donde|qué|que|cómo|como|también|tambien|además|ademas|estudio|estudios|investigación|investigacion)\b/gi;
+  const cleaned = query.replace(fillers, " ").replace(/\s+/g, " ").trim();
+  // Fall back to original query if cleaning removed everything
+  return cleaned.length >= 3 ? cleaned : query.trim();
+}
+
 function getTools(lang: "es" | "en") {
   return lang === "en"
     ? [
@@ -658,40 +671,36 @@ function PaperResultsMessage({ papers, lang }: { papers: PaperResult[]; lang: "e
 }
 
 function PaperSourcesList({ papers, lang }: { papers: PaperResult[]; lang: "es" | "en" }) {
-  const [open, setOpen] = useState(false);
   if (papers.length === 0) return null;
   return (
     <div className="ri-sources">
-      <button type="button" className="ri-sources-toggle" onClick={() => setOpen((o) => !o)}>
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <p className="ri-sources-heading">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
           <path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
-        {lang === "en" ? `${papers.length} sources` : `${papers.length} fuentes`}
-        <span className={`ri-sources-chevron${open ? " open" : ""}`} aria-hidden="true">▾</span>
-      </button>
-      {open && (
-        <ol className="ri-sources-list">
-          {papers.map((p, i) => (
-            <li key={p.id || i} className="ri-source-item">
-              <span className="ri-source-num">[{i + 1}]</span>
-              <div className="ri-source-body">
-                {p.url ? (
-                  <a className="ri-source-title" href={p.url} target="_blank" rel="noopener noreferrer">
-                    {p.title}
-                  </a>
-                ) : (
-                  <span className="ri-source-title">{p.title}</span>
-                )}
-                <span className="ri-source-byline">
-                  {p.authors.slice(0, 3).join(", ")}
-                  {p.authors.length > 3 ? " et al." : ""}
-                  {p.year ? ` · ${p.year}` : ""}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
+        {lang === "en" ? "Academic sources" : "Fuentes académicas"}
+      </p>
+      <ol className="ri-sources-list">
+        {papers.map((p, i) => (
+          <li key={p.id || i} className="ri-source-item">
+            <span className="ri-source-num">[{i + 1}]</span>
+            <div className="ri-source-body">
+              {p.url ? (
+                <a className="ri-source-title" href={p.url} target="_blank" rel="noopener noreferrer">
+                  {p.title}
+                </a>
+              ) : (
+                <span className="ri-source-title">{p.title}</span>
+              )}
+              <span className="ri-source-byline">
+                {p.authors.slice(0, 3).join(", ")}
+                {p.authors.length > 3 ? " et al." : ""}
+                {p.year ? ` · ${p.year}` : ""}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -1337,7 +1346,8 @@ export default function ResearchMode() {
         // Step 1: Fetch relevant papers for citation context (best-effort)
         let sourcePapers: PaperResult[] = [];
         try {
-          const searchRes = await fetch(`/api/paper-search?q=${encodeURIComponent(trimmed)}`);
+          const searchQuery = cleanReviewQuery(trimmed);
+          const searchRes = await fetch(`/api/paper-search?q=${encodeURIComponent(searchQuery)}`);
           if (searchRes.ok) {
             const searchData = (await searchRes.json()) as { papers?: PaperResult[] };
             sourcePapers = (searchData.papers ?? [])
