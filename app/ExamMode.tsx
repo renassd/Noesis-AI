@@ -180,7 +180,7 @@ function parseGrades(
 
 export default function ExamMode() {
   const { lang } = useLang();
-  const { usage, applyUsage } = useAiUsage();
+  const { usage, loading: usageLoading, applyUsage } = useAiUsage();
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [content, setContent] = useState("");
@@ -192,7 +192,8 @@ export default function ExamMode() {
   const [grades, setGrades] = useState<Record<string, WrittenGrade>>({});
   const [error, setError] = useState("");
 
-  const hasCredits = (usage?.creditsRemaining ?? 0) > 0;
+  // Optimistic while loading — only disable if we *know* credits = 0
+  const hasCredits = usageLoading || !usage || (usage.creditsRemaining ?? 0) > 0;
 
   const handleImportedText = useCallback((file: ImportedTextFile) => {
     setAttachment(file);
