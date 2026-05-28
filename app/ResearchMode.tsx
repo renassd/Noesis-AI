@@ -240,6 +240,51 @@ ${baseInstructions(langHint)}`;
 }
 
 /**
+ * Call the Semantic Scholar public API directly from the browser.
+ * Their CORS policy allows unauthenticated browser requests, so no server
+ * proxy is needed.  Returns up to `limit` papers with a non-empty abstract.
+ */
+async function searchSemanticScholar(query: string, limit: number): Promise<PaperResult[]> {
+  const url =
+    `https://api.semanticscholar.org/graph/v1/paper/search` +
+    `?query=${encodeURIComponent(query)}` +
+    `&limit=${limit + 3}&fields=title,authors,year,abstract,url,externalIds`;
+
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(12000),
+  });
+
+  if (!res.ok) throw new Error(`Semantic Scholar ${res.status}`);
+
+  const data = (await res.json()) as {
+    data?: Array<{
+      paperId: string;
+      title?: string;
+      authors?: Array<{ name: string }>;
+      year?: number;
+      abstract?: string;
+      url?: string;
+      externalIds?: { DOI?: string };
+    }>;
+  };
+
+  return (data.data ?? [])
+    .filter((p) => (p.abstract?.trim().length ?? 0) > 50)
+    .slice(0, limit)
+    .map((p) => ({
+      id: p.paperId,
+      title: p.title ?? "Untitled",
+      authors: (p.authors ?? []).map((a) => a.name),
+      year: p.year ?? null,
+      abstract: p.abstract ?? "",
+      url:
+        p.url ??
+        (p.externalIds?.DOI ? `https://doi.org/${p.externalIds.DOI}` : ""),
+    }));
+}
+
+/**
  * Strip Spanish filler words from a search query so Semantic Scholar
  * (which works best with English terms) returns better results.
  * e.g. "Revisión de CAR-T Cell Therapy en Tumores" → "CAR-T Cell Therapy Tumores"
@@ -1041,18 +1086,7 @@ export default function ResearchMode() {
       setPastedImage(null);
 
       try {
-        const searchRes = await fetch("/api/paper-search", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ q: trimmed }),
-        });
-        const searchData = (await searchRes.json()) as { papers?: PaperResult[]; error?: string };
-
-        if (!searchRes.ok || !searchData.papers) {
-          throw new Error(searchData.error ?? `Search failed (${searchRes.status})`);
-        }
-
-        const rawPapers = searchData.papers.filter((p) => p.abstract?.trim().length > 50).slice(0, 6);
+        const rawPapers = await searchSemanticScholar(trimmed, 6);
 
         let papersWithSummaries: PaperResult[] = rawPapers;
 
@@ -1351,17 +1385,7 @@ export default function ResearchMode() {
         let sourcePapers: PaperResult[] = [];
         try {
           const searchQuery = cleanReviewQuery(trimmed);
-          const searchRes = await fetch("/api/paper-search", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ q: searchQuery }),
-          });
-          if (searchRes.ok) {
-            const searchData = (await searchRes.json()) as { papers?: PaperResult[] };
-            sourcePapers = (searchData.papers ?? [])
-              .filter((p) => (p.abstract?.trim().length ?? 0) > 80)
-              .slice(0, 5);
-          }
+          sourcePapers = await searchSemanticScholar(searchQuery, 5);
         } catch {
           /* proceed without papers — review still works */
         }
