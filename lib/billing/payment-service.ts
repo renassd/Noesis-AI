@@ -6,6 +6,7 @@
 // ============================================================
 
 import { PaddleProvider } from "./providers/paddle";
+import { LemonSqueezyProvider } from "./providers/lemonsqueezy";
 import { StripeProvider } from "./providers/stripe";
 import {
   applyEvent,
@@ -26,7 +27,8 @@ import type {
 // THIS is the only line that changes during migration.
 // Month 1–5: PaddleProvider
 // Month 6+ : StripeProvider
-const activeProvider = new PaddleProvider();
+// const activeProvider = new PaddleProvider(); // replaced by LemonSqueezy
+const activeProvider = new LemonSqueezyProvider();
 // const activeProvider = new StripeProvider(); // ← uncomment month 5
 
 // Export for webhook routes that need to call handleWebhook()

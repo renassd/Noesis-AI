@@ -17,7 +17,7 @@ export type SubscriptionStatus =
   | "paused"
   | "inactive";  // default for free / never subscribed
 
-export type ProviderName = "paddle" | "stripe";
+export type ProviderName = "paddle" | "stripe" | "lemonsqueezy";
 
 // Normalized subscription — provider-agnostic ─────────────────
 export interface NormalizedSubscription {
