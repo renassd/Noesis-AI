@@ -1011,38 +1011,36 @@ export default function HomePage() {
                 <h3 className="lp-h3">{en ? "Research Assistant" : "Asistente de Investigación"}</h3>
                 <p className="lp-body" style={{ fontSize: "0.86rem" }}>
                   {en
-                    ? "Upload a PDF, paper or document and Neuvra extracts what matters — key findings, methodology, citations and structured summaries."
-                    : "Sube un PDF, paper o documento y Neuvra extrae lo que importa — hallazgos clave, metodología, citas y resúmenes estructurados."}
+                    ? "Upload papers or search real academic sources. Neuvra generates literature reviews with inline citations — every claim linked to its source, like a real academic paper."
+                    : "Subí papers o buscá fuentes académicas reales. Neuvra genera revisiones de literatura con citas inline — cada afirmación vinculada a su fuente, como en un paper académico."}
                 </p>
 
-                {/* Doc → bullets visual */}
+                {/* Literature review snippet */}
                 <div className="lp-doc-preview" aria-hidden="true">
-                  <div className="lp-doc-filename">
-                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>picture_as_pdf</span>
-                    {en ? "neuroscience_study.pdf" : "estudio_neurociencia.pdf"}
+                  <div className="lp-doc-filename" style={{ color: "rgba(59,130,246,0.8)" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>auto_stories</span>
+                    {en ? "Literature review · CAR-T therapy" : "Revisión de literatura · Terapia CAR-T"}
                   </div>
                   <div className="lp-doc-bullet">
                     {en
-                      ? "Sleep increases synaptic consolidation by 34%"
-                      : "El sueño aumenta la consolidación sináptica en un 34%"}
+                      ? <>CAR-T cells achieve 70–90% remission in B-cell lymphoma <span style={{ color: "rgba(59,130,246,0.9)", fontWeight: 700 }}>[1]</span>.</>
+                      : <>Las células CAR-T logran 70–90% de remisión en linfoma B <span style={{ color: "rgba(59,130,246,0.9)", fontWeight: 700 }}>[1]</span>.</>}
                   </div>
                   <div className="lp-doc-bullet">
                     {en
-                      ? "Hippocampus most active during REM phase"
-                      : "El hipocampo es más activo durante la fase REM"}
+                      ? <>CD28 provides faster expansion, 4-1BB improves persistence <span style={{ color: "rgba(59,130,246,0.9)", fontWeight: 700 }}>[2][3]</span>.</>
+                      : <>CD28 da expansión más rápida, 4-1BB mejora la persistencia <span style={{ color: "rgba(59,130,246,0.9)", fontWeight: 700 }}>[2][3]</span>.</>}
                   </div>
-                  <div className="lp-doc-bullet">
-                    {en
-                      ? "Sample: 1,200 students, 6-month longitudinal"
-                      : "Muestra: 1.200 estudiantes, 6 meses longitudinal"}
+                  <div className="lp-doc-bullet" style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.68rem", marginTop: 6 }}>
+                    {en ? "▸ 4 academic sources · OpenAlex" : "▸ 4 fuentes académicas · OpenAlex"}
                   </div>
                 </div>
 
-                {/* Paper analysis feature chips */}
+                {/* Feature chips */}
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} aria-hidden="true">
                   {(en
-                    ? ["Analyze papers", "PDF summaries", "Citations", "Literature review"]
-                    : ["Analizar papers", "Resúmenes PDF", "Citas", "Revisión de literatura"]
+                    ? ["Find papers", "Inline citations", "Literature review", "PDF analysis"]
+                    : ["Buscar papers", "Citas inline", "Revisión de literatura", "Análisis PDF"]
                   ).map((tag) => (
                     <span key={tag} className="lp-step-feat-tag" style={{ color: "rgba(59,130,246,0.85)", borderColor: "rgba(59,130,246,0.2)" }}>{tag}</span>
                   ))}
@@ -1171,6 +1169,71 @@ export default function HomePage() {
 
             </div>
 
+            {/* ─── EXAM GENERATOR — full width strip ──────────────────── */}
+            <FadeReveal style={{ marginTop: 20 }} as="div">
+              <div style={{
+                padding: "28px 36px",
+                borderRadius: "var(--lp-radius-card)",
+                display: "flex",
+                alignItems: "center",
+                gap: 32,
+                flexWrap: "wrap",
+                background: "linear-gradient(to right, rgba(59,130,246,0.13), rgba(11,19,38,0))",
+                borderLeft: "3px solid rgba(59,130,246,0.6)",
+                border: "1px solid rgba(59,130,246,0.18)",
+              }} className="lp-glass lp-card-hover">
+                <div className="lp-sys-icon lp-sys-icon--secondary" style={{ flexShrink: 0 }} aria-hidden="true">
+                  <span className="material-symbols-outlined" style={{ fontSize: 26 }}>quiz</span>
+                </div>
+                <div style={{ flex: "0 0 260px" }}>
+                  <h3 className="lp-h3" style={{ marginBottom: 4, fontSize: "1.1rem" }}>
+                    {en ? "Exam Generator" : "Generador de Exámenes"}
+                  </h3>
+                  <p className="lp-body" style={{ fontSize: "0.86rem", margin: 0 }}>
+                    {en
+                      ? "Paste notes, upload a document, or type a topic — the AI builds a full exam with multiple choice or open questions, then grades every answer with detailed feedback."
+                      : "Pegá apuntes, subí un documento, o escribí un tema — la IA genera un examen completo con opción múltiple o preguntas abiertas, y corrige cada respuesta con feedback detallado."}
+                  </p>
+                </div>
+                {/* Mini exam preview */}
+                <div style={{ flex: 1, minWidth: 220, display: "flex", flexDirection: "column", gap: 8 }} aria-hidden="true">
+                  <div style={{ padding: "10px 14px", border: "1px solid rgba(59,130,246,0.25)", borderRadius: 10, background: "rgba(59,130,246,0.06)" }}>
+                    <p style={{ fontSize: "0.74rem", fontWeight: 600, color: "rgba(255,255,255,0.6)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      {en ? "Q1 · Multiple choice" : "P1 · Opción múltiple"}
+                    </p>
+                    <p style={{ fontSize: "0.8rem", color: "#fff", margin: "0 0 8px" }}>
+                      {en ? "What triggers the G1 checkpoint in cell cycle?" : "¿Qué activa el checkpoint G1 en el ciclo celular?"}
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      {(en
+                        ? ["A  DNA damage signals", "B  Cyclin D accumulation ✓", "C  Telomere shortening"]
+                        : ["A  Señales de daño en ADN", "B  Acumulación de Ciclina D ✓", "C  Acortamiento de telómeros"]
+                      ).map((opt, i) => (
+                        <span key={i} style={{ fontSize: "0.72rem", color: opt.includes("✓") ? "rgba(74,222,128,0.9)" : "rgba(255,255,255,0.45)", padding: "2px 0" }}>{opt}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {(en
+                      ? ["Multiple choice", "Written", "AI grading", "History saved"]
+                      : ["Opción múltiple", "Abiertas", "Corrección IA", "Historial"]
+                    ).map(t => (
+                      <span key={t} className="lp-step-feat-tag" style={{ color: "rgba(59,130,246,0.85)", borderColor: "rgba(59,130,246,0.22)" }}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="lp-btn lp-btn--ghost"
+                  onClick={handleCta}
+                  style={{ flexShrink: 0, padding: "12px 22px", fontSize: "0.88rem" }}
+                  aria-label={en ? "Try Exam Generator" : "Probar generador de exámenes"}
+                >
+                  {en ? "Generate an exam →" : "Generar un examen →"}
+                </button>
+              </div>
+            </FadeReveal>
+
             {/* ─── MEMORY ENGINE — full width accent strip ────────────── */}
             <FadeReveal
               style={{ marginTop: 20 }}
@@ -1254,14 +1317,13 @@ export default function HomePage() {
                 <h3 className="lp-h3">{en ? "Exam preparation" : "Preparación de exámenes"}</h3>
                 <p className="lp-body" style={{ fontSize: "0.88rem" }}>
                   {en
-                    ? "Upload your syllabus or class notes. The AI Tutor explains what you don't understand, then auto-generates flashcard decks from the same material — so you review what you actually learned."
-                    : "Subí tu temario o apuntes de clase. El Tutor IA explica lo que no entendés, luego genera automáticamente mazos de flashcards desde el mismo material — para que repases lo que realmente aprendiste."}
+                    ? "Paste your notes or upload a document and let the AI generate the exam — multiple choice or open questions — then grade every answer with feedback. Or use the AI Tutor to understand first and flashcards to lock it in."
+                    : "Pegá tus apuntes o subí un documento y dejá que la IA genere el examen — opción múltiple o preguntas abiertas — y te corrija cada respuesta con feedback. O usá el Tutor IA para entender y las flashcards para fijar."}
                 </p>
-                {/* How it works micro-flow */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }} aria-hidden="true">
                   {(en
-                    ? ["Upload class notes or PDF syllabus", "AI Tutor clarifies weak concepts", "Auto flashcards built from same source", "Memory Engine schedules optimal review"]
-                    : ["Subís apuntes o PDF del temario", "Tutor IA aclara los conceptos débiles", "Flashcards automáticas desde la misma fuente", "Motor de Memoria programa el repaso óptimo"]
+                    ? ["Paste notes, PDF or type a topic", "AI generates the full exam instantly", "Answer MCQ or written questions", "AI grades every answer with feedback & score"]
+                    : ["Pegás apuntes, PDF o escribís un tema", "La IA genera el examen completo al instante", "Respondés opción múltiple o preguntas abiertas", "La IA corrige con feedback y puntaje por respuesta"]
                   ).map((step, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.77rem", color: "var(--lp-muted)" }}>
                       <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(124,58,237,0.2)", color: "var(--lp-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.62rem", fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
@@ -1271,8 +1333,8 @@ export default function HomePage() {
                 </div>
                 <ul className="lp-tags" aria-label={en ? "Features used" : "Funciones usadas"} style={{ marginTop: 12 }}>
                   {(en
-                    ? ["AI Tutor", "Auto Flashcards", "Memory Engine", "PDF Upload"]
-                    : ["Tutor IA", "Flashcards", "Motor de Memoria", "PDF"]
+                    ? ["Exam Generator", "AI Grading", "Auto Flashcards", "Memory Engine"]
+                    : ["Generador de exámenes", "Corrección IA", "Flashcards", "Motor de Memoria"]
                   ).map(tag => <li key={tag}>{tag}</li>)}
                 </ul>
               </article>
@@ -1527,8 +1589,8 @@ export default function HomePage() {
                 </p>
                 <ul className="lp-tagline-features" aria-label={en ? "Key features" : "Funciones clave"}>
                   {(en
-                    ? ["AI tutor that explains, not just answers", "Auto flashcards from any material", "Memory engine that knows when to review"]
-                    : ["Tutor de IA que explica, no solo responde", "Flashcards automáticas desde cualquier material", "Motor de memoria que sabe cuándo repasar"]
+                    ? ["AI tutor that explains, not just answers", "Auto flashcards from any material", "Exam generator with AI grading", "Literature review with inline citations"]
+                    : ["Tutor de IA que explica, no solo responde", "Flashcards automáticas desde cualquier material", "Generador de exámenes con corrección IA", "Revisión de literatura con citas inline"]
                   ).map((item) => (
                     <li key={item}>
                       <span className="lp-tagline-dot" aria-hidden="true" />
