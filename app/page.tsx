@@ -620,44 +620,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* ── MIT ── */}
-                <div className="lp-trust-cell" role="listitem" aria-label="Massachusetts Institute of Technology">
-                  <div className="lp-trust-img-wrap">
-                    <Image src="/logos/mit.png" alt="Massachusetts Institute of Technology"
-                      width={357} height={100}
-                      className="lp-trust-img lp-trust-img--on-white" />
-                  </div>
-                </div>
-
-                {/* ── Yale ── */}
-                <div className="lp-trust-cell" role="listitem" aria-label="Yale University">
-                  <div className="lp-trust-img-wrap">
-                    <Image src="/logos/yale.svg" alt="Yale University"
-                      width={500} height={216}
-                      className="lp-trust-img lp-trust-img--on-white"
-                      unoptimized />
-                  </div>
-                </div>
-
-                {/* ── Stanford ── */}
-                <div className="lp-trust-cell" role="listitem" aria-label="Stanford University">
-                  <div className="lp-trust-img-wrap">
-                    <Image src="/logos/stanford.png" alt="Stanford University"
-                      width={400} height={490}
-                      className="lp-trust-img lp-trust-img--stanford" />
-                  </div>
-                </div>
-
-                {/* ── Princeton ── */}
-                <div className="lp-trust-cell" role="listitem" aria-label="Princeton University">
-                  <div className="lp-trust-img-wrap">
-                    <Image src="/logos/princeton.png" alt="Princeton University"
-                      width={300} height={100}
-                      className="lp-trust-img lp-trust-img--on-white" />
-                  </div>
-                </div>
-
-                {/* ── Penn — light logo for light mode, dark logo for dark mode ── */}
+                {/* ── Penn ── */}
                 <div className="lp-trust-cell" role="listitem" aria-label="University of Pennsylvania">
                   <div className="lp-trust-img-wrap">
                     <Image src="/logos/upenn.png" alt="University of Pennsylvania"
