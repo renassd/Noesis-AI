@@ -429,6 +429,10 @@ input[type="number"] {
   cursor: pointer;
   font: 700 14px var(--font-body);
   transition: transform 0.18s, box-shadow 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .auth-submit {
