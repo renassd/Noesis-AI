@@ -27,7 +27,7 @@ interface AuthCtx {
   signOut: () => Promise<void>;
 }
 
-type AuthMode = "signin" | "signup";
+type AuthMode = "signin" | "signup" | "forgot";
 
 const DEFAULT: AuthState = { signedIn: false, email: "", name: "", userId: "" };
 
