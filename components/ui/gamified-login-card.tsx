@@ -2,7 +2,7 @@
 
 import { useLang } from "@/app/i18n";
 
-type AuthMode = "signin" | "signup";
+type AuthMode = "signin" | "signup" | "forgot";
 
 interface GamifiedLoginCardProps {
   mode: AuthMode;
@@ -11,12 +11,14 @@ interface GamifiedLoginCardProps {
   password: string;
   loading: boolean;
   error?: string;
+  forgotSent?: boolean;
   onModeChange: (mode: AuthMode) => void;
   onNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSubmit: () => void;
   onGoogle: () => void;
+  onForgotSubmit: () => void;
 }
 
 export default function GamifiedLoginCard({
@@ -26,27 +28,78 @@ export default function GamifiedLoginCard({
   password,
   loading,
   error,
+  forgotSent,
   onModeChange,
   onNameChange,
   onEmailChange,
   onPasswordChange,
   onSubmit,
   onGoogle,
+  onForgotSubmit,
 }: GamifiedLoginCardProps) {
   const { t } = useLang();
   const authText = t.auth;
 
+  // ── Forgot password view ───────────────────────────────────
+  if (mode === "forgot") {
+    return (
+      <>
+        <div className="auth-modal-header">
+          <span className="eyebrow">{authText.brand}</span>
+          <h3>{authText.forgotTitle}</h3>
+          <p>{authText.forgotDescription}</p>
+        </div>
+
+        <div className="auth-form">
+          {forgotSent ? (
+            <p style={{ fontSize: 14, color: "#15803d", margin: 0, padding: "12px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+              {authText.forgotSent}
+            </p>
+          ) : (
+            <>
+              <label className="auth-field">
+                <span>{authText.email}</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => onEmailChange(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && onForgotSubmit()}
+                  placeholder={authText.emailPlaceholder}
+                  autoFocus
+                />
+              </label>
+
+              <button
+                type="button"
+                className="auth-submit"
+                onClick={onForgotSubmit}
+                disabled={loading || !email.includes("@")}
+              >
+                {loading ? authText.forgotLoading : authText.forgotCta}
+              </button>
+
+              {error && (
+                <p style={{ fontSize: 13, color: "#c2410c", margin: 0 }}>{error}</p>
+              )}
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onModeChange("signin")}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--muted)", textDecoration: "underline", padding: 0, alignSelf: "center" }}
+          >
+            {authText.backToSignin}
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  // ── Sign in / Sign up view ─────────────────────────────────
   const copy = mode === "signup"
-    ? {
-        title: authText.signupTitle,
-        description: authText.signupDescription,
-        cta: authText.signupCta,
-      }
-    : {
-        title: authText.signinTitle,
-        description: authText.signinDescription,
-        cta: authText.signinCta,
-      };
+    ? { title: authText.signupTitle, description: authText.signupDescription, cta: authText.signupCta }
+    : { title: authText.signinTitle, description: authText.signinDescription, cta: authText.signinCta };
 
   return (
     <>
@@ -80,7 +133,7 @@ export default function GamifiedLoginCard({
             <input
               type="text"
               value={name}
-              onChange={(event) => onNameChange(event.target.value)}
+              onChange={(e) => onNameChange(e.target.value)}
               placeholder={authText.namePlaceholder}
             />
           </label>
@@ -91,20 +144,31 @@ export default function GamifiedLoginCard({
           <input
             type="email"
             value={email}
-            onChange={(event) => onEmailChange(event.target.value)}
-            onKeyDown={(event) => event.key === "Enter" && void onSubmit()}
+            onChange={(e) => onEmailChange(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void onSubmit()}
             placeholder={authText.emailPlaceholder}
             autoFocus
           />
         </label>
 
         <label className="auth-field">
-          <span>{authText.password}</span>
+          <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {authText.password}
+            {mode === "signin" && (
+              <button
+                type="button"
+                onClick={() => onModeChange("forgot")}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--blue-700, #3b6de0)", padding: 0, fontWeight: 500 }}
+              >
+                {authText.forgotPassword}
+              </button>
+            )}
+          </span>
           <input
             type="password"
             value={password}
-            onChange={(event) => onPasswordChange(event.target.value)}
-            onKeyDown={(event) => event.key === "Enter" && void onSubmit()}
+            onChange={(e) => onPasswordChange(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void onSubmit()}
             placeholder={authText.passwordPlaceholder}
           />
         </label>
@@ -132,11 +196,9 @@ export default function GamifiedLoginCard({
           {authText.continueWithGoogle}
         </button>
 
-        {error ? (
-          <p style={{ fontSize: 13, color: "#c2410c", margin: 0 }}>
-            {error}
-          </p>
-        ) : null}
+        {error && (
+          <p style={{ fontSize: 13, color: "#c2410c", margin: 0 }}>{error}</p>
+        )}
       </div>
     </>
   );

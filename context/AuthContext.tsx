@@ -175,6 +175,7 @@ function AuthModal({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -258,6 +259,27 @@ function AuthModal({
     }
   }
 
+  async function handleForgotPassword() {
+    const supabase = getSupabaseBrowser();
+    if (!supabase) return;
+    if (!email.includes("@")) { setError(authText.invalidEmail); return; }
+
+    setError("");
+    setLoading(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        { redirectTo: `${window.location.origin}/auth/reset-password` },
+      );
+      if (resetError) throw resetError;
+      setForgotSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : authText.forgotError);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div
       className="auth-modal-backdrop"
@@ -290,13 +312,15 @@ function AuthModal({
             email={email}
             password={password}
             loading={loading}
-            onModeChange={setMode}
+            error={error}
+            forgotSent={forgotSent}
+            onModeChange={(m) => { setMode(m); setError(""); setForgotSent(false); }}
             onNameChange={setName}
             onEmailChange={setEmail}
             onPasswordChange={setPassword}
             onSubmit={() => void handleSubmit()}
             onGoogle={() => void handleGoogle()}
-            error={error}
+            onForgotSubmit={() => void handleForgotPassword()}
           />
         </div>
       </div>
