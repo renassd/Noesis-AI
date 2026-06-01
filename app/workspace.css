@@ -844,6 +844,80 @@
 }
 .tutor-example:hover { border-color: var(--blue-500); color: var(--blue-900); background: var(--surface-blue); }
 
+/* ── Tutor history ────────────────────────────────────────────── */
+.tutor-history {
+  margin-top: 28px;
+  width: 100%;
+  text-align: left;
+}
+.tutor-history-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+.tutor-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tutor-history-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tutor-history-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  transition: border-color 0.12s, background 0.12s;
+  min-width: 0;
+}
+.tutor-history-btn:hover {
+  border-color: var(--blue-500);
+  background: var(--surface-blue);
+}
+.tutor-history-topic {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.tutor-history-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.tutor-history-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.tutor-history-delete:hover {
+  background: #ffebee;
+  color: #c62828;
+}
+
 .tutor-reset-btn {
   padding: 8px 16px;
   border-radius: 999px;

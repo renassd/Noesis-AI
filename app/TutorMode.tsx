@@ -11,6 +11,36 @@ import { useLang } from "./i18n";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+interface TutorSession {
+  id: string;
+  topic: string;
+  messages: Message[];
+  savedAt: number;
+}
+
+const STORAGE_KEY = "noesis_tutor_history";
+
+function loadHistory(): TutorSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as TutorSession[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(sessions: TutorSession[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+  } catch { /* ignore */ }
+}
+
+function generateId() {
+  return `tutor_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
 function MarkdownMessage({ content }: { content: string }) {
   return <div className="rm-content" dangerouslySetInnerHTML={{ __html: renderMarkdownWithMath(content) }} />;
 }
@@ -32,27 +62,47 @@ ${langHint}`;
 }
 
 export default function TutorMode() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { auth } = useAuth();
   const { usage, loading: usageLoading, applyUsage } = useAiUsage();
   const s = t.study;
+
   const [topic, setTopic] = useState("");
   const [started, setStarted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [history, setHistory] = useState<TutorSession[]>([]);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const usageReady = auth.signedIn && !usageLoading && !!usage;
   const hasCredits = usageReady && usage.creditsRemaining > 0;
   const canSend = hasCredits && !loading && !!input.trim();
   const canStart = hasCredits && !!topic.trim();
 
+  // Load history on mount
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Fire-and-forget: extract memories from a tutor exchange (never blocks the UI)
+  // Auto-save current session whenever messages change
+  useEffect(() => {
+    if (!started || !currentSessionId || messages.length === 0) return;
+    const session: TutorSession = { id: currentSessionId, topic, messages, savedAt: Date.now() };
+    setHistory((prev) => {
+      const filtered = prev.filter((s) => s.id !== currentSessionId);
+      const updated = [session, ...filtered];
+      saveHistory(updated);
+      return updated;
+    });
+  }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function fireExtract(content: string, label: string) {
     void fetchWithSupabaseAuth("/api/memory/extract", {
       method: "POST",
@@ -69,7 +119,6 @@ export default function TutorMode() {
         max_tokens: 16000,
         system,
         messages: msgs,
-        // Inject relevant past-session memories when a topic is known
         ...(memoryQuery ? { useMemory: true, memoryQuery } : {}),
       }),
     });
@@ -80,28 +129,20 @@ export default function TutorMode() {
   }
 
   async function startSession() {
-    if (!topic.trim()) return;
-    if (!hasCredits) {
-      setError(s.tutorOutOfCredits);
-      return;
-    }
-
-    const firstMsg: Message = {
-      role: "user",
-      content: `Quiero aprender sobre: ${topic.trim()}`,
-    };
+    if (!topic.trim() || !hasCredits) return;
+    const firstMsg: Message = { role: "user", content: `Quiero aprender sobre: ${topic.trim()}` };
     setLoading(true);
     setError("");
-
     try {
       const text = await callAI(
         [firstMsg],
         buildTutorSystem(topic, langInstruction(detectLang(topic.trim()))),
-        topic, // search past memories on this topic
+        topic,
       );
+      const sessionId = generateId();
+      setCurrentSessionId(sessionId);
       setStarted(true);
       setMessages([firstMsg, { role: "assistant", content: text }]);
-      // Extract the first full explanation — richest content for long-term memory
       fireExtract(`Tema: ${topic}\n\nExplicación del tutor:\n${text}`, `Tutor: ${topic}`);
     } catch {
       setError(s.tutorError);
@@ -110,32 +151,51 @@ export default function TutorMode() {
     }
   }
 
+  function resumeSession(session: TutorSession) {
+    setTopic(session.topic);
+    setMessages(session.messages);
+    setCurrentSessionId(session.id);
+    setStarted(true);
+    setInput("");
+    setError("");
+  }
+
+  function deleteSession(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setHistory((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      saveHistory(updated);
+      return updated;
+    });
+  }
+
+  function resetToStart() {
+    setStarted(false);
+    setMessages([]);
+    setTopic("");
+    setInput("");
+    setCurrentSessionId(null);
+    setHistory(loadHistory());
+  }
+
   async function send() {
-    if (!input.trim() || loading) return;
-    if (!hasCredits) {
-      setError(s.tutorOutOfCredits);
-      return;
-    }
+    if (!input.trim() || loading || !hasCredits) return;
     const userMsg: Message = { role: "user", content: input.trim() };
     const updated = [...messages, userMsg];
     setLoading(true);
     setError("");
-
     try {
       const text = await callAI(
         updated,
         buildTutorSystem(topic, langInstruction(detectLang(input.trim()))),
-        `${topic} ${input.trim()}`, // narrow the memory search to topic + current question
+        `${topic} ${input.trim()}`,
       );
       const finalMessages: Message[] = [...updated, { role: "assistant", content: text }];
       setInput("");
       setMessages(finalMessages);
-      // Extract every 3rd assistant response to keep memory growing without spamming
       const assistantCount = finalMessages.filter((m) => m.role === "assistant").length;
       if (assistantCount % 3 === 0) {
-        const recentExchange =
-          `Estudiante: ${input.trim()}\n\nTutor: ${text}`;
-        fireExtract(`Tema: ${topic}\n\n${recentExchange}`, `Tutor: ${topic}`);
+        fireExtract(`Tema: ${topic}\n\nEstudiante: ${input.trim()}\n\nTutor: ${text}`, `Tutor: ${topic}`);
       }
     } catch {
       setError(s.tutorError);
@@ -144,6 +204,7 @@ export default function TutorMode() {
     }
   }
 
+  // ── Start screen ─────────────────────────────────────────────
   if (!started) {
     return (
       <div className="ws-panel ws-panel-centered">
@@ -156,10 +217,7 @@ export default function TutorMode() {
               className="tutor-topic-input"
               placeholder={s.tutorPlaceholder}
               value={topic}
-              onChange={(e) => {
-                if (error) setError("");
-                setTopic(e.target.value);
-              }}
+              onChange={(e) => { if (error) setError(""); setTopic(e.target.value); }}
               onKeyDown={(e) => e.key === "Enter" && void startSession()}
               disabled={!hasCredits}
             />
@@ -175,11 +233,50 @@ export default function TutorMode() {
               </button>
             ))}
           </div>
+
+          {/* History */}
+          {history.length > 0 && (
+            <div className="tutor-history">
+              <p className="tutor-history-heading">
+                {lang === "en" ? "Recent sessions" : "Sesiones recientes"}
+              </p>
+              <div className="tutor-history-list">
+                {history.slice(0, 8).map((session) => (
+                  <div key={session.id} className="tutor-history-item">
+                    <button
+                      type="button"
+                      className="tutor-history-btn"
+                      onClick={() => resumeSession(session)}
+                    >
+                      <span className="tutor-history-topic">{session.topic}</span>
+                      <span className="tutor-history-meta">
+                        {session.messages.filter((m) => m.role === "assistant").length}{" "}
+                        {lang === "en" ? "responses" : "respuestas"} ·{" "}
+                        {new Date(session.savedAt).toLocaleDateString(
+                          lang === "es" ? "es-AR" : "en-US",
+                          { day: "numeric", month: "short" },
+                        )}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="tutor-history-delete"
+                      onClick={(e) => deleteSession(session.id, e)}
+                      aria-label={lang === "en" ? "Delete session" : "Eliminar sesión"}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
+  // ── Chat screen ──────────────────────────────────────────────
   return (
     <div className="ws-panel ws-panel-chat">
       <div className="ws-panel-header">
@@ -194,16 +291,7 @@ export default function TutorMode() {
             )}
           </p>
         </div>
-        <button
-          className="tutor-reset-btn"
-          type="button"
-          onClick={() => {
-            setStarted(false);
-            setMessages([]);
-            setTopic("");
-            setInput("");
-          }}
-        >
+        <button className="tutor-reset-btn" type="button" onClick={resetToStart}>
           {s.tutorNewTopic}
         </button>
       </div>
@@ -216,7 +304,7 @@ export default function TutorMode() {
               {m.role === "assistant" ? (
                 <MarkdownMessage content={m.content} />
               ) : (
-                m.content.split("\n").map((line, j) => <p key={j}>{line || "\u00a0"}</p>)
+                m.content.split("\n").map((line, j) => <p key={j}>{line || " "}</p>)
               )}
             </div>
           </div>
@@ -225,11 +313,7 @@ export default function TutorMode() {
         {loading && (
           <div className="chat-msg assistant">
             <div className="chat-avatar">N</div>
-            <div className="chat-bubble chat-typing">
-              <span />
-              <span />
-              <span />
-            </div>
+            <div className="chat-bubble chat-typing"><span /><span /><span /></div>
           </div>
         )}
         <div ref={bottomRef} />
@@ -240,10 +324,7 @@ export default function TutorMode() {
           className="chat-input"
           placeholder={s.tutorPlaceholder}
           value={input}
-          onChange={(e) => {
-            if (error) setError("");
-            setInput(e.target.value);
-          }}
+          onChange={(e) => { if (error) setError(""); setInput(e.target.value); }}
           onKeyDown={(e) => e.key === "Enter" && void send()}
           disabled={loading || !hasCredits}
         />
@@ -253,7 +334,6 @@ export default function TutorMode() {
       </div>
 
       {error && <p className="gen-error" style={{ margin: "0 22px 14px" }}>{error}</p>}
-
       <AiUsageCard variant="inline" />
     </div>
   );
