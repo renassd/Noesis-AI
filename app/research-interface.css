@@ -155,11 +155,42 @@
   background: rgba(255, 255, 255, 0.68);
 }
 
+.ri-history-item-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.ri-history-item-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: var(--ri-muted);
+  cursor: pointer;
+  padding: 4px 5px;
+  border-radius: 6px;
+  line-height: 1;
+  margin-top: 10px;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.ri-history-item-wrap:hover .ri-history-item-delete {
+  opacity: 1;
+}
+
+.ri-history-item-delete:hover {
+  background: #ffebee;
+  color: #c62828;
+}
+
 .ri-history-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 14px 15px;
   border: 1px solid transparent;
   border-radius: 18px;

@@ -971,6 +971,22 @@ export default function ResearchMode() {
     saveActiveSessionId(sessionState.activeSessionId);
   }, [sessionState]);
 
+  const deleteSession = useCallback((id: string) => {
+    setSessionState((prev) => {
+      const remaining = prev.sessions.filter((s) => s.id !== id);
+      // If deleting the active session, switch to next or create fresh
+      if (prev.activeSessionId !== id) {
+        return { ...prev, sessions: sortSessions(remaining) };
+      }
+      if (remaining.length > 0) {
+        const sorted = sortSessions(remaining);
+        return { sessions: sorted, activeSessionId: sorted[0].id };
+      }
+      const fresh = createSession(lang);
+      return { sessions: [fresh], activeSessionId: fresh.id };
+    });
+  }, [lang]);
+
   const startNewSession = useCallback(() => {
     setSessionState((prev) => {
       const current = prev.sessions.find((session) => session.id === prev.activeSessionId);
@@ -1633,15 +1649,24 @@ export default function ResearchMode() {
                 </p>
               ) : (
                 savedSessions.map((session) => (
-                  <button
-                    key={session.id}
-                    type="button"
-                    className={`ri-history-item${session.id === sessionState.activeSessionId ? " active" : ""}`}
-                    onClick={() => selectSession(session.id)}
-                  >
-                    <span className="ri-history-item-title">{resolveSessionTitle(session, lang)}</span>
-                    <span className="ri-history-item-preview">{getSessionPreview(session, lang)}</span>
-                  </button>
+                  <div key={session.id} className="ri-history-item-wrap">
+                    <button
+                      type="button"
+                      className={`ri-history-item${session.id === sessionState.activeSessionId ? " active" : ""}`}
+                      onClick={() => selectSession(session.id)}
+                    >
+                      <span className="ri-history-item-title">{resolveSessionTitle(session, lang)}</span>
+                      <span className="ri-history-item-preview">{getSessionPreview(session, lang)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="ri-history-item-delete"
+                      onClick={() => deleteSession(session.id)}
+                      aria-label={lang === "en" ? "Delete chat" : "Eliminar chat"}
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))
               )}
             </div>
