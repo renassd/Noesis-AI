@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void syncSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) {
         return;
       }
@@ -106,6 +106,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setReady(true);
       setModalOpen(false);
+
+      // Send welcome email on first sign-up (account created within last 2 minutes)
+      if (event === "SIGNED_IN" && user.created_at) {
+        const createdAt = new Date(user.created_at).getTime();
+        const isNewUser = Date.now() - createdAt < 2 * 60 * 1000;
+        if (isNewUser) {
+          void fetch("/api/email/welcome", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: user.email,
+              name: readName(user.email, user.user_metadata),
+            }),
+          }).catch(() => {});
+        }
+      }
     });
 
     return () => {
