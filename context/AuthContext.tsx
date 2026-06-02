@@ -246,7 +246,23 @@ function AuthModal({
         });
 
         if (signUpError) {
-          throw signUpError;
+          const msg = signUpError.message.toLowerCase();
+          if (msg.includes("already registered") || msg.includes("already been registered")) {
+            setError(lang === "en"
+              ? "This email already has an account. Try signing in, or use Google sign-in."
+              : "Este email ya tiene una cuenta. Intentá iniciar sesión, o usá Google.");
+          } else {
+            throw signUpError;
+          }
+          return;
+        }
+
+        // Supabase returns identities: [] when the email already exists (silent duplicate)
+        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+          setError(lang === "en"
+            ? "This email already has an account. Try signing in, or use Google sign-in."
+            : "Este email ya tiene una cuenta. Intentá iniciar sesión, o usá Google.");
+          return;
         }
 
         if (!data.session) {
