@@ -24,6 +24,7 @@ interface GamifiedLoginCardProps {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
   loading: boolean;
   error?: string;
   forgotSent?: boolean;
@@ -31,6 +32,7 @@ interface GamifiedLoginCardProps {
   onNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
+  onConfirmPasswordChange: (value: string) => void;
   onSubmit: () => void;
   onGoogle: () => void;
   onForgotSubmit: () => void;
@@ -41,6 +43,7 @@ export default function GamifiedLoginCard({
   name,
   email,
   password,
+  confirmPassword,
   loading,
   error,
   forgotSent,
@@ -48,11 +51,12 @@ export default function GamifiedLoginCard({
   onNameChange,
   onEmailChange,
   onPasswordChange,
+  onConfirmPasswordChange,
   onSubmit,
   onGoogle,
   onForgotSubmit,
 }: GamifiedLoginCardProps) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const authText = t.auth;
   const [showPassword, setShowPassword] = useState(false);
 
@@ -242,11 +246,53 @@ export default function GamifiedLoginCard({
           );
         })()}
 
+        {mode === "signup" && (
+          <label className="auth-field">
+            <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              {lang === "en" ? "Confirm password" : "Confirmar contraseña"}
+              {confirmPassword.length > 0 && (
+                <span style={{ fontSize: 12, fontWeight: 600, color: confirmPassword === password ? "#22c55e" : "#ef4444" }}>
+                  {confirmPassword === password ? "✓ Coinciden" : "✗ No coinciden"}
+                </span>
+              )}
+            </span>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => onConfirmPasswordChange(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void onSubmit()}
+                placeholder={lang === "en" ? "Repeat your password" : "Repetí tu contraseña"}
+                style={{ paddingRight: 40, width: "100%", boxSizing: "border-box", borderColor: confirmPassword.length > 0 ? (confirmPassword === password ? "#22c55e" : "#ef4444") : undefined }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 4, color: "var(--muted, #66768f)", lineHeight: 1 }}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+          </label>
+        )}
+
         <button
           type="button"
           className="auth-submit"
           onClick={onSubmit}
-          disabled={loading || !email.includes("@")}
+          disabled={loading || !email.includes("@") || (mode === "signup" && confirmPassword !== password)}
         >
           {loading ? authText.loading : copy.cta}
         </button>

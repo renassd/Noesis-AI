@@ -189,6 +189,7 @@ function AuthModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
@@ -220,6 +221,11 @@ function AuthModal({
 
     if (!password.trim()) {
       setError(authText.missingPassword);
+      return;
+    }
+
+    if (mode === "signup" && password !== confirmPassword) {
+      setError(lang === "en" ? "Passwords do not match." : "Las contraseñas no coinciden.");
       return;
     }
 
@@ -337,10 +343,12 @@ function AuthModal({
             loading={loading}
             error={error}
             forgotSent={forgotSent}
-            onModeChange={(m) => { setMode(m); setError(""); setForgotSent(false); }}
+            onModeChange={(m) => { setMode(m); setError(""); setForgotSent(false); setConfirmPassword(""); }}
             onNameChange={setName}
             onEmailChange={setEmail}
             onPasswordChange={setPassword}
+            onConfirmPasswordChange={setConfirmPassword}
+            confirmPassword={confirmPassword}
             onSubmit={() => void handleSubmit()}
             onGoogle={() => void handleGoogle()}
             onForgotSubmit={() => void handleForgotPassword()}
