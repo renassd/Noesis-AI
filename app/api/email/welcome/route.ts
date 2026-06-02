@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuthenticatedUser, AuthError } from "@/lib/server-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAuthenticatedUser(req);
-
     const { email, name } = (await req.json()) as { email?: string; name?: string };
     if (!email) return NextResponse.json({ error: "Missing email" }, { status: 400 });
 
     const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: "RESEND_API_KEY not set" }, { status: 500 });
+    if (!apiKey) {
+      console.error("[welcome-email] RESEND_API_KEY not set");
+      return NextResponse.json({ error: "RESEND_API_KEY not set" }, { status: 500 });
+    }
+
+    console.log("[welcome-email] sending to:", email);
 
     const displayName = name || email.split("@")[0];
 
@@ -81,9 +83,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    if (err instanceof AuthError) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
     console.error("[welcome-email] error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
