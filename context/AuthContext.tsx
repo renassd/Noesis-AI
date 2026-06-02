@@ -183,7 +183,7 @@ function AuthModal({
   onClose: () => void;
   onGoogleSignIn: () => Promise<void>;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const authText = t.auth;
   const [mode, setMode] = useState<AuthMode>("signin");
   const [name, setName] = useState("");
@@ -257,7 +257,14 @@ function AuthModal({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : authText.submitError);
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.toLowerCase().includes("invalid login credentials") || msg.toLowerCase().includes("invalid email or password")) {
+        setError(lang === "en" ? "Incorrect email or password." : "Email o contraseña incorrectos.");
+      } else if (msg.toLowerCase().includes("email not confirmed")) {
+        setError(lang === "en" ? "Please confirm your email before signing in." : "Confirmá tu email antes de ingresar.");
+      } else {
+        setError(msg || authText.submitError);
+      }
     } finally {
       setLoading(false);
     }
