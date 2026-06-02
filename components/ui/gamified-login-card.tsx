@@ -2,6 +2,20 @@
 
 import { useLang } from "@/app/i18n";
 
+function getPasswordStrength(pwd: string): { score: number; label: string; color: string } {
+  if (!pwd) return { score: 0, label: "", color: "#dbe4f1" };
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (pwd.length >= 12) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  if (score <= 1) return { score: 1, label: "Débil", color: "#ef4444" };
+  if (score <= 2) return { score: 2, label: "Regular", color: "#f97316" };
+  if (score <= 3) return { score: 3, label: "Buena", color: "#eab308" };
+  return { score: 4, label: "Fuerte", color: "#22c55e" };
+}
+
 type AuthMode = "signin" | "signup" | "forgot";
 
 interface GamifiedLoginCardProps {
@@ -172,6 +186,37 @@ export default function GamifiedLoginCard({
             placeholder={authText.passwordPlaceholder}
           />
         </label>
+
+        {mode === "signup" && password.length > 0 && (() => {
+          const { score, label, color } = getPasswordStrength(password);
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: -8 }}>
+              <div style={{ display: "flex", gap: 4 }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} style={{
+                    flex: 1, height: 4, borderRadius: 2,
+                    background: i <= score ? color : "#dbe4f1",
+                    transition: "background 0.2s",
+                  }} />
+                ))}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: "var(--muted, #66768f)" }}>
+                  {[
+                    { ok: password.length >= 8, text: "8+ caracteres" },
+                    { ok: /[A-Z]/.test(password), text: "Mayúscula" },
+                    { ok: /[0-9]/.test(password), text: "Número" },
+                  ].map((req, i) => (
+                    <span key={i} style={{ marginRight: 8, color: req.ok ? "#22c55e" : "var(--muted, #66768f)" }}>
+                      {req.ok ? "✓" : "·"} {req.text}
+                    </span>
+                  ))}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 600, color }}>{label}</span>
+              </div>
+            </div>
+          );
+        })()}
 
         <button
           type="button"
