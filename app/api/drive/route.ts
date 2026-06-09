@@ -200,21 +200,26 @@ export async function GET(req: NextRequest) {
       tokens = { ...tokens, access_token: fresh };
     }
 
-    // Fetch files: docs, sheets, PDFs, text
+    // Fetch files: docs, PDFs, text
     const query = [
       "mimeType='application/vnd.google-apps.document'",
       "mimeType='application/pdf'",
       "mimeType='text/plain'",
     ].join(" or ");
 
+    const searchQuery = searchParams.get("search") ?? "";
+    const pageToken   = searchParams.get("pageToken") ?? "";
+
+    const params = new URLSearchParams({
+      q:        `(${query}) and trashed=false${searchQuery ? ` and name contains '${searchQuery.replace(/'/g, "\\'")}'` : ""}`,
+      fields:   "nextPageToken,files(id,name,mimeType,modifiedTime,size)",
+      orderBy:  "modifiedTime desc",
+      pageSize: "20",
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+
     const listRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?` +
-      new URLSearchParams({
-        q:        `(${query}) and trashed=false`,
-        fields:   "files(id,name,mimeType,modifiedTime,size)",
-        orderBy:  "modifiedTime desc",
-        pageSize: "20",
-      }),
+      `https://www.googleapis.com/drive/v3/files?` + params.toString(),
       { headers: { Authorization: `Bearer ${tokens.access_token}` } }
     );
 
@@ -226,8 +231,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Failed to list Drive files" }, { status: 500 });
     }
 
-    const data = await listRes.json() as { files: unknown[] };
-    return NextResponse.json({ files: data.files });
+    const data = await listRes.json() as { files: unknown[]; nextPageToken?: string };
+    return NextResponse.json({ files: data.files, nextPageToken: data.nextPageToken ?? null });
   }
 
   // ── file: download and extract text from a specific file ──

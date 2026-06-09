@@ -55,6 +55,9 @@ const COPY = {
     retry:         "Retry",
     setupRequired: "Drive not configured",
     fetchingFile:  "Fetching file...",
+    searchPlaceholder: "Search files...",
+    loadMore:      "Load more",
+    loadingMore:   "Loading...",
   },
   es: {
     file:          "Subir archivo",
@@ -76,6 +79,9 @@ const COPY = {
     retry:         "Reintentar",
     setupRequired: "Drive no configurado",
     fetchingFile:  "Obteniendo archivo...",
+    searchPlaceholder: "Buscar archivos...",
+    loadMore:      "Cargar más",
+    loadingMore:   "Cargando...",
   },
 } as const;
 
@@ -107,10 +113,14 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
   const imageRef = useRef<HTMLInputElement>(null);
   const [uploadStatus,  setUploadStatus]  = useState<UploadStatus>("idle");
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
-  const [driveStatus,   setDriveStatus]   = useState<DriveStatus>("idle");
-  const [driveFiles,    setDriveFiles]    = useState<DriveFile[]>([]);
-  const [driveError,    setDriveError]    = useState<string | null>(null);
-  const [showPicker,    setShowPicker]    = useState(false);
+  const [driveStatus,    setDriveStatus]    = useState<DriveStatus>("idle");
+  const [driveFiles,     setDriveFiles]     = useState<DriveFile[]>([]);
+  const [driveError,     setDriveError]     = useState<string | null>(null);
+  const [showPicker,     setShowPicker]     = useState(false);
+  const [driveSearch,    setDriveSearch]    = useState("");
+  const [nextPageToken,  setNextPageToken]  = useState<string | null>(null);
+  const [loadingMore,    setLoadingMore]    = useState(false);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const uploadPhaseTimers = useRef<number[]>([]);
 
@@ -255,21 +265,34 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
     reader.readAsDataURL(file);
   }
 
+  // -- Drive: fetch files (with optional search + pageToken) ------------------
+  async function fetchDriveFiles(search = "", pageToken?: string) {
+    const params = new URLSearchParams({ action: "files" });
+    if (search) params.set("search", search);
+    if (pageToken) params.set("pageToken", pageToken);
+
+    const res  = await fetchWithSupabaseAuth(`/api/drive?${params.toString()}`);
+    const data = await res.json() as {
+      files?: DriveFile[];
+      nextPageToken?: string | null;
+      error?: string;
+      needsAuth?: boolean;
+      setup?: boolean;
+    };
+    return { res, data };
+  }
+
   // -- Drive: check auth or open OAuth ---------------------------------------
   async function handleDriveClick() {
     if (showPicker) { setShowPicker(false); return; }
 
     setDriveStatus("loading");
     setDriveError(null);
+    setDriveSearch("");
+    setNextPageToken(null);
 
     try {
-      const res  = await fetchWithSupabaseAuth("/api/drive?action=files");
-      const data = await res.json() as {
-        files?: DriveFile[];
-        error?: string;
-        needsAuth?: boolean;
-        setup?: boolean;
-      };
+      const { res, data } = await fetchDriveFiles();
 
       if (data.setup) {
         setDriveStatus("not_configured");
@@ -296,12 +319,46 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
       }
 
       setDriveFiles(data.files ?? []);
+      setNextPageToken(data.nextPageToken ?? null);
       setDriveStatus("picking");
       setShowPicker(true);
     } catch {
       setDriveStatus("error");
       setDriveError(t.driveError);
       setShowPicker(true);
+    }
+  }
+
+  // -- Drive: search with debounce -------------------------------------------
+  function handleDriveSearch(value: string) {
+    setDriveSearch(value);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(async () => {
+      setDriveStatus("loading");
+      setNextPageToken(null);
+      try {
+        const { res, data } = await fetchDriveFiles(value);
+        if (!res.ok || data.error) { setDriveStatus("error"); setDriveError(data.error ?? t.driveError); return; }
+        setDriveFiles(data.files ?? []);
+        setNextPageToken(data.nextPageToken ?? null);
+        setDriveStatus("picking");
+      } catch {
+        setDriveStatus("error");
+        setDriveError(t.driveError);
+      }
+    }, 400);
+  }
+
+  // -- Drive: load more files ------------------------------------------------
+  async function handleLoadMore() {
+    if (!nextPageToken || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const { data } = await fetchDriveFiles(driveSearch, nextPageToken);
+      setDriveFiles((prev) => [...prev, ...(data.files ?? [])]);
+      setNextPageToken(data.nextPageToken ?? null);
+    } catch { /* ignore */ } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -456,19 +513,42 @@ export function ImportBar({ onTextFile, onImageFile, lang = "es" }: ImportBarPro
             </div>
           )}
 
-          {driveStatus === "picking" && (
-            <div className="import-drive-list">
-              {driveFiles.length === 0 && (
-                <p className="import-drive-empty">{t.noFiles}</p>
-              )}
-              {driveFiles.map((f) => (
-                <button key={f.id} type="button" className="import-drive-file"
-                  onClick={() => void handleDriveFileSelect(f)}>
-                  <span className="import-drive-file-name">{f.name}</span>
-                  {f.size && <span className="import-drive-file-size">{fmtSize(f.size)}</span>}
-                </button>
-              ))}
-            </div>
+          {(driveStatus === "picking" || driveStatus === "loading") && (
+            <>
+              <div className="import-drive-search">
+                <input
+                  type="text"
+                  className="import-drive-search-input"
+                  placeholder={t.searchPlaceholder}
+                  value={driveSearch}
+                  onChange={(e) => handleDriveSearch(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="import-drive-list">
+                {driveStatus === "loading" && driveFiles.length === 0 && (
+                  <div className="import-drive-message">
+                    <span className="import-spinner" style={{ width: 16, height: 16 }} />
+                  </div>
+                )}
+                {driveStatus === "picking" && driveFiles.length === 0 && (
+                  <p className="import-drive-empty">{t.noFiles}</p>
+                )}
+                {driveFiles.map((f) => (
+                  <button key={f.id} type="button" className="import-drive-file"
+                    onClick={() => void handleDriveFileSelect(f)}>
+                    <span className="import-drive-file-name">{f.name}</span>
+                    {f.size && <span className="import-drive-file-size">{fmtSize(f.size)}</span>}
+                  </button>
+                ))}
+                {nextPageToken && (
+                  <button type="button" className="import-drive-load-more"
+                    onClick={() => void handleLoadMore()} disabled={loadingMore}>
+                    {loadingMore ? t.loadingMore : t.loadMore}
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}
