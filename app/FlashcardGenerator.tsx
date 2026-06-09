@@ -121,7 +121,7 @@ function extractJsonArray(raw: string): RawCard[] | null {
 }
 
 export default function FlashcardGenerator({ onSaveDeck }: Props) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const s = t.study;
   const { auth } = useAuth();
   const { usage, loading: usageLoading, applyUsage } = useAiUsage();
@@ -134,6 +134,7 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
   const [error, setError] = useState("");
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
+  const [loadingImages, setLoadingImages] = useState(false);
   const usageReady = auth.signedIn && !usageLoading && !!usage;
   const hasCredits = usageReady && usage.creditsRemaining > 0;
   const canGenerate = hasCredits && !loading && text.trim().length >= 30;
@@ -187,6 +188,28 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
       if (!deckName) {
         setDeckName(`Deck ${new Date().toLocaleDateString()}`);
       }
+
+      // Fetch images for each card in parallel, update progressively
+      setLoadingImages(true);
+      void Promise.all(
+        generatedCards.map(async (card) => {
+          try {
+            const res = await fetchWithSupabaseAuth("/api/card-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ prompt: card.question }),
+            });
+            if (!res.ok) return;
+            const { imageUrl, title } = await res.json() as { imageUrl: string | null; title: string | null };
+            if (!imageUrl) return;
+            setCards((prev) => prev.map((c) =>
+              c.id === card.id
+                ? { ...c, visual: { ...(c.visual ?? {}), imageUrl, imageAlt: title ?? card.question } }
+                : c,
+            ));
+          } catch { /* ignore, images are optional */ }
+        }),
+      ).finally(() => setLoadingImages(false));
     } catch (err) {
       setError(err instanceof Error ? err.message : s.generatorRequestError);
     } finally {
@@ -279,6 +302,11 @@ export default function FlashcardGenerator({ onSaveDeck }: Props) {
               </div>
 
               <div className="gen-output-actions">
+                {loadingImages && (
+                  <span className="gen-images-loading">
+                    {lang === "es" ? "Buscando imágenes…" : "Fetching images…"}
+                  </span>
+                )}
                 {cards.length > 0 && (
                   <div className="gen-save-row">
                     <input

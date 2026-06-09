@@ -20,7 +20,7 @@ interface TutorSession {
 
 const STORAGE_KEY = "noesis_tutor_history";
 
-function loadHistory(): TutorSession[] {
+function loadLocalHistory(): TutorSession[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -30,7 +30,7 @@ function loadHistory(): TutorSession[] {
   }
 }
 
-function saveHistory(sessions: TutorSession[]) {
+function saveLocalHistory(sessions: TutorSession[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
@@ -82,10 +82,17 @@ export default function TutorMode() {
   const canSend = hasCredits && !loading && !!input.trim();
   const canStart = hasCredits && !!topic.trim();
 
-  // Load history on mount
+  // Load history on mount / when auth changes
   useEffect(() => {
-    setHistory(loadHistory());
-  }, []);
+    if (auth.signedIn) {
+      void fetchWithSupabaseAuth("/api/tutor/sessions")
+        .then((res) => res.ok ? res.json() : Promise.reject())
+        .then((data: { sessions: TutorSession[] }) => setHistory(data.sessions ?? []))
+        .catch(() => setHistory(loadLocalHistory()));
+    } else {
+      setHistory(loadLocalHistory());
+    }
+  }, [auth.signedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -98,9 +105,16 @@ export default function TutorMode() {
     setHistory((prev) => {
       const filtered = prev.filter((s) => s.id !== currentSessionId);
       const updated = [session, ...filtered];
-      saveHistory(updated);
+      if (!auth.signedIn) saveLocalHistory(updated);
       return updated;
     });
+    if (auth.signedIn) {
+      void fetchWithSupabaseAuth("/api/tutor/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(session),
+      });
+    }
   }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function fireExtract(content: string, label: string) {
@@ -162,9 +176,12 @@ export default function TutorMode() {
 
   function deleteSession(id: string, e: React.MouseEvent) {
     e.stopPropagation();
+    if (auth.signedIn) {
+      void fetchWithSupabaseAuth(`/api/tutor/sessions/${id}`, { method: "DELETE" });
+    }
     setHistory((prev) => {
       const updated = prev.filter((s) => s.id !== id);
-      saveHistory(updated);
+      if (!auth.signedIn) saveLocalHistory(updated);
       return updated;
     });
   }
@@ -175,7 +192,14 @@ export default function TutorMode() {
     setTopic("");
     setInput("");
     setCurrentSessionId(null);
-    setHistory(loadHistory());
+    if (auth.signedIn) {
+      void fetchWithSupabaseAuth("/api/tutor/sessions")
+        .then((res) => res.ok ? res.json() : Promise.reject())
+        .then((data: { sessions: TutorSession[] }) => setHistory(data.sessions ?? []))
+        .catch(() => setHistory(loadLocalHistory()));
+    } else {
+      setHistory(loadLocalHistory());
+    }
   }
 
   async function send() {
