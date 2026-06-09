@@ -17,14 +17,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid planId" }, { status: 400 });
     }
 
-    const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL!;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
     const session = await createCheckoutSession({
       userId: user.id,
       email: user.email!,
       planId,
       interval,
-      successUrl: `${origin}/billing/success?plan=${planId}`,
-      cancelUrl:  `${origin}/billing/canceled`,
+      successUrl: `${appUrl}/billing/success?plan=${planId}`,
+      cancelUrl:  `${appUrl}/billing/canceled`,
     });
 
     return NextResponse.json({ url: session.url });

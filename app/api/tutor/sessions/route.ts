@@ -39,6 +39,18 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
+    // If session already exists, verify ownership before updating
+    if (body.id) {
+      const { data: existing } = await supabase
+        .from("tutor_sessions")
+        .select("user_id")
+        .eq("id", body.id)
+        .maybeSingle();
+      if (existing && existing.user_id !== user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const { error } = await supabase
       .from("tutor_sessions")
       .upsert(

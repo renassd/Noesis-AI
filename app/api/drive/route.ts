@@ -210,8 +210,9 @@ export async function GET(req: NextRequest) {
     const searchQuery = searchParams.get("search") ?? "";
     const pageToken   = searchParams.get("pageToken") ?? "";
 
+    const safeSearch = searchQuery.slice(0, 200).replace(/['"\\]/g, " ").trim();
     const params = new URLSearchParams({
-      q:        `(${query}) and trashed=false${searchQuery ? ` and name contains '${searchQuery.replace(/'/g, "\\'")}'` : ""}`,
+      q:        `(${query}) and trashed=false${safeSearch ? ` and name contains '${safeSearch}'` : ""}`,
       fields:   "nextPageToken,files(id,name,mimeType,modifiedTime,size)",
       orderBy:  "modifiedTime desc",
       pageSize: "20",

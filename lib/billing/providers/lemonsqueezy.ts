@@ -190,7 +190,9 @@ export class LemonSqueezyProvider implements PaymentProvider {
       .update(rawBody)
       .digest("hex");
 
-    if (digest !== signature) {
+    const digestBuf = Buffer.from(digest, "hex");
+    const sigBuf    = Buffer.from(signature, "hex");
+    if (digestBuf.length !== sigBuf.length || !crypto.timingSafeEqual(digestBuf, sigBuf)) {
       throw new Error("Invalid LemonSqueezy webhook signature");
     }
 
