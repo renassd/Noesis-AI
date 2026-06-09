@@ -5,15 +5,16 @@ import { AuthError, requireAuthenticatedUser } from "../../../../../lib/server-a
 export const dynamic = "force-dynamic";
 
 // DELETE /api/tutor/sessions/[id]
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { user } = await requireAuthenticatedUser(req);
+    const { id } = await params;
     const supabase = getSupabaseAdmin();
 
     const { error } = await supabase
       .from("tutor_sessions")
       .delete()
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", user.id);
 
     if (error) {
