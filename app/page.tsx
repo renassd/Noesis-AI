@@ -8,6 +8,7 @@ import ColorModeToggle from "./ColorModeToggle";
 import LangToggle from "./LangToggle";
 import { useLang } from "./i18n";
 import { useAuth } from "@/context/AuthContext";
+import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { HeroMockup } from "./HeroMockup";
 import ThemePanel from "./theme/ThemePanel";
@@ -400,6 +401,23 @@ export default function HomePage() {
     } else {
       openModal();
     }
+  }
+
+  /** Upgrade handler — creates LemonSqueezy checkout and redirects */
+  async function handleUpgrade(interval: "monthly" | "yearly") {
+    if (!auth.signedIn) {
+      openModal();
+      return;
+    }
+    try {
+      const res = await fetchWithSupabaseAuth("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: "pro", interval }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (data.url) window.location.href = data.url;
+    } catch { /* ignore */ }
   }
 
   /** Research CTA handler — redirects authenticated users to Research */
@@ -1380,6 +1398,11 @@ export default function HomePage() {
                 const badge    = "badge"    in card ? card.badge    : undefined;
                 const cta      = "cta"      in card ? card.cta      : undefined;
                 const period   = "period"   in card ? card.period   : undefined;
+                // i=0 free, i=1 monthly pro, i=2 annual pro
+                const ctaHandler =
+                  i === 1 ? () => void handleUpgrade("monthly") :
+                  i === 2 ? () => void handleUpgrade("yearly") :
+                  handleCta;
                 return (
                   <article
                     key={card.label}
@@ -1405,7 +1428,7 @@ export default function HomePage() {
                       <button
                         type="button"
                         className={`lp-btn ${featured ? "lp-btn--primary" : "lp-btn--ghost"}`}
-                        onClick={handleCta}
+                        onClick={ctaHandler}
                         style={{ width: "100%", justifyContent: "center" }}
                         aria-label={cta}
                       >
