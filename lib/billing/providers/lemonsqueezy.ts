@@ -14,6 +14,7 @@ import type {
   PlanId,
   SubscriptionStatus,
 } from "../types";
+import { getUserIdByProviderCustomerId } from "../db";
 
 const LS_API_BASE = "https://api.lemonsqueezy.com/v1";
 
@@ -196,7 +197,10 @@ export class LemonSqueezyProvider implements PaymentProvider {
     const payload = JSON.parse(rawBody) as LSWebhookPayload;
     const { meta, data } = payload;
 
-    const userId = meta.custom_data?.user_id ?? null;
+    let userId: string | null = meta.custom_data?.user_id ?? null;
+    if (!userId && data.attributes.customer_id) {
+      userId = await getUserIdByProviderCustomerId(String(data.attributes.customer_id));
+    }
     const eventType = mapEventType(meta.event_name);
     const subscription = normalizeSubscription(data.id, data.attributes, userId ?? "");
 

@@ -127,7 +127,7 @@ export async function recordEvent(event: NormalizedEvent): Promise<boolean> {
   }
 
   const { error } = await db.from("subscription_events").insert({
-    user_id: event.userId,
+    user_id: event.userId || null,
     subscription_id: subscriptionId,
     event_type: event.type,
     plan_id: event.planId,
@@ -139,6 +139,10 @@ export async function recordEvent(event: NormalizedEvent): Promise<boolean> {
   if (error) {
     // Unique constraint on (provider, provider_event_id) = already processed
     if (error.code === "23505") return false;
+    if (error.code === "23503") {
+      console.warn("[billing/db] Unknown user_id in webhook event, skipping:", event.providerEventId);
+      return false;
+    }
     throw error;
   }
 
