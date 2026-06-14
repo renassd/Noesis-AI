@@ -15,6 +15,7 @@ import {
 } from "./db";
 import { getEffectivePlan, hasFeature } from "./feature-gates";
 import type {
+  BillingPortalUrls,
   CheckoutParams,
   CheckoutSession,
   FeatureKey,
@@ -112,6 +113,21 @@ export async function canAccess(
   } catch {
     return false; // fail closed — deny access on error
   }
+}
+
+/**
+ * Get hosted portal URLs so the user can switch plan/interval,
+ * cancel, resume, or update their payment method.
+ */
+export async function getBillingPortalUrls(userId: string): Promise<BillingPortalUrls> {
+  const row = await getSubscriptionByUserId(userId);
+  if (!row?.provider_subscription_id) {
+    throw new Error("No active subscription");
+  }
+  if (!activeProvider.getCustomerPortalUrls) {
+    throw new Error("Billing portal not available for current provider");
+  }
+  return activeProvider.getCustomerPortalUrls(row.provider_subscription_id);
 }
 
 /**

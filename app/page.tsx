@@ -118,6 +118,27 @@ function ProfileDropdown({
                 </button>
               )}
 
+              {/* Manage subscription (switch plan/interval, cancel, resume) */}
+              {isPro && (
+                <button
+                  type="button" role="menuitem"
+                  className="pd-item"
+                  onClick={async () => {
+                    close();
+                    try {
+                      const res = await fetchWithSupabaseAuth("/api/billing/portal");
+                      const data = await res.json() as { customerPortalUrl?: string; error?: string };
+                      if (data.customerPortalUrl) {
+                        window.open(data.customerPortalUrl, "_blank", "noopener,noreferrer");
+                      }
+                    } catch { /* ignore */ }
+                  }}
+                >
+                  <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">account_balance_wallet</span>
+                  {en ? "Manage subscription" : "Gestionar suscripción"}
+                </button>
+              )}
+
               {/* Personalization → opens ThemePanel */}
               <button
                 type="button" role="menuitem"

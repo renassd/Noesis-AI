@@ -71,6 +71,13 @@ export interface CheckoutSession {
   sessionId: string;
 }
 
+// Billing portal ──────────────────────────────────────────────
+export interface BillingPortalUrls {
+  customerPortalUrl?: string;
+  updateSubscriptionUrl?: string;
+  updatePaymentMethodUrl?: string;
+}
+
 // Provider interface — the only contract that matters ─────────
 // Both Paddle and Stripe implement this. Business logic never
 // touches provider-specific code directly.
@@ -94,6 +101,9 @@ export interface PaymentProvider {
 
   /** Resume a paused subscription */
   resumeSubscription?(providerSubscriptionId: string): Promise<void>;
+
+  /** Hosted portal URLs for switching plan/interval, canceling, resuming, or updating payment method */
+  getCustomerPortalUrls?(providerSubscriptionId: string): Promise<BillingPortalUrls>;
 }
 
 // DB row shapes ───────────────────────────────────────────────

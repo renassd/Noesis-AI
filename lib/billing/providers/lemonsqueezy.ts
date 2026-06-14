@@ -99,6 +99,11 @@ interface LSSubscriptionAttributes {
   renews_at: string | null;
   ends_at: string | null;
   pause: unknown | null;
+  urls?: {
+    update_payment_method?: string;
+    customer_portal?: string;
+    customer_portal_update_subscription?: string;
+  };
 }
 
 interface LSWebhookPayload {
@@ -259,5 +264,24 @@ export class LemonSqueezyProvider implements PaymentProvider {
         },
       },
     );
+  }
+
+  /** Hosted portal URLs — let the customer switch plan/interval, cancel, resume, or update payment method. */
+  async getCustomerPortalUrls(providerSubscriptionId: string): Promise<{
+    customerPortalUrl?: string;
+    updateSubscriptionUrl?: string;
+    updatePaymentMethodUrl?: string;
+  }> {
+    const res = await lsRequest<{ data: { attributes: LSSubscriptionAttributes } }>(
+      "GET",
+      `/subscriptions/${providerSubscriptionId}`,
+    );
+
+    const urls = res.data.attributes.urls ?? {};
+    return {
+      customerPortalUrl: urls.customer_portal,
+      updateSubscriptionUrl: urls.customer_portal_update_subscription,
+      updatePaymentMethodUrl: urls.update_payment_method,
+    };
   }
 }

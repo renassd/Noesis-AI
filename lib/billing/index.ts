@@ -9,6 +9,7 @@ export {
   getSubscriptionStatus,
   canAccess,
   cancelSubscription,
+  getBillingPortalUrls,
   syncSubscriptionFromProvider,
   hasFeature,
   getEffectivePlan,
@@ -17,4 +18,4 @@ export {
 
 export { PLAN_DAILY_CREDITS, getAccessibleFeatures } from "./feature-gates";
 export { getAllPlans, getPlan } from "./db";
-export type { FeatureKey, PlanId, SubscriptionStatus, BillingInterval } from "./types";
+export type { FeatureKey, PlanId, SubscriptionStatus, BillingInterval, BillingPortalUrls } from "./types";
