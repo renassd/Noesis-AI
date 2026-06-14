@@ -4,7 +4,7 @@ import { getSubscriptionStatus } from "@/lib/billing/payment-service";
 export type UserPlan = "free" | "pro";
 
 type PlanConfig = {
-  monthlyCredits: number;
+  creditsPerWindow: number;
   rateLimitPerMinute: number;
   maxOutputTokens: number;
   maxInputChars: number;
@@ -28,7 +28,7 @@ type UsageEventRow = {
 
 export type AiUsageSnapshot = {
   plan: UserPlan;
-  monthlyCredits: number;
+  creditsPerWindow: number;
   creditsUsed: number;
   creditsRemaining: number;
   lastResetAt: string;
@@ -64,14 +64,14 @@ export class AiUsageError extends Error {
 // summaries, long analyses, etc.).
 const PLAN_CONFIG: Record<UserPlan, PlanConfig> = {
   free: {
-    monthlyCredits: 50,
+    creditsPerWindow: 50,
     rateLimitPerMinute: 5,
     maxOutputTokens: 16000,
     maxInputChars: 50000,
     model: process.env.ANTHROPIC_MODEL_FREE ?? "claude-3-5-haiku-20241022",
   },
   pro: {
-    monthlyCredits: 1000,
+    creditsPerWindow: 1000,
     rateLimitPerMinute: 20,
     maxOutputTokens: 16000,
     maxInputChars: 50000,
@@ -113,9 +113,9 @@ function createSnapshot(row: UsageRow): AiUsageSnapshot {
 
   return {
     plan,
-    monthlyCredits: config.monthlyCredits,
+    creditsPerWindow: config.creditsPerWindow,
     creditsUsed,
-    creditsRemaining: Math.max(config.monthlyCredits - creditsUsed, 0),
+    creditsRemaining: Math.max(config.creditsPerWindow - creditsUsed, 0),
     lastResetAt,
     nextResetAt,
     rateLimitPerMinute: config.rateLimitPerMinute,

@@ -65,7 +65,7 @@ export default function AiUsageCard({ variant = "compact" }: Props) {
     );
   }
 
-  const percentUsed = Math.min(100, Math.round((usage.creditsUsed / usage.monthlyCredits) * 100));
+  const percentUsed = Math.min(100, Math.round((usage.creditsUsed / usage.creditsPerWindow) * 100));
   const planLabel = usage.plan === "pro" ? usageText.proPlan : usageText.freePlan;
 
   if (variant === "inline") {
@@ -117,7 +117,7 @@ export default function AiUsageCard({ variant = "compact" }: Props) {
       <div className="ai-usage-stats">
         <div>
           <span>{usageText.monthlyLimit}</span>
-          <strong>{usage.monthlyCredits}</strong>
+          <strong>{usage.creditsPerWindow}</strong>
         </div>
         <div>
           <span>{usageText.creditsUsed}</span>
