@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { getSubscriptionStatus } from "@/lib/billing/payment-service";
 
 export type UserPlan = "free" | "pro";
 
@@ -82,6 +83,17 @@ function normalizePlan(plan: string | null | undefined): UserPlan {
   return plan === "pro" ? "pro" : "free";
 }
 
+// The `subscriptions` table (updated by billing webhooks) is the source of
+// truth for the user's plan. Fall back to the given plan if the lookup fails.
+async function resolveEffectivePlan(userId: string, fallback: UserPlan): Promise<UserPlan> {
+  try {
+    const { effectivePlan } = await getSubscriptionStatus(userId);
+    return effectivePlan === "pro" ? "pro" : "free";
+  } catch {
+    return fallback;
+  }
+}
+
 function addResetWindow(value: Date): Date {
   const next = new Date(value);
   next.setHours(next.getHours() + USAGE_RESET_WINDOW_HOURS);
@@ -126,11 +138,11 @@ async function ensureUsageRow(userId: string): Promise<UsageRow> {
   }
 
   if (data) {
-    const normalizedPlan = normalizePlan(data.plan);
-    if (data.plan !== normalizedPlan) {
+    const effectivePlan = await resolveEffectivePlan(userId, normalizePlan(data.plan));
+    if (data.plan !== effectivePlan) {
       const { data: updated, error: updateError } = await supabase
         .from("ai_user_usage")
-        .update({ plan: normalizedPlan, updated_at: new Date().toISOString() })
+        .update({ plan: effectivePlan, updated_at: new Date().toISOString() })
         .eq("user_id", userId)
         .select("user_id, plan, credits_used, last_reset_at, created_at, updated_at")
         .single<UsageRow>();
@@ -144,11 +156,12 @@ async function ensureUsageRow(userId: string): Promise<UsageRow> {
     return data;
   }
 
+  const initialPlan = await resolveEffectivePlan(userId, "free");
   const { data: inserted, error: insertError } = await supabase
     .from("ai_user_usage")
     .insert({
       user_id: userId,
-      plan: "free",
+      plan: initialPlan,
       credits_used: 0,
       last_reset_at: new Date().toISOString(),
     })
