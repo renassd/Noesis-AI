@@ -814,7 +814,7 @@ function downloadLandscapeReport(report: LandscapeReport, lang: "es" | "en") {
   const chartBars = (report.trendsByYear ?? [])
     .map(
       (t) =>
-        `<div class="bar-col"><span class="bar-val">${t.count}</span><div class="bar" style="height:${Math.max(8, (t.count / maxCount) * 120)}px"></div><span class="bar-label">${t.year}</span></div>`,
+        `<div class="bar-col"><span class="bar-val">${t.count}</span><div class="bar" style="height:${Math.max(8, (t.count / maxCount) * 100)}px"></div><span class="bar-label">${t.year}</span></div>`,
     )
     .join("");
 
@@ -858,7 +858,7 @@ function downloadLandscapeReport(report: LandscapeReport, lang: "es" | "en") {
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
   th, td { border: 1px solid #d6e0f0; padding: 7px 9px; text-align: left; }
   th { background: #f4f7fc; color: #173c9b; }
-  .chart { display: flex; align-items: flex-end; gap: 12px; height: 140px; padding: 10px 4px 0; }
+  .chart { display: flex; align-items: flex-end; gap: 12px; height: 170px; padding: 20px 4px 0; }
   .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .bar { width: 100%; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #6f97f6 0%, #2e63de 100%); }
   .bar-label, .bar-val { font-size: 11px; color: #5a6880; text-align: center; }
@@ -955,7 +955,7 @@ function LandscapeReportView({ report, lang }: { report: LandscapeReport; lang: 
                 {trends.map((t) => (
                   <div key={t.year} className="ri-landscape-bar-col">
                     <span className="ri-landscape-bar-val">{t.count}</span>
-                    <div className="ri-landscape-bar" style={{ height: `${Math.max(8, (t.count / maxCount) * 120)}px` }} />
+                    <div className="ri-landscape-bar" style={{ height: `${Math.max(8, (t.count / maxCount) * 100)}px` }} />
                     <span className="ri-landscape-bar-label">{t.year}</span>
                   </div>
                 ))}
