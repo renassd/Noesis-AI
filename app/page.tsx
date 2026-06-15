@@ -127,8 +127,9 @@ function ProfileDropdown({
                     close();
                     // Open the tab synchronously (within the click handler) so
                     // browsers don't treat it as an unsolicited popup once the
-                    // fetch below resolves.
-                    const portalTab = window.open("", "_blank", "noopener,noreferrer");
+                    // fetch below resolves. Can't use noopener here — we need
+                    // the window reference to navigate it once the URL arrives.
+                    const portalTab = window.open("", "_blank");
                     try {
                       const res = await fetchWithSupabaseAuth("/api/billing/portal");
                       const data = await res.json() as { customerPortalUrl?: string; error?: string };
