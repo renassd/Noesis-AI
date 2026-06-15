@@ -330,7 +330,7 @@ function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?:
         { id: "findpapers" as ToolId, label: "Find papers" },
         { id: "explain"    as ToolId, label: "Explain concept" },
         { id: "writing"    as ToolId, label: "Structure writing" },
-        { id: "landscape"  as ToolId, label: "Report / Landscape", isNew: true },
+        { id: "landscape"  as ToolId, label: "Report / Landscape" },
       ]
     : [
         { id: "papers"     as ToolId, label: "Analizar paper" },
@@ -339,7 +339,7 @@ function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?:
         { id: "findpapers" as ToolId, label: "Buscar papers" },
         { id: "explain"    as ToolId, label: "Explicar concepto" },
         { id: "writing"    as ToolId, label: "Estructurar escritura" },
-        { id: "landscape"  as ToolId, label: "Reporte / Landscape", isNew: true },
+        { id: "landscape"  as ToolId, label: "Reporte / Landscape" },
       ];
 }
 
