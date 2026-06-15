@@ -125,13 +125,23 @@ function ProfileDropdown({
                   className="pd-item"
                   onClick={async () => {
                     close();
+                    // Open the tab synchronously (within the click handler) so
+                    // browsers don't treat it as an unsolicited popup once the
+                    // fetch below resolves.
+                    const portalTab = window.open("", "_blank", "noopener,noreferrer");
                     try {
                       const res = await fetchWithSupabaseAuth("/api/billing/portal");
                       const data = await res.json() as { customerPortalUrl?: string; error?: string };
-                      if (data.customerPortalUrl) {
-                        window.open(data.customerPortalUrl, "_blank", "noopener,noreferrer");
+                      if (data.customerPortalUrl && portalTab) {
+                        portalTab.location.href = data.customerPortalUrl;
+                      } else {
+                        portalTab?.close();
+                        if (data.error) console.error("[billing/portal]", data.error);
                       }
-                    } catch { /* ignore */ }
+                    } catch (err) {
+                      portalTab?.close();
+                      console.error("[billing/portal]", err);
+                    }
                   }}
                 >
                   <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">account_balance_wallet</span>
