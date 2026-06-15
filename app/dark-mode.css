@@ -2251,6 +2251,51 @@ html.dark .ri-chip.active {
   box-shadow: none;
 }
 
+html.dark .ri-landscape-title,
+html.dark .ri-landscape-card-title,
+html.dark .ri-landscape-text,
+html.dark table.ri-landscape-table {
+  color: var(--dm-ink);
+}
+
+html.dark .ri-landscape-card {
+  background: var(--ri-dark-surface-soft);
+  border-color: var(--ri-dark-unified-line) !important;
+}
+
+html.dark .ri-landscape-export {
+  background: rgba(25, 31, 48, 0.96);
+  border-color: var(--ri-dark-chip-line) !important;
+  color: #9fbfff;
+}
+
+html.dark .ri-landscape-export:hover {
+  background: rgba(53, 66, 96, 0.92);
+}
+
+html.dark table.ri-landscape-table th,
+html.dark table.ri-landscape-table td {
+  border-color: var(--ri-dark-unified-line);
+}
+
+html.dark table.ri-landscape-table th {
+  background: var(--ri-dark-surface);
+  color: var(--dm-blue-500);
+}
+
+html.dark table.ri-landscape-table tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html.dark .ri-landscape-bar-label,
+html.dark .ri-landscape-bar-val {
+  color: var(--dm-muted);
+}
+
+html.dark .ri-landscape-bar-val {
+  color: var(--dm-blue-500);
+}
+
 html.dark .ri-img-preview {
   background: rgba(20, 25, 38, 0.9);
   border-color: var(--dm-line);
