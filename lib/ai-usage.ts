@@ -232,9 +232,12 @@ export async function reserveAiRequest(params: {
   userId: string;
   requestedMaxTokens?: number;
   inputChars: number;
+  /** How many credits this request will consume (default 1). */
+  requiredCredits?: number;
 }): Promise<AiRequestReservation> {
   const row = await getActiveUsageRow(params.userId);
   const usage = createSnapshot(row);
+  const requiredCredits = Math.max(1, params.requiredCredits ?? 1);
 
   if (params.inputChars > usage.maxInputChars) {
     throw new AiUsageError(
@@ -253,7 +256,7 @@ export async function reserveAiRequest(params: {
     );
   }
 
-  if (usage.creditsRemaining < 1) {
+  if (usage.creditsRemaining < requiredCredits) {
     throw new AiUsageError(
       "Ya alcanzaste tu limite de uso actual. Espera al proximo reinicio o actualiza a Pro para seguir usando Neosis.",
       403,

@@ -39,6 +39,15 @@ interface PaperResult {
   summary?: string;
 }
 
+interface LandscapeReport {
+  topic: string;
+  summary: string;
+  comparisonTable?: { headers: string[]; rows: string[][] };
+  trendsByYear?: Array<{ year: number; count: number }>;
+  gaps?: string[];
+  sources: PaperResult[];
+}
+
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -48,8 +57,9 @@ type Message = {
   paperResults?: PaperResult[];
   /** "results" = find-papers card list · "sources" = literature review citations */
   paperResultsMode?: "results" | "sources";
+  landscapeReport?: LandscapeReport;
 };
-type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers";
+type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers" | "landscape";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
 
 interface ResearchSession {
@@ -169,6 +179,7 @@ If no specific question is asked, produce the full structured analysis above.
 
 ${base}`;
     case "findpapers":
+    case "landscape":
       return base;
   }
 }
@@ -310,7 +321,7 @@ function cleanReviewQuery(query: string): string {
   return cleaned.length >= 3 ? cleaned : query.trim();
 }
 
-function getTools(lang: "es" | "en") {
+function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?: boolean }> {
   return lang === "en"
     ? [
         { id: "papers"     as ToolId, label: "Analyze paper" },
@@ -319,6 +330,7 @@ function getTools(lang: "es" | "en") {
         { id: "findpapers" as ToolId, label: "Find papers" },
         { id: "explain"    as ToolId, label: "Explain concept" },
         { id: "writing"    as ToolId, label: "Structure writing" },
+        { id: "landscape"  as ToolId, label: "Report / Landscape", isNew: true },
       ]
     : [
         { id: "papers"     as ToolId, label: "Analizar paper" },
@@ -327,6 +339,7 @@ function getTools(lang: "es" | "en") {
         { id: "findpapers" as ToolId, label: "Buscar papers" },
         { id: "explain"    as ToolId, label: "Explicar concepto" },
         { id: "writing"    as ToolId, label: "Estructurar escritura" },
+        { id: "landscape"  as ToolId, label: "Reporte / Landscape", isNew: true },
       ];
 }
 
@@ -339,6 +352,7 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
         findpapers: "Enter a topic or research question to find relevant papers with AI summaries...",
         explain:    "What concept would you like explained? (e.g. meiosis, Bayes...)",
         writing:    "Paste your text or describe what part of your writing needs help...",
+        landscape:  "Enter a research topic to generate a landscape report with summary, comparison table, trends and gaps...",
       }
     : {
         papers:     "Pegá un paper, artículo o abstract — extraeré metodología, hallazgos, contribuciones y limitaciones...",
@@ -347,6 +361,7 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
         findpapers: "Escribí un tema o pregunta de investigación para encontrar papers con resúmenes IA...",
         explain:    "¿Qué concepto querés que te explique? (ej: meiosis, Bayes...)",
         writing:    "Pegá tu texto o describí qué parte de tu escritura necesita organizarse...",
+        landscape:  "Escribí un tema de investigación para generar un reporte landscape con resumen, tabla comparativa, tendencias y brechas...",
       };
 }
 
@@ -359,6 +374,7 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         findpapers: "Type any topic or research question. I'll find relevant academic papers and summarize each one so you can choose what to read.",
         explain:    "Write any concept and I will explain it clearly, with analogies and examples.",
         writing:    "Paste your text or describe which part of your writing needs help.",
+        landscape:  "Write a research topic. I'll search academic papers, analyze the current landscape and build a report with a summary, comparison table, trends chart and research gaps.",
       }
     : {
         papers:     "Pegá cualquier paper o artículo académico. Extraeré la pregunta de investigación, metodología, hallazgos clave, contribuciones y limitaciones.",
@@ -367,6 +383,7 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         findpapers: "Escribí cualquier tema o pregunta. Voy a buscar papers académicos relevantes y resumir cada uno para que elijas qué leer.",
         explain:    "Escribí cualquier concepto y te lo explico de forma clara, con analogías y ejemplos.",
         writing:    "Pegá tu texto o describí en qué parte de tu escritura necesitás ayuda.",
+        landscape:  "Escribí un tema de investigación. Voy a buscar papers académicos, analizar el estado actual del tema y armar un reporte con resumen, tabla comparativa, gráfico de tendencias y brechas de investigación.",
       };
 }
 
@@ -770,6 +787,203 @@ function PaperSourcesList({ papers, lang }: { papers: PaperResult[]; lang: "es" 
   );
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Open a print-friendly standalone document for the landscape report and
+ * trigger the browser's print dialog (the user can "Save as PDF" from there).
+ */
+function downloadLandscapeReport(report: LandscapeReport, lang: "es" | "en") {
+  const win = window.open("", "_blank");
+  if (!win) return;
+
+  const maxCount = Math.max(1, ...(report.trendsByYear ?? []).map((t) => t.count), 1);
+
+  const tableHeaders = (report.comparisonTable?.headers ?? []).map((h) => `<th>${escapeHtml(h)}</th>`).join("");
+  const tableRows = (report.comparisonTable?.rows ?? [])
+    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+    .join("");
+
+  const chartBars = (report.trendsByYear ?? [])
+    .map(
+      (t) =>
+        `<div class="bar-col"><span class="bar-val">${t.count}</span><div class="bar" style="height:${Math.max(8, (t.count / maxCount) * 120)}px"></div><span class="bar-label">${t.year}</span></div>`,
+    )
+    .join("");
+
+  const gapsHtml = (report.gaps ?? []).map((g, i) => `<p>${i + 1}. ${escapeHtml(g)}</p>`).join("");
+
+  const sourcesHtml = report.sources
+    .map((s, i) => {
+      const byline = [
+        s.authors.length ? `${escapeHtml(s.authors.slice(0, 3).join(", "))}${s.authors.length > 3 ? " et al." : ""}` : "",
+        s.year ? String(s.year) : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      return `<li><strong>${escapeHtml(s.title)}</strong>${byline ? `<br><span class="muted">${byline}</span>` : ""}</li>`;
+    })
+    .join("");
+
+  const title = lang === "en" ? "Landscape" : "Landscape";
+  const labels = {
+    summary: lang === "en" ? "Executive summary" : "Resumen ejecutivo",
+    comparison: lang === "en" ? "Comparison of approaches" : "Comparativa de enfoques",
+    trends: lang === "en" ? "Publications per year" : "Publicaciones por año",
+    gaps: lang === "en" ? "Gaps & opportunities" : "Brechas y oportunidades",
+    sources: lang === "en" ? "Sources" : "Fuentes",
+    generated: lang === "en" ? "Generated by Neuvra AI" : "Generado por Neuvra AI",
+  };
+
+  const html = `<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+<meta charset="UTF-8" />
+<title>${title}: ${escapeHtml(report.topic)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'DM Sans', 'Segoe UI', sans-serif; color: #0d1b36; padding: 28px; background: #fff; }
+  h1 { font-family: 'Lora', Georgia, serif; font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  h2 .dot { width: 8px; height: 8px; border-radius: 50%; background: #2e63de; display: inline-block; }
+  p { font-size: 13px; line-height: 1.6; margin: 0 0 8px; }
+  .card { border: 1px solid #d6e0f0; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border: 1px solid #d6e0f0; padding: 7px 9px; text-align: left; }
+  th { background: #f4f7fc; color: #173c9b; }
+  .chart { display: flex; align-items: flex-end; gap: 12px; height: 140px; padding: 10px 4px 0; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar { width: 100%; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #6f97f6 0%, #2e63de 100%); }
+  .bar-label, .bar-val { font-size: 11px; color: #5a6880; text-align: center; }
+  .bar-val { font-weight: 700; color: #173c9b; }
+  ul { padding-left: 18px; font-size: 12px; line-height: 1.6; }
+  .muted { color: #5a6880; font-size: 11px; }
+  .footnote { font-size: 11px; color: #5a6880; text-align: center; padding-top: 10px; }
+</style>
+</head>
+<body>
+  <h1>${title}: ${escapeHtml(report.topic)}</h1>
+  <div class="card">
+    <h2><span class="dot"></span>${labels.summary}</h2>
+    <p>${escapeHtml(report.summary)}</p>
+  </div>
+  ${tableRows ? `<div class="card"><h2><span class="dot"></span>${labels.comparison}</h2><table><thead><tr>${tableHeaders}</tr></thead><tbody>${tableRows}</tbody></table></div>` : ""}
+  ${chartBars ? `<div class="card"><h2><span class="dot"></span>${labels.trends}</h2><div class="chart">${chartBars}</div></div>` : ""}
+  ${gapsHtml ? `<div class="card"><h2><span class="dot"></span>${labels.gaps}</h2>${gapsHtml}</div>` : ""}
+  ${sourcesHtml ? `<div class="card"><h2><span class="dot"></span>${labels.sources}</h2><ul>${sourcesHtml}</ul></div>` : ""}
+  <p class="footnote">${labels.generated}</p>
+</body>
+</html>`;
+
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+}
+
+function LandscapeReportView({ report, lang }: { report: LandscapeReport; lang: "es" | "en" }) {
+  const trends = report.trendsByYear ?? [];
+  const maxCount = Math.max(1, ...trends.map((t) => t.count), 1);
+  const comparison = report.comparisonTable;
+  const gaps = report.gaps ?? [];
+
+  return (
+    <div className="ri-landscape">
+      <div className="ri-landscape-toolbar">
+        <h3 className="ri-landscape-title">{report.topic}</h3>
+        <button type="button" className="ri-landscape-export" onClick={() => downloadLandscapeReport(report, lang)}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {lang === "en" ? "Download PDF" : "Descargar PDF"}
+        </button>
+      </div>
+
+      <div className="ri-landscape-card">
+        <h4 className="ri-landscape-card-title">
+          <span className="ri-landscape-dot" aria-hidden="true" />
+          {lang === "en" ? "Executive summary" : "Resumen ejecutivo"}
+        </h4>
+        <p className="ri-landscape-text">{report.summary}</p>
+      </div>
+
+      {comparison && comparison.rows.length > 0 && (
+        <div className="ri-landscape-card">
+          <h4 className="ri-landscape-card-title">
+            <span className="ri-landscape-dot" aria-hidden="true" />
+            {lang === "en" ? "Comparison of approaches" : "Comparativa de enfoques"}
+          </h4>
+          <div className="ri-landscape-table-wrap">
+            <table className="ri-landscape-table">
+              <thead>
+                <tr>
+                  {comparison.headers.map((h, i) => (
+                    <th key={i}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {comparison.rows.map((row, ri) => (
+                  <tr key={ri}>
+                    {row.map((cell, ci) => (
+                      <td key={ci}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {(trends.length > 0 || gaps.length > 0) && (
+        <div className="ri-landscape-grid">
+          {trends.length > 0 && (
+            <div className="ri-landscape-card">
+              <h4 className="ri-landscape-card-title">
+                <span className="ri-landscape-dot" aria-hidden="true" />
+                {lang === "en" ? "Publications per year" : "Publicaciones por año"}
+              </h4>
+              <div className="ri-landscape-chart">
+                {trends.map((t) => (
+                  <div key={t.year} className="ri-landscape-bar-col">
+                    <span className="ri-landscape-bar-val">{t.count}</span>
+                    <div className="ri-landscape-bar" style={{ height: `${Math.max(8, (t.count / maxCount) * 120)}px` }} />
+                    <span className="ri-landscape-bar-label">{t.year}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {gaps.length > 0 && (
+            <div className="ri-landscape-card">
+              <h4 className="ri-landscape-card-title">
+                <span className="ri-landscape-dot" aria-hidden="true" />
+                {lang === "en" ? "Gaps & opportunities" : "Brechas y oportunidades"}
+              </h4>
+              {gaps.map((gap, i) => (
+                <p key={i} className="ri-landscape-text">
+                  {i + 1}. {gap}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <PaperSourcesList papers={report.sources} lang={lang} />
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MarkdownMessage({ content }: { content: string }) {
@@ -777,7 +991,7 @@ function MarkdownMessage({ content }: { content: string }) {
 }
 
 function createEmptyMessages(): Record<ToolId, Message[]> {
-  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [] };
+  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [], landscape: [] };
 }
 
 function generateSessionId(): string {
@@ -842,14 +1056,14 @@ function loadHistory(): ResearchSession[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as ResearchSession[];
-    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers"];
+    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers", "landscape"];
     return parsed
       .filter((item): item is ResearchSession => Boolean(item?.id))
       .map((item) => ({
         id: item.id,
         title: item.title || "New chat",
         activeTool: valid.includes(item.activeTool) ? item.activeTool : "summary",
-        messages: item.messages ?? createEmptyMessages(),
+        messages: { ...createEmptyMessages(), ...(item.messages ?? {}) },
         input: item.input ?? "",
         attachment: item.attachment ?? null,
         savedAt: typeof item.savedAt === "number" ? item.savedAt : Date.now(),
@@ -1201,6 +1415,69 @@ export default function ResearchMode() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unknown error";
         console.error("[ResearchMode] paper search failed:", msg);
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // ── Landscape / report tool ──────────────────────────────────────────────
+    if (activeTool === "landscape") {
+      const nextSessionId =
+        activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
+      setLoading(true);
+      setError("");
+      setSessionState((prev) => ({
+        activeSessionId: nextSessionId,
+        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+          ...session,
+          id: nextSessionId,
+          messages: { ...session.messages, landscape: updated },
+          input: "",
+          savedAt: Date.now(),
+        })),
+      }));
+      setPastedImage(null);
+
+      try {
+        const res = await fetchWithSupabaseAuth("/api/research/landscape", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic: trimmed, lang }),
+        });
+        const data = (await res.json()) as { report?: LandscapeReport; error?: string; usage?: unknown };
+        applyUsage(data.usage as Parameters<typeof applyUsage>[0]);
+
+        if (!res.ok || !data.report) {
+          throw new Error(data.error || "Unknown error");
+        }
+
+        const assistantMsg: Message = {
+          role: "assistant",
+          content: lang === "en"
+            ? `Landscape report: **${data.report.topic}**`
+            : `Reporte landscape: **${data.report.topic}**`,
+          landscapeReport: data.report,
+        };
+
+        setSessionState((prev) => ({
+          ...prev,
+          sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
+            const next = {
+              ...session,
+              messages: {
+                ...session.messages,
+                landscape: [...(session.messages.landscape ?? []), assistantMsg],
+              },
+              savedAt: Date.now(),
+            };
+            return { ...next, title: deriveSessionTitle(next, lang) };
+          }),
+        }));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("[ResearchMode] landscape report failed:", msg);
         setError(msg);
       } finally {
         setLoading(false);
@@ -1710,6 +1987,9 @@ export default function ResearchMode() {
                           {message.paperResultsMode !== "sources" && message.paperResults !== undefined && (
                             <PaperResultsMessage papers={message.paperResults} lang={lang} />
                           )}
+                          {message.landscapeReport && (
+                            <LandscapeReportView report={message.landscapeReport} lang={lang} />
+                          )}
                         </>
                       ) : (
                         <>
@@ -1770,6 +2050,7 @@ export default function ResearchMode() {
                   onClick={() => switchTool(tool.id)}
                 >
                   {tool.label}
+                  {tool.isNew && <span className="ri-chip-badge">{lang === "en" ? "NEW" : "NUEVO"}</span>}
                 </button>
               ))}
             </div>
