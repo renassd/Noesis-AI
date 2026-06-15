@@ -787,105 +787,201 @@ function PaperSourcesList({ papers, lang }: { papers: PaperResult[]; lang: "es" 
   );
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+function slugify(text: string): string {
+  const slug = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-+|-+$)/g, "");
+  return slug.slice(0, 60) || "landscape";
 }
 
 /**
- * Open a print-friendly standalone document for the landscape report and
- * trigger the browser's print dialog (the user can "Save as PDF" from there).
+ * Build the landscape report as an actual PDF file (via jsPDF) and trigger
+ * a download — no print dialog involved.
  */
-function downloadLandscapeReport(report: LandscapeReport, lang: "es" | "en") {
-  const win = window.open("", "_blank");
-  if (!win) return;
+async function downloadLandscapeReport(report: LandscapeReport, lang: "es" | "en") {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
 
-  const maxCount = Math.max(1, ...(report.trendsByYear ?? []).map((t) => t.count), 1);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
 
-  const tableHeaders = (report.comparisonTable?.headers ?? []).map((h) => `<th>${escapeHtml(h)}</th>`).join("");
-  const tableRows = (report.comparisonTable?.rows ?? [])
-    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
-    .join("");
+  const text = [13, 27, 54] as [number, number, number];
+  const muted = [90, 104, 128] as [number, number, number];
+  const accent = [46, 99, 222] as [number, number, number];
+  const border = [214, 224, 240] as [number, number, number];
+  const headerBg = [244, 247, 252] as [number, number, number];
 
-  const chartBars = (report.trendsByYear ?? [])
-    .map(
-      (t) =>
-        `<div class="bar-col"><span class="bar-val">${t.count}</span><div class="bar" style="height:${Math.max(8, (t.count / maxCount) * 100)}px"></div><span class="bar-label">${t.year}</span></div>`,
-    )
-    .join("");
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
 
-  const gapsHtml = (report.gaps ?? []).map((g, i) => `<p>${i + 1}. ${escapeHtml(g)}</p>`).join("");
+  const sectionTitle = (title: string) => {
+    ensureSpace(12);
+    doc.setFillColor(...accent);
+    doc.circle(margin + 1, y + 2.2, 1, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...text);
+    doc.text(title, margin + 5, y + 3.2);
+    y += 9;
+  };
 
-  const sourcesHtml = report.sources
-    .map((s, i) => {
+  const paragraph = (value: string, opts: { size?: number; color?: [number, number, number]; bold?: boolean } = {}) => {
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(opts.size ?? 10);
+    doc.setTextColor(...(opts.color ?? text));
+    const lines: string[] = doc.splitTextToSize(value, contentWidth);
+    for (const line of lines) {
+      ensureSpace(5.5);
+      doc.text(line, margin, y);
+      y += 5.5;
+    }
+  };
+
+  // ── Title ──────────────────────────────────────────────────────────────
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(...text);
+  const titleLines: string[] = doc.splitTextToSize(`Landscape: ${report.topic}`, contentWidth);
+  for (const line of titleLines) {
+    ensureSpace(8);
+    doc.text(line, margin, y);
+    y += 8;
+  }
+  y += 2;
+
+  // ── Executive summary ─────────────────────────────────────────────────
+  sectionTitle(lang === "en" ? "Executive summary" : "Resumen ejecutivo");
+  paragraph(report.summary);
+  y += 4;
+
+  // ── Comparison table ──────────────────────────────────────────────────
+  const comparison = report.comparisonTable;
+  if (comparison && comparison.rows.length > 0) {
+    sectionTitle(lang === "en" ? "Comparison of approaches" : "Comparativa de enfoques");
+
+    const colCount = comparison.headers.length;
+    const colWidth = contentWidth / colCount;
+    const cellPadding = 2;
+    const lineHeight = 4;
+    doc.setFontSize(8);
+
+    const drawRow = (cells: string[], isHeader: boolean) => {
+      const wrapped = cells.map((cell) => doc.splitTextToSize(String(cell ?? ""), colWidth - cellPadding * 2) as string[]);
+      const rowHeight = Math.max(...wrapped.map((lines) => lines.length)) * lineHeight + cellPadding * 2;
+
+      ensureSpace(rowHeight);
+
+      if (isHeader) {
+        doc.setFillColor(...headerBg);
+        doc.rect(margin, y, contentWidth, rowHeight, "F");
+      }
+
+      doc.setDrawColor(...border);
+      for (let i = 0; i <= colCount; i++) {
+        const x = margin + colWidth * i;
+        doc.line(x, y, x, y + rowHeight);
+      }
+      doc.line(margin, y, margin + contentWidth, y);
+      doc.line(margin, y + rowHeight, margin + contentWidth, y + rowHeight);
+
+      doc.setFont("helvetica", isHeader ? "bold" : "normal");
+      doc.setTextColor(...(isHeader ? accent : text));
+      wrapped.forEach((lines, ci) => {
+        lines.forEach((line, li) => {
+          doc.text(line, margin + colWidth * ci + cellPadding, y + cellPadding + (li + 1) * lineHeight - 1);
+        });
+      });
+
+      y += rowHeight;
+    };
+
+    drawRow(comparison.headers, true);
+    for (const row of comparison.rows) drawRow(row, false);
+    y += 6;
+  }
+
+  // ── Publications per year ────────────────────────────────────────────
+  const trends = report.trendsByYear ?? [];
+  if (trends.length > 0) {
+    sectionTitle(lang === "en" ? "Publications per year" : "Publicaciones por año");
+
+    const chartHeight = 40;
+    ensureSpace(chartHeight + 12);
+    const maxCount = Math.max(1, ...trends.map((t) => t.count));
+    const barGap = 3;
+    const barWidth = (contentWidth - barGap * (trends.length - 1)) / trends.length;
+    const baseY = y + chartHeight;
+
+    trends.forEach((t, i) => {
+      const barH = Math.max(2, (t.count / maxCount) * chartHeight);
+      const x = margin + i * (barWidth + barGap);
+
+      doc.setFillColor(...accent);
+      doc.rect(x, baseY - barH, barWidth, barH, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...accent);
+      doc.text(String(t.count), x + barWidth / 2, baseY - barH - 2, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...muted);
+      doc.text(String(t.year), x + barWidth / 2, baseY + 4, { align: "center" });
+    });
+
+    y = baseY + 10;
+  }
+
+  // ── Gaps & opportunities ─────────────────────────────────────────────
+  const gaps = report.gaps ?? [];
+  if (gaps.length > 0) {
+    sectionTitle(lang === "en" ? "Gaps & opportunities" : "Brechas y oportunidades");
+    gaps.forEach((gap, i) => paragraph(`${i + 1}. ${gap}`));
+    y += 4;
+  }
+
+  // ── Sources ───────────────────────────────────────────────────────────
+  if (report.sources.length > 0) {
+    sectionTitle(lang === "en" ? "Sources" : "Fuentes");
+    for (const source of report.sources) {
+      paragraph(source.title, { bold: true, size: 9 });
       const byline = [
-        s.authors.length ? `${escapeHtml(s.authors.slice(0, 3).join(", "))}${s.authors.length > 3 ? " et al." : ""}` : "",
-        s.year ? String(s.year) : "",
+        source.authors.length ? `${source.authors.slice(0, 3).join(", ")}${source.authors.length > 3 ? " et al." : ""}` : "",
+        source.year ? String(source.year) : "",
       ]
         .filter(Boolean)
         .join(" · ");
-      return `<li><strong>${escapeHtml(s.title)}</strong>${byline ? `<br><span class="muted">${byline}</span>` : ""}</li>`;
-    })
-    .join("");
+      if (byline) paragraph(byline, { size: 8, color: muted });
+      y += 1.5;
+    }
+  }
 
-  const title = lang === "en" ? "Landscape" : "Landscape";
-  const labels = {
-    summary: lang === "en" ? "Executive summary" : "Resumen ejecutivo",
-    comparison: lang === "en" ? "Comparison of approaches" : "Comparativa de enfoques",
-    trends: lang === "en" ? "Publications per year" : "Publicaciones por año",
-    gaps: lang === "en" ? "Gaps & opportunities" : "Brechas y oportunidades",
-    sources: lang === "en" ? "Sources" : "Fuentes",
-    generated: lang === "en" ? "Generated by Neuvra AI" : "Generado por Neuvra AI",
-  };
+  // ── Footer on every page ─────────────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text(
+      lang === "en" ? "Generated by Neuvra AI" : "Generado por Neuvra AI",
+      pageWidth / 2,
+      pageHeight - 8,
+      { align: "center" },
+    );
+  }
 
-  const html = `<!DOCTYPE html>
-<html lang="${lang}">
-<head>
-<meta charset="UTF-8" />
-<title>${title}: ${escapeHtml(report.topic)}</title>
-<style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'DM Sans', 'Segoe UI', sans-serif; color: #0d1b36; padding: 28px; background: #fff; }
-  h1 { font-family: 'Lora', Georgia, serif; font-size: 22px; margin: 0 0 4px; }
-  h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
-  h2 .dot { width: 8px; height: 8px; border-radius: 50%; background: #2e63de; display: inline-block; }
-  p { font-size: 13px; line-height: 1.6; margin: 0 0 8px; }
-  .card { border: 1px solid #d6e0f0; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th, td { border: 1px solid #d6e0f0; padding: 7px 9px; text-align: left; }
-  th { background: #f4f7fc; color: #173c9b; }
-  .chart { display: flex; align-items: flex-end; gap: 12px; height: 170px; padding: 20px 4px 0; }
-  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .bar { width: 100%; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #6f97f6 0%, #2e63de 100%); }
-  .bar-label, .bar-val { font-size: 11px; color: #5a6880; text-align: center; }
-  .bar-val { font-weight: 700; color: #173c9b; }
-  ul { padding-left: 18px; font-size: 12px; line-height: 1.6; }
-  .muted { color: #5a6880; font-size: 11px; }
-  .footnote { font-size: 11px; color: #5a6880; text-align: center; padding-top: 10px; }
-</style>
-</head>
-<body>
-  <h1>${title}: ${escapeHtml(report.topic)}</h1>
-  <div class="card">
-    <h2><span class="dot"></span>${labels.summary}</h2>
-    <p>${escapeHtml(report.summary)}</p>
-  </div>
-  ${tableRows ? `<div class="card"><h2><span class="dot"></span>${labels.comparison}</h2><table><thead><tr>${tableHeaders}</tr></thead><tbody>${tableRows}</tbody></table></div>` : ""}
-  ${chartBars ? `<div class="card"><h2><span class="dot"></span>${labels.trends}</h2><div class="chart">${chartBars}</div></div>` : ""}
-  ${gapsHtml ? `<div class="card"><h2><span class="dot"></span>${labels.gaps}</h2>${gapsHtml}</div>` : ""}
-  ${sourcesHtml ? `<div class="card"><h2><span class="dot"></span>${labels.sources}</h2><ul>${sourcesHtml}</ul></div>` : ""}
-  <p class="footnote">${labels.generated}</p>
-</body>
-</html>`;
-
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 300);
+  doc.save(`landscape-${slugify(report.topic)}.pdf`);
 }
 
 function LandscapeReportView({ report, lang }: { report: LandscapeReport; lang: "es" | "en" }) {
@@ -893,16 +989,29 @@ function LandscapeReportView({ report, lang }: { report: LandscapeReport; lang: 
   const maxCount = Math.max(1, ...trends.map((t) => t.count), 1);
   const comparison = report.comparisonTable;
   const gaps = report.gaps ?? [];
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await downloadLandscapeReport(report, lang);
+    } catch (err) {
+      console.error("[landscape] PDF export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="ri-landscape">
       <div className="ri-landscape-toolbar">
         <h3 className="ri-landscape-title">{report.topic}</h3>
-        <button type="button" className="ri-landscape-export" onClick={() => downloadLandscapeReport(report, lang)}>
+        <button type="button" className="ri-landscape-export" onClick={handleExport} disabled={exporting}>
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          {lang === "en" ? "Download PDF" : "Descargar PDF"}
+          {exporting ? (lang === "en" ? "Generating..." : "Generando...") : (lang === "en" ? "Download PDF" : "Descargar PDF")}
         </button>
       </div>
 

@@ -1050,6 +1050,11 @@ a.ri-source-title:hover {
   background: var(--ri-blue-soft, #dfe9ff);
 }
 
+.ri-landscape-export:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .ri-landscape-card {
   border: 1px solid var(--ri-line, #dbe4f1);
   border-radius: 16px;
