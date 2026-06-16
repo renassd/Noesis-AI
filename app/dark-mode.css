@@ -2296,6 +2296,37 @@ html.dark .ri-landscape-bar-val {
   color: var(--dm-blue-500);
 }
 
+/* Slides nav (the slide card itself is always dark by design) */
+html.dark .ri-slide-nav-btn {
+  background: rgba(25, 31, 48, 0.96);
+  border-color: var(--ri-dark-unified-line) !important;
+  color: var(--dm-ink);
+}
+
+html.dark .ri-slide-nav-btn:hover:not(:disabled) {
+  background: rgba(53, 66, 96, 0.92);
+}
+
+html.dark .ri-slide-thumb {
+  background: var(--ri-dark-surface-soft);
+  border-color: var(--ri-dark-unified-line);
+  color: var(--dm-ink);
+}
+
+html.dark .ri-slide-thumb.active {
+  background: rgba(91, 142, 245, 0.14);
+  border-color: rgba(91, 142, 245, 0.35);
+  color: var(--dm-blue-500);
+}
+
+html.dark .ri-slide-dot {
+  background: var(--ri-dark-unified-line);
+}
+
+html.dark .ri-slide-dot.active {
+  background: var(--dm-blue-500);
+}
+
 html.dark .ri-img-preview {
   background: rgba(20, 25, 38, 0.9);
   border-color: var(--dm-line);

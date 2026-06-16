@@ -81,6 +81,20 @@ interface ChartsReport {
   sources: PaperResult[];
 }
 
+interface SlideItem {
+  type: "title" | "agenda" | "content" | "conclusion" | "references";
+  title: string;
+  subtitle?: string;
+  bullets?: string[];
+}
+
+interface SlidesReport {
+  presentationTitle: string;
+  subtitle?: string;
+  slides: SlideItem[];
+  sources: PaperResult[];
+}
+
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -93,8 +107,9 @@ type Message = {
   landscapeReport?: LandscapeReport;
   researchReport?: ResearchReport;
   chartsReport?: ChartsReport;
+  slidesReport?: SlidesReport;
 };
-type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers" | "landscape" | "report" | "charts";
+type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers" | "landscape" | "report" | "charts" | "slides";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
 
 interface ResearchSession {
@@ -217,6 +232,7 @@ ${base}`;
     case "landscape":
     case "report":
     case "charts":
+    case "slides":
       return base;
   }
 }
@@ -369,6 +385,7 @@ function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?:
         { id: "writing"    as ToolId, label: "Structure writing" },
         { id: "report"     as ToolId, label: "Research Report" },
         { id: "charts"     as ToolId, label: "Charts & Tables" },
+        { id: "slides"     as ToolId, label: "Presentation" },
         { id: "landscape"  as ToolId, label: "Report / Landscape" },
       ]
     : [
@@ -380,6 +397,7 @@ function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?:
         { id: "writing"    as ToolId, label: "Estructurar escritura" },
         { id: "report"     as ToolId, label: "Research Report" },
         { id: "charts"     as ToolId, label: "Tablas y Gráficos" },
+        { id: "slides"     as ToolId, label: "Presentación" },
         { id: "landscape"  as ToolId, label: "Reporte / Landscape" },
       ];
 }
@@ -396,6 +414,7 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
         landscape:  "Enter a research topic to generate a landscape report with summary, comparison table, trends and gaps...",
         report:     "Enter a topic or upload a paper to generate a full academic report...",
         charts:     "Describe your data or upload a CSV / paper to generate charts and tables...",
+        slides:     "Enter a topic or upload a paper to generate a presentation...",
       }
     : {
         papers:     "Pegá un paper, artículo o abstract — extraeré metodología, hallazgos, contribuciones y limitaciones...",
@@ -407,6 +426,7 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
         landscape:  "Escribí un tema de investigación para generar un reporte landscape con resumen, tabla comparativa, tendencias y brechas...",
         report:     "Escribe un tema o sube un paper para generar un reporte académico completo...",
         charts:     "Describí tus datos o subí un CSV / paper para generar gráficos y tablas...",
+        slides:     "Escribí un tema o subí un paper para generar una presentación...",
       };
 }
 
@@ -422,6 +442,7 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         landscape:  "Write a research topic. I'll search academic papers, analyze the current landscape and build a report with a summary, comparison table, trends chart and research gaps.",
         report:     "Generate a full academic report — abstract, introduction, state of the art, key findings, gaps and conclusion — from a topic or an uploaded paper.",
         charts:     "Generate charts and tables from data or topic...",
+        slides:     "Generate a slide deck from any topic or paper...",
       }
     : {
         papers:     "Pegá cualquier paper o artículo académico. Extraeré la pregunta de investigación, metodología, hallazgos clave, contribuciones y limitaciones.",
@@ -433,6 +454,7 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         landscape:  "Escribí un tema de investigación. Voy a buscar papers académicos, analizar el estado actual del tema y armar un reporte con resumen, tabla comparativa, gráfico de tendencias y brechas de investigación.",
         report:     "Generá un reporte académico completo — abstract, introducción, estado del arte, hallazgos, brechas y conclusión — a partir de un tema o un paper subido.",
         charts:     "Generá gráficos y tablas desde datos o un tema...",
+        slides:     "Generá una presentación desde cualquier tema o paper...",
       };
 }
 
@@ -1542,6 +1564,215 @@ function ResearchChartsView({ report, lang }: { report: ChartsReport; lang: "es"
   );
 }
 
+// ── Slides / Presentation view ────────────────────────────────────────────────
+
+const SLIDE_BG_COLORS: Record<string, string> = {
+  title: "linear-gradient(135deg, #1a2a6c 0%, #2e63de 100%)",
+  agenda: "linear-gradient(135deg, #173c9b 0%, #3b6de0 100%)",
+  content: "linear-gradient(135deg, #1b2240 0%, #233066 100%)",
+  conclusion: "linear-gradient(135deg, #1a2a6c 0%, #2e63de 100%)",
+  references: "linear-gradient(135deg, #141926 0%, #1e2a4a 100%)",
+};
+
+function SlidesView({ report, lang }: { report: SlidesReport; lang: "es" | "en" }) {
+  const [current, setCurrent] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const slides = report.slides;
+  const slide = slides[current];
+  if (!slide) return null;
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await downloadSlidesReport(report, lang);
+    } catch (err) {
+      console.error("[slides] PDF export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="ri-slides">
+      <div className="ri-landscape-toolbar">
+        <h3 className="ri-landscape-title">{report.presentationTitle}</h3>
+        <button type="button" className="ri-landscape-export" onClick={handleExport} disabled={exporting}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {exporting ? (lang === "en" ? "Generating..." : "Generando...") : (lang === "en" ? "Download PDF" : "Descargar PDF")}
+        </button>
+      </div>
+
+      <div className="ri-slide-card" style={{ background: SLIDE_BG_COLORS[slide.type] || SLIDE_BG_COLORS.content }}>
+        {slide.type === "title" ? (
+          <div className="ri-slide-title-layout">
+            <h2 className="ri-slide-main-title">{slide.title}</h2>
+            {slide.subtitle && <p className="ri-slide-subtitle">{slide.subtitle}</p>}
+            {report.subtitle && !slide.subtitle && <p className="ri-slide-subtitle">{report.subtitle}</p>}
+          </div>
+        ) : (
+          <div className="ri-slide-content-layout">
+            <h3 className="ri-slide-content-title">{slide.title}</h3>
+            {slide.subtitle && <p className="ri-slide-content-subtitle">{slide.subtitle}</p>}
+            {slide.bullets && slide.bullets.length > 0 && (
+              <ul className="ri-slide-bullets">
+                {slide.bullets.map((b, i) => (
+                  <li key={i} className="ri-slide-bullet">{b}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+        <div className="ri-slide-num">{current + 1} / {slides.length}</div>
+      </div>
+
+      <div className="ri-slide-nav">
+        <button
+          type="button"
+          className="ri-slide-nav-btn"
+          onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+          disabled={current === 0}
+          aria-label="Previous slide"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <div className="ri-slide-dots">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`ri-slide-dot${i === current ? " active" : ""}`}
+              onClick={() => setCurrent(i)}
+              aria-label={`Slide ${i + 1}`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className="ri-slide-nav-btn"
+          onClick={() => setCurrent((c) => Math.min(slides.length - 1, c + 1))}
+          disabled={current === slides.length - 1}
+          aria-label="Next slide"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="ri-slide-strip">
+        {slides.map((s, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`ri-slide-thumb${i === current ? " active" : ""}`}
+            onClick={() => setCurrent(i)}
+          >
+            <span className="ri-slide-thumb-title">{s.title}</span>
+          </button>
+        ))}
+      </div>
+
+      {report.sources.length > 0 && <PaperSourcesList papers={report.sources} lang={lang} />}
+    </div>
+  );
+}
+
+/**
+ * Build the presentation as a landscape PDF (via jsPDF) — one slide per page,
+ * with a colored background per slide type, the title, bullets and a footer.
+ */
+async function downloadSlidesReport(report: SlidesReport, lang: "es" | "en") {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+  const pageWidth = 297;
+  const pageHeight = 210;
+  const margin = 20;
+  const contentWidth = pageWidth - margin * 2;
+
+  const bgColors: Record<string, [number, number, number]> = {
+    title: [26, 42, 108],
+    agenda: [23, 60, 155],
+    content: [27, 34, 64],
+    conclusion: [26, 42, 108],
+    references: [20, 25, 38],
+  };
+
+  report.slides.forEach((slide, idx) => {
+    if (idx > 0) doc.addPage();
+
+    const [r, g, b] = bgColors[slide.type] ?? bgColors.content;
+    doc.setFillColor(r, g, b);
+    doc.rect(0, 0, pageWidth, pageHeight, "F");
+
+    if (slide.type === "title") {
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      const titleLines: string[] = doc.splitTextToSize(slide.title, contentWidth);
+      let ty = 70;
+      for (const line of titleLines) {
+        doc.text(line, pageWidth / 2, ty, { align: "center" });
+        ty += 11;
+      }
+      const sub = slide.subtitle || report.subtitle;
+      if (sub) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(13);
+        doc.setTextColor(210, 220, 240);
+        doc.text(sub, pageWidth / 2, ty + 4, { align: "center" });
+      }
+    } else {
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      const titleLines: string[] = doc.splitTextToSize(slide.title, contentWidth);
+      let ty = 35;
+      for (const line of titleLines) {
+        doc.text(line, margin, ty);
+        ty += 9;
+      }
+
+      if (slide.bullets && slide.bullets.length > 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.setTextColor(235, 240, 250);
+        let by = Math.max(55, ty + 6);
+        for (const bullet of slide.bullets) {
+          const lines: string[] = doc.splitTextToSize(`•  ${bullet}`, contentWidth - 6);
+          for (const line of lines) {
+            if (by > pageHeight - margin) break;
+            doc.text(line, margin + 2, by);
+            by += 6.5;
+          }
+          by += 1.5;
+        }
+      }
+    }
+
+    // Slide number bottom-right
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 140, 170);
+    doc.text(`${idx + 1} / ${report.slides.length}`, pageWidth - margin, pageHeight - 10, { align: "right" });
+
+    // Footer
+    doc.text(
+      lang === "en" ? "Generated by Neuvra AI" : "Generado por Neuvra AI",
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: "center" },
+    );
+  });
+
+  doc.save(`presentation-${slugify(report.presentationTitle)}.pdf`);
+}
+
 /**
  * Build the research report as an actual PDF file (via jsPDF) and trigger a
  * download — same visual style as the landscape PDF, with the report sections.
@@ -1821,7 +2052,7 @@ function MarkdownMessage({ content }: { content: string }) {
 }
 
 function createEmptyMessages(): Record<ToolId, Message[]> {
-  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [], landscape: [], report: [], charts: [] };
+  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [], landscape: [], report: [], charts: [], slides: [] };
 }
 
 function generateSessionId(): string {
@@ -1886,7 +2117,7 @@ function loadHistory(): ResearchSession[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as ResearchSession[];
-    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers", "landscape", "report", "charts"];
+    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers", "landscape", "report", "charts", "slides"];
     return parsed
       .filter((item): item is ResearchSession => Boolean(item?.id))
       .map((item) => ({
@@ -2468,6 +2699,84 @@ export default function ResearchMode() {
       return;
     }
 
+    // ── Presentation / Slides tool ────────────────────────────────────────────
+    if (activeTool === "slides") {
+      const hasFile = Boolean(attachment?.content?.trim());
+      if (!trimmed && !hasFile) {
+        setError(
+          lang === "en"
+            ? "Enter a topic or upload a paper."
+            : "Escribí un tema o subí un paper.",
+        );
+        return;
+      }
+
+      const nextSessionId =
+        activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
+      setLoading(true);
+      setError("");
+      setSessionState((prev) => ({
+        activeSessionId: nextSessionId,
+        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+          ...session,
+          id: nextSessionId,
+          messages: { ...session.messages, slides: updated },
+          input: "",
+          attachment: null,
+          savedAt: Date.now(),
+        })),
+      }));
+      setPastedImage(null);
+
+      try {
+        const res = await fetchWithSupabaseAuth("/api/research/slides", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: trimmed || undefined,
+            lang,
+            paperContent: attachment?.content || undefined,
+          }),
+        });
+        const data = (await res.json()) as { slides?: SlidesReport; error?: string; usage?: unknown };
+        applyUsage(data.usage as Parameters<typeof applyUsage>[0]);
+
+        if (!res.ok || !data.slides) {
+          throw new Error(data.error || "Unknown error");
+        }
+
+        const assistantMsg: Message = {
+          role: "assistant",
+          content: lang === "en"
+            ? `Presentation: **${data.slides.presentationTitle}**`
+            : `Presentación: **${data.slides.presentationTitle}**`,
+          slidesReport: data.slides,
+        };
+
+        setSessionState((prev) => ({
+          ...prev,
+          sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
+            const next = {
+              ...session,
+              messages: {
+                ...session.messages,
+                slides: [...(session.messages.slides ?? []), assistantMsg],
+              },
+              savedAt: Date.now(),
+            };
+            return { ...next, title: deriveSessionTitle(next, lang) };
+          }),
+        }));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("[ResearchMode] slides failed:", msg);
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     // ── Flashcard intent detection ────────────────────────────────────────────
     if (detectFlashcardIntent(messageContent)) {
       console.log("FLASHCARD_INTENT_DETECTED", { trigger: messageContent.slice(0, 80) });
@@ -2978,6 +3287,9 @@ export default function ResearchMode() {
                           )}
                           {message.chartsReport && (
                             <ResearchChartsView report={message.chartsReport} lang={lang} />
+                          )}
+                          {message.slidesReport && (
+                            <SlidesView report={message.slidesReport} lang={lang} />
                           )}
                         </>
                       ) : (
