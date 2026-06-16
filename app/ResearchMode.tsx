@@ -48,6 +48,18 @@ interface LandscapeReport {
   sources: PaperResult[];
 }
 
+interface ResearchReport {
+  topic: string;
+  abstract: string;
+  introduction: string;
+  stateOfArt: string;
+  keyFindings: string[];
+  gaps: string[];
+  conclusion: string;
+  trendsByYear?: Array<{ year: number; count: number }>;
+  sources: PaperResult[];
+}
+
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -58,8 +70,9 @@ type Message = {
   /** "results" = find-papers card list · "sources" = literature review citations */
   paperResultsMode?: "results" | "sources";
   landscapeReport?: LandscapeReport;
+  researchReport?: ResearchReport;
 };
-type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers" | "landscape";
+type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers" | "landscape" | "report";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
 
 interface ResearchSession {
@@ -180,6 +193,7 @@ If no specific question is asked, produce the full structured analysis above.
 ${base}`;
     case "findpapers":
     case "landscape":
+    case "report":
       return base;
   }
 }
@@ -330,6 +344,7 @@ function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?:
         { id: "findpapers" as ToolId, label: "Find papers" },
         { id: "explain"    as ToolId, label: "Explain concept" },
         { id: "writing"    as ToolId, label: "Structure writing" },
+        { id: "report"     as ToolId, label: "Research Report" },
         { id: "landscape"  as ToolId, label: "Report / Landscape" },
       ]
     : [
@@ -339,6 +354,7 @@ function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?:
         { id: "findpapers" as ToolId, label: "Buscar papers" },
         { id: "explain"    as ToolId, label: "Explicar concepto" },
         { id: "writing"    as ToolId, label: "Estructurar escritura" },
+        { id: "report"     as ToolId, label: "Research Report" },
         { id: "landscape"  as ToolId, label: "Reporte / Landscape" },
       ];
 }
@@ -353,6 +369,7 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
         explain:    "What concept would you like explained? (e.g. meiosis, Bayes...)",
         writing:    "Paste your text or describe what part of your writing needs help...",
         landscape:  "Enter a research topic to generate a landscape report with summary, comparison table, trends and gaps...",
+        report:     "Enter a topic or upload a paper to generate a full academic report...",
       }
     : {
         papers:     "Pegá un paper, artículo o abstract — extraeré metodología, hallazgos, contribuciones y limitaciones...",
@@ -362,6 +379,7 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
         explain:    "¿Qué concepto querés que te explique? (ej: meiosis, Bayes...)",
         writing:    "Pegá tu texto o describí qué parte de tu escritura necesita organizarse...",
         landscape:  "Escribí un tema de investigación para generar un reporte landscape con resumen, tabla comparativa, tendencias y brechas...",
+        report:     "Escribe un tema o sube un paper para generar un reporte académico completo...",
       };
 }
 
@@ -375,6 +393,7 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         explain:    "Write any concept and I will explain it clearly, with analogies and examples.",
         writing:    "Paste your text or describe which part of your writing needs help.",
         landscape:  "Write a research topic. I'll search academic papers, analyze the current landscape and build a report with a summary, comparison table, trends chart and research gaps.",
+        report:     "Generate a full academic report — abstract, introduction, state of the art, key findings, gaps and conclusion — from a topic or an uploaded paper.",
       }
     : {
         papers:     "Pegá cualquier paper o artículo académico. Extraeré la pregunta de investigación, metodología, hallazgos clave, contribuciones y limitaciones.",
@@ -384,6 +403,7 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         explain:    "Escribí cualquier concepto y te lo explico de forma clara, con analogías y ejemplos.",
         writing:    "Pegá tu texto o describí en qué parte de tu escritura necesitás ayuda.",
         landscape:  "Escribí un tema de investigación. Voy a buscar papers académicos, analizar el estado actual del tema y armar un reporte con resumen, tabla comparativa, gráfico de tendencias y brechas de investigación.",
+        report:     "Generá un reporte académico completo — abstract, introducción, estado del arte, hallazgos, brechas y conclusión — a partir de un tema o un paper subido.",
       };
 }
 
@@ -1093,6 +1113,278 @@ function LandscapeReportView({ report, lang }: { report: LandscapeReport; lang: 
   );
 }
 
+/**
+ * Build the research report as an actual PDF file (via jsPDF) and trigger a
+ * download — same visual style as the landscape PDF, with the report sections.
+ */
+async function downloadResearchReport(report: ResearchReport, lang: "es" | "en") {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const text = [13, 27, 54] as [number, number, number];
+  const muted = [90, 104, 128] as [number, number, number];
+  const accent = [46, 99, 222] as [number, number, number];
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const sectionTitle = (title: string) => {
+    ensureSpace(12);
+    doc.setFillColor(...accent);
+    doc.circle(margin + 1, y + 2.2, 1, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...text);
+    doc.text(title, margin + 5, y + 3.2);
+    y += 9;
+  };
+
+  const paragraph = (value: string, opts: { size?: number; color?: [number, number, number]; bold?: boolean } = {}) => {
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(opts.size ?? 10);
+    doc.setTextColor(...(opts.color ?? text));
+    const lines: string[] = doc.splitTextToSize(value, contentWidth);
+    for (const line of lines) {
+      ensureSpace(5.5);
+      doc.text(line, margin, y);
+      y += 5.5;
+    }
+  };
+
+  // ── Title ──────────────────────────────────────────────────────────────
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(...text);
+  const titleLines: string[] = doc.splitTextToSize(report.topic, contentWidth);
+  for (const line of titleLines) {
+    ensureSpace(8);
+    doc.text(line, margin, y);
+    y += 8;
+  }
+  y += 2;
+
+  // ── Abstract ───────────────────────────────────────────────────────────
+  sectionTitle(lang === "en" ? "Abstract" : "Abstract");
+  paragraph(report.abstract);
+  y += 4;
+
+  // ── Introduction ───────────────────────────────────────────────────────
+  sectionTitle(lang === "en" ? "Introduction" : "Introducción");
+  paragraph(report.introduction);
+  y += 4;
+
+  // ── State of the art ───────────────────────────────────────────────────
+  sectionTitle(lang === "en" ? "State of the art" : "Estado del arte");
+  paragraph(report.stateOfArt);
+  y += 4;
+
+  // ── Key findings ───────────────────────────────────────────────────────
+  if (report.keyFindings.length > 0) {
+    sectionTitle(lang === "en" ? "Key findings" : "Hallazgos clave");
+    report.keyFindings.forEach((finding, i) => paragraph(`${i + 1}. ${finding}`));
+    y += 4;
+  }
+
+  // ── Publications per year ──────────────────────────────────────────────
+  const trends = report.trendsByYear ?? [];
+  if (trends.length > 0) {
+    sectionTitle(lang === "en" ? "Publications per year" : "Publicaciones por año");
+
+    const chartHeight = 40;
+    ensureSpace(chartHeight + 12);
+    const maxCount = Math.max(1, ...trends.map((t) => t.count));
+    const barGap = 3;
+    const barWidth = (contentWidth - barGap * (trends.length - 1)) / trends.length;
+    const baseY = y + chartHeight;
+
+    trends.forEach((t, i) => {
+      const barH = Math.max(2, (t.count / maxCount) * chartHeight);
+      const x = margin + i * (barWidth + barGap);
+
+      doc.setFillColor(...accent);
+      doc.rect(x, baseY - barH, barWidth, barH, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...accent);
+      doc.text(String(t.count), x + barWidth / 2, baseY - barH - 2, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...muted);
+      doc.text(String(t.year), x + barWidth / 2, baseY + 4, { align: "center" });
+    });
+
+    y = baseY + 10;
+  }
+
+  // ── Gaps & opportunities ───────────────────────────────────────────────
+  if (report.gaps.length > 0) {
+    sectionTitle(lang === "en" ? "Gaps & opportunities" : "Brechas y oportunidades");
+    report.gaps.forEach((gap, i) => paragraph(`${i + 1}. ${gap}`));
+    y += 4;
+  }
+
+  // ── Conclusion ─────────────────────────────────────────────────────────
+  sectionTitle(lang === "en" ? "Conclusion" : "Conclusión");
+  paragraph(report.conclusion);
+  y += 4;
+
+  // ── Sources ────────────────────────────────────────────────────────────
+  if (report.sources.length > 0) {
+    sectionTitle(lang === "en" ? "References" : "Referencias");
+    for (const source of report.sources) {
+      paragraph(source.title, { bold: true, size: 9 });
+      const byline = [
+        source.authors.length ? `${source.authors.slice(0, 3).join(", ")}${source.authors.length > 3 ? " et al." : ""}` : "",
+        source.year ? String(source.year) : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      if (byline) paragraph(byline, { size: 8, color: muted });
+      y += 1.5;
+    }
+  }
+
+  // ── Footer on every page ───────────────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text(
+      lang === "en" ? "Generated by Neuvra AI" : "Generado por Neuvra AI",
+      pageWidth / 2,
+      pageHeight - 8,
+      { align: "center" },
+    );
+  }
+
+  doc.save(`report-${slugify(report.topic)}.pdf`);
+}
+
+function ResearchReportView({ report, lang }: { report: ResearchReport; lang: "es" | "en" }) {
+  const trends = report.trendsByYear ?? [];
+  const maxCount = Math.max(1, ...trends.map((t) => t.count), 1);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await downloadResearchReport(report, lang);
+    } catch (err) {
+      console.error("[report] PDF export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="ri-landscape">
+      <div className="ri-landscape-toolbar">
+        <h3 className="ri-landscape-title">{report.topic}</h3>
+        <button type="button" className="ri-landscape-export" onClick={handleExport} disabled={exporting}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {exporting ? (lang === "en" ? "Generating..." : "Generando...") : (lang === "en" ? "Download PDF" : "Descargar PDF")}
+        </button>
+      </div>
+
+      <div className="ri-landscape-card">
+        <h4 className="ri-landscape-card-title">
+          <span className="ri-landscape-dot" aria-hidden="true" />
+          {lang === "en" ? "Abstract" : "Abstract"}
+        </h4>
+        <p className="ri-landscape-text">{report.abstract}</p>
+      </div>
+
+      <div className="ri-landscape-card">
+        <h4 className="ri-landscape-card-title">
+          <span className="ri-landscape-dot" aria-hidden="true" />
+          {lang === "en" ? "Introduction" : "Introducción"}
+        </h4>
+        <p className="ri-landscape-text">{report.introduction}</p>
+      </div>
+
+      <div className="ri-landscape-card">
+        <h4 className="ri-landscape-card-title">
+          <span className="ri-landscape-dot" aria-hidden="true" />
+          {lang === "en" ? "State of the art" : "Estado del arte"}
+        </h4>
+        <p className="ri-landscape-text">{report.stateOfArt}</p>
+      </div>
+
+      {report.keyFindings.length > 0 && (
+        <div className="ri-landscape-card">
+          <h4 className="ri-landscape-card-title">
+            <span className="ri-landscape-dot" aria-hidden="true" />
+            {lang === "en" ? "Key findings" : "Hallazgos clave"}
+          </h4>
+          {report.keyFindings.map((finding, i) => (
+            <p key={i} className="ri-landscape-text">
+              {i + 1}. {finding}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {trends.length > 0 && (
+        <div className="ri-landscape-card">
+          <h4 className="ri-landscape-card-title">
+            <span className="ri-landscape-dot" aria-hidden="true" />
+            {lang === "en" ? "Publications per year" : "Publicaciones por año"}
+          </h4>
+          <div className="ri-landscape-chart">
+            {trends.map((t) => (
+              <div key={t.year} className="ri-landscape-bar-col">
+                <span className="ri-landscape-bar-val">{t.count}</span>
+                <div className="ri-landscape-bar" style={{ height: `${Math.max(8, (t.count / maxCount) * 100)}px` }} />
+                <span className="ri-landscape-bar-label">{t.year}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {report.gaps.length > 0 && (
+        <div className="ri-landscape-card">
+          <h4 className="ri-landscape-card-title">
+            <span className="ri-landscape-dot" aria-hidden="true" />
+            {lang === "en" ? "Gaps & opportunities" : "Brechas y oportunidades"}
+          </h4>
+          {report.gaps.map((gap, i) => (
+            <p key={i} className="ri-landscape-text">
+              {i + 1}. {gap}
+            </p>
+          ))}
+        </div>
+      )}
+
+      <div className="ri-landscape-card">
+        <h4 className="ri-landscape-card-title">
+          <span className="ri-landscape-dot" aria-hidden="true" />
+          {lang === "en" ? "Conclusion" : "Conclusión"}
+        </h4>
+        <p className="ri-landscape-text">{report.conclusion}</p>
+      </div>
+
+      <PaperSourcesList papers={report.sources} lang={lang} />
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MarkdownMessage({ content }: { content: string }) {
@@ -1100,7 +1392,7 @@ function MarkdownMessage({ content }: { content: string }) {
 }
 
 function createEmptyMessages(): Record<ToolId, Message[]> {
-  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [], landscape: [] };
+  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [], landscape: [], report: [] };
 }
 
 function generateSessionId(): string {
@@ -1165,7 +1457,7 @@ function loadHistory(): ResearchSession[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as ResearchSession[];
-    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers", "landscape"];
+    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers", "landscape", "report"];
     return parsed
       .filter((item): item is ResearchSession => Boolean(item?.id))
       .map((item) => ({
@@ -1587,6 +1879,74 @@ export default function ResearchMode() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unknown error";
         console.error("[ResearchMode] landscape report failed:", msg);
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // ── Research Report tool ──────────────────────────────────────────────────
+    if (activeTool === "report") {
+      const nextSessionId =
+        activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
+      setLoading(true);
+      setError("");
+      setSessionState((prev) => ({
+        activeSessionId: nextSessionId,
+        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+          ...session,
+          id: nextSessionId,
+          messages: { ...session.messages, report: updated },
+          input: "",
+          attachment: null,
+          savedAt: Date.now(),
+        })),
+      }));
+      setPastedImage(null);
+
+      try {
+        const res = await fetchWithSupabaseAuth("/api/research/report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: trimmed,
+            lang,
+            paperContent: attachment?.content ?? undefined,
+          }),
+        });
+        const data = (await res.json()) as { report?: ResearchReport; error?: string; usage?: unknown };
+        applyUsage(data.usage as Parameters<typeof applyUsage>[0]);
+
+        if (!res.ok || !data.report) {
+          throw new Error(data.error || "Unknown error");
+        }
+
+        const assistantMsg: Message = {
+          role: "assistant",
+          content: lang === "en"
+            ? `Research report: **${data.report.topic}**`
+            : `Reporte de investigación: **${data.report.topic}**`,
+          researchReport: data.report,
+        };
+
+        setSessionState((prev) => ({
+          ...prev,
+          sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
+            const next = {
+              ...session,
+              messages: {
+                ...session.messages,
+                report: [...(session.messages.report ?? []), assistantMsg],
+              },
+              savedAt: Date.now(),
+            };
+            return { ...next, title: deriveSessionTitle(next, lang) };
+          }),
+        }));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("[ResearchMode] research report failed:", msg);
         setError(msg);
       } finally {
         setLoading(false);
@@ -2098,6 +2458,9 @@ export default function ResearchMode() {
                           )}
                           {message.landscapeReport && (
                             <LandscapeReportView report={message.landscapeReport} lang={lang} />
+                          )}
+                          {message.researchReport && (
+                            <ResearchReportView report={message.researchReport} lang={lang} />
                           )}
                         </>
                       ) : (
