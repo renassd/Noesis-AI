@@ -60,6 +60,27 @@ interface ResearchReport {
   sources: PaperResult[];
 }
 
+interface ChartItem {
+  title: string;
+  type: "bar" | "line" | "pie";
+  labels: string[];
+  values: number[];
+  description?: string;
+}
+
+interface TableItem {
+  title: string;
+  headers: string[];
+  rows: string[][];
+}
+
+interface ChartsReport {
+  title: string;
+  charts: ChartItem[];
+  tables: TableItem[];
+  sources: PaperResult[];
+}
+
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -71,8 +92,9 @@ type Message = {
   paperResultsMode?: "results" | "sources";
   landscapeReport?: LandscapeReport;
   researchReport?: ResearchReport;
+  chartsReport?: ChartsReport;
 };
-type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers" | "landscape" | "report";
+type ToolId = "summary" | "review" | "explain" | "writing" | "papers" | "findpapers" | "landscape" | "report" | "charts";
 type InputIntent = "single_word" | "short_concept" | "research_request" | "normal";
 
 interface ResearchSession {
@@ -194,6 +216,7 @@ ${base}`;
     case "findpapers":
     case "landscape":
     case "report":
+    case "charts":
       return base;
   }
 }
@@ -345,6 +368,7 @@ function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?:
         { id: "explain"    as ToolId, label: "Explain concept" },
         { id: "writing"    as ToolId, label: "Structure writing" },
         { id: "report"     as ToolId, label: "Research Report" },
+        { id: "charts"     as ToolId, label: "Charts & Tables" },
         { id: "landscape"  as ToolId, label: "Report / Landscape" },
       ]
     : [
@@ -355,6 +379,7 @@ function getTools(lang: "es" | "en"): Array<{ id: ToolId; label: string; isNew?:
         { id: "explain"    as ToolId, label: "Explicar concepto" },
         { id: "writing"    as ToolId, label: "Estructurar escritura" },
         { id: "report"     as ToolId, label: "Research Report" },
+        { id: "charts"     as ToolId, label: "Tablas y Gráficos" },
         { id: "landscape"  as ToolId, label: "Reporte / Landscape" },
       ];
 }
@@ -370,6 +395,7 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
         writing:    "Paste your text or describe what part of your writing needs help...",
         landscape:  "Enter a research topic to generate a landscape report with summary, comparison table, trends and gaps...",
         report:     "Enter a topic or upload a paper to generate a full academic report...",
+        charts:     "Describe your data or upload a CSV / paper to generate charts and tables...",
       }
     : {
         papers:     "Pegá un paper, artículo o abstract — extraeré metodología, hallazgos, contribuciones y limitaciones...",
@@ -380,6 +406,7 @@ function getPlaceholders(lang: "es" | "en"): Record<ToolId, string> {
         writing:    "Pegá tu texto o describí qué parte de tu escritura necesita organizarse...",
         landscape:  "Escribí un tema de investigación para generar un reporte landscape con resumen, tabla comparativa, tendencias y brechas...",
         report:     "Escribe un tema o sube un paper para generar un reporte académico completo...",
+        charts:     "Describí tus datos o subí un CSV / paper para generar gráficos y tablas...",
       };
 }
 
@@ -394,6 +421,7 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         writing:    "Paste your text or describe which part of your writing needs help.",
         landscape:  "Write a research topic. I'll search academic papers, analyze the current landscape and build a report with a summary, comparison table, trends chart and research gaps.",
         report:     "Generate a full academic report — abstract, introduction, state of the art, key findings, gaps and conclusion — from a topic or an uploaded paper.",
+        charts:     "Generate charts and tables from data or topic...",
       }
     : {
         papers:     "Pegá cualquier paper o artículo académico. Extraeré la pregunta de investigación, metodología, hallazgos clave, contribuciones y limitaciones.",
@@ -404,6 +432,7 @@ function getEmptyHints(lang: "en" | "es"): Record<ToolId, string> {
         writing:    "Pegá tu texto o describí en qué parte de tu escritura necesitás ayuda.",
         landscape:  "Escribí un tema de investigación. Voy a buscar papers académicos, analizar el estado actual del tema y armar un reporte con resumen, tabla comparativa, gráfico de tendencias y brechas de investigación.",
         report:     "Generá un reporte académico completo — abstract, introducción, estado del arte, hallazgos, brechas y conclusión — a partir de un tema o un paper subido.",
+        charts:     "Generá gráficos y tablas desde datos o un tema...",
       };
 }
 
@@ -1113,6 +1142,406 @@ function LandscapeReportView({ report, lang }: { report: LandscapeReport; lang: 
   );
 }
 
+// ── Charts & Tables: SVG chart renderers (no external libraries) ─────────────
+
+function SvgBarChart({ chart }: { chart: ChartItem }) {
+  const max = Math.max(...chart.values, 1);
+  const chartH = 140;
+  const barW = Math.max(20, Math.min(50, Math.floor(280 / chart.labels.length)));
+  const gap = 8;
+  const totalW = chart.labels.length * (barW + gap) - gap;
+
+  return (
+    <svg viewBox={`0 0 ${Math.max(totalW, 280)} ${chartH + 40}`} style={{ width: "100%", maxHeight: 200 }}>
+      {chart.values.map((v, i) => {
+        const barH = Math.max(4, (v / max) * chartH);
+        const x = i * (barW + gap);
+        return (
+          <g key={i}>
+            <rect x={x} y={chartH - barH} width={barW} height={barH} fill="#5b8ef5" rx={3} />
+            <text x={x + barW / 2} y={chartH - barH - 4} textAnchor="middle" fontSize={10} fill="#5b8ef5">{v}</text>
+            <text x={x + barW / 2} y={chartH + 14} textAnchor="middle" fontSize={9} fill="#8496b0">{chart.labels[i]?.slice(0, 10)}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function SvgLineChart({ chart }: { chart: ChartItem }) {
+  const max = Math.max(...chart.values, 1);
+  const min = Math.min(...chart.values, 0);
+  const range = max - min || 1;
+  const chartH = 120;
+  const chartW = 280;
+  const n = chart.values.length;
+  const stepX = n > 1 ? chartW / (n - 1) : chartW;
+
+  const points = chart.values.map((v, i) => {
+    const x = i * stepX;
+    const y = chartH - ((v - min) / range) * chartH;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${chartW} ${chartH + 30}`} style={{ width: "100%", maxHeight: 180 }}>
+      <polyline points={points} fill="none" stroke="#5b8ef5" strokeWidth={2} />
+      {chart.values.map((v, i) => {
+        const x = i * stepX;
+        const y = chartH - ((v - min) / range) * chartH;
+        return (
+          <g key={i}>
+            <circle cx={x} cy={y} r={3} fill="#5b8ef5" />
+            <text x={x} y={chartH + 16} textAnchor="middle" fontSize={9} fill="#8496b0">{chart.labels[i]?.slice(0, 8)}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function SvgPieChart({ chart }: { chart: ChartItem }) {
+  const total = chart.values.reduce((a, b) => a + b, 0) || 1;
+  const COLORS = ["#5b8ef5", "#34c48a", "#f0a040", "#f06060", "#89aeff", "#8496b0"];
+  const cx = 80, cy = 80, r = 70;
+
+  let startAngle = -Math.PI / 2;
+  const slices = chart.values.map((v, i) => {
+    const angle = (v / total) * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+    const slice = { d, color: COLORS[i % COLORS.length], label: chart.labels[i], pct: Math.round((v / total) * 100) };
+    startAngle = endAngle;
+    return slice;
+  });
+
+  return (
+    <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+      <svg viewBox="0 0 160 160" style={{ width: 140, height: 140, flexShrink: 0 }}>
+        {slices.map((s, i) => <path key={i} d={s.d} fill={s.color} />)}
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {slices.map((s, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+            <span style={{ color: "var(--ri-ink, #10203a)" }}>{s.label}: {s.pct}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChartRenderer({ chart }: { chart: ChartItem }) {
+  if (chart.type === "line") return <SvgLineChart chart={chart} />;
+  if (chart.type === "pie") return <SvgPieChart chart={chart} />;
+  return <SvgBarChart chart={chart} />;
+}
+
+/**
+ * Build the charts & tables report as a PDF (via jsPDF) and trigger a download.
+ * Tables are drawn with the shared table logic; charts are drawn as simplified
+ * bar/line graphics, or described in text for pie charts.
+ */
+async function downloadChartsReport(report: ChartsReport, lang: "es" | "en") {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const text = [13, 27, 54] as [number, number, number];
+  const muted = [90, 104, 128] as [number, number, number];
+  const accent = [46, 99, 222] as [number, number, number];
+  const border = [214, 224, 240] as [number, number, number];
+  const headerBg = [244, 247, 252] as [number, number, number];
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const sectionTitle = (title: string) => {
+    ensureSpace(12);
+    doc.setFillColor(...accent);
+    doc.circle(margin + 1, y + 2.2, 1, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...text);
+    doc.text(title, margin + 5, y + 3.2);
+    y += 9;
+  };
+
+  const paragraph = (value: string, opts: { size?: number; color?: [number, number, number]; bold?: boolean } = {}) => {
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(opts.size ?? 10);
+    doc.setTextColor(...(opts.color ?? text));
+    const lines: string[] = doc.splitTextToSize(value, contentWidth);
+    for (const line of lines) {
+      ensureSpace(5.5);
+      doc.text(line, margin, y);
+      y += 5.5;
+    }
+  };
+
+  const drawTable = (headers: string[], rows: string[][]) => {
+    const colCount = headers.length;
+    const colWidth = contentWidth / colCount;
+    const cellPadding = 2;
+    const lineHeight = 4;
+    doc.setFontSize(8);
+
+    const drawRow = (cells: string[], isHeader: boolean) => {
+      const wrapped = cells.map((cell) => doc.splitTextToSize(String(cell ?? ""), colWidth - cellPadding * 2) as string[]);
+      const rowHeight = Math.max(...wrapped.map((lines) => lines.length)) * lineHeight + cellPadding * 2;
+
+      ensureSpace(rowHeight);
+
+      if (isHeader) {
+        doc.setFillColor(...headerBg);
+        doc.rect(margin, y, contentWidth, rowHeight, "F");
+      }
+
+      doc.setDrawColor(...border);
+      for (let i = 0; i <= colCount; i++) {
+        const x = margin + colWidth * i;
+        doc.line(x, y, x, y + rowHeight);
+      }
+      doc.line(margin, y, margin + contentWidth, y);
+      doc.line(margin, y + rowHeight, margin + contentWidth, y + rowHeight);
+
+      doc.setFont("helvetica", isHeader ? "bold" : "normal");
+      doc.setTextColor(...(isHeader ? accent : text));
+      wrapped.forEach((lines, ci) => {
+        lines.forEach((line, li) => {
+          doc.text(line, margin + colWidth * ci + cellPadding, y + cellPadding + (li + 1) * lineHeight - 1);
+        });
+      });
+
+      y += rowHeight;
+    };
+
+    drawRow(headers, true);
+    for (const row of rows) drawRow(row, false);
+  };
+
+  const drawBarChart = (chart: ChartItem) => {
+    const chartHeight = 40;
+    ensureSpace(chartHeight + 12);
+    const maxVal = Math.max(1, ...chart.values);
+    const barGap = 3;
+    const count = Math.max(1, chart.values.length);
+    const barWidth = (contentWidth - barGap * (count - 1)) / count;
+    const baseY = y + chartHeight;
+
+    chart.values.forEach((v, i) => {
+      const barH = Math.max(2, (v / maxVal) * chartHeight);
+      const x = margin + i * (barWidth + barGap);
+
+      doc.setFillColor(...accent);
+      doc.rect(x, baseY - barH, barWidth, barH, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(...accent);
+      doc.text(String(v), x + barWidth / 2, baseY - barH - 2, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...muted);
+      doc.text(String(chart.labels[i] ?? "").slice(0, 10), x + barWidth / 2, baseY + 4, { align: "center" });
+    });
+
+    y = baseY + 10;
+  };
+
+  const drawLineChart = (chart: ChartItem) => {
+    const chartHeight = 40;
+    ensureSpace(chartHeight + 12);
+    const maxVal = Math.max(1, ...chart.values);
+    const minVal = Math.min(0, ...chart.values);
+    const range = maxVal - minVal || 1;
+    const count = Math.max(1, chart.values.length);
+    const stepX = count > 1 ? contentWidth / (count - 1) : contentWidth;
+    const baseY = y + chartHeight;
+
+    doc.setDrawColor(...accent);
+    let prev: [number, number] | null = null;
+    chart.values.forEach((v, i) => {
+      const x = margin + i * stepX;
+      const py = baseY - ((v - minVal) / range) * chartHeight;
+      if (prev) doc.line(prev[0], prev[1], x, py);
+      doc.setFillColor(...accent);
+      doc.circle(x, py, 0.8, "F");
+      prev = [x, py];
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...muted);
+      doc.text(String(chart.labels[i] ?? "").slice(0, 8), x, baseY + 4, { align: "center" });
+    });
+
+    y = baseY + 10;
+  };
+
+  // ── Title ──────────────────────────────────────────────────────────────
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(...text);
+  const titleLines: string[] = doc.splitTextToSize(report.title, contentWidth);
+  for (const line of titleLines) {
+    ensureSpace(8);
+    doc.text(line, margin, y);
+    y += 8;
+  }
+  y += 2;
+
+  // ── Tables ─────────────────────────────────────────────────────────────
+  for (const table of report.tables) {
+    if (!table.rows.length) continue;
+    sectionTitle(table.title);
+    drawTable(table.headers, table.rows);
+    y += 6;
+  }
+
+  // ── Charts ─────────────────────────────────────────────────────────────
+  for (const chart of report.charts) {
+    sectionTitle(chart.title);
+    if (chart.description) paragraph(chart.description, { size: 9, color: muted });
+    if (chart.type === "line") {
+      drawLineChart(chart);
+    } else if (chart.type === "pie") {
+      const total = chart.values.reduce((a, b) => a + b, 0) || 1;
+      chart.labels.forEach((lbl, i) => {
+        const pct = Math.round(((chart.values[i] ?? 0) / total) * 100);
+        paragraph(`• ${lbl}: ${pct}%`, { size: 9 });
+      });
+      y += 2;
+    } else {
+      drawBarChart(chart);
+    }
+    y += 4;
+  }
+
+  // ── Sources ────────────────────────────────────────────────────────────
+  if (report.sources.length > 0) {
+    sectionTitle(lang === "en" ? "Sources" : "Fuentes");
+    for (const source of report.sources) {
+      paragraph(source.title, { bold: true, size: 9 });
+      const byline = [
+        source.authors.length ? `${source.authors.slice(0, 3).join(", ")}${source.authors.length > 3 ? " et al." : ""}` : "",
+        source.year ? String(source.year) : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      if (byline) paragraph(byline, { size: 8, color: muted });
+      y += 1.5;
+    }
+  }
+
+  // ── Footer on every page ─────────────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text(
+      lang === "en" ? "Generated by Neuvra AI" : "Generado por Neuvra AI",
+      pageWidth / 2,
+      pageHeight - 8,
+      { align: "center" },
+    );
+  }
+
+  doc.save(`charts-${slugify(report.title)}.pdf`);
+}
+
+function ResearchChartsView({ report, lang }: { report: ChartsReport; lang: "es" | "en" }) {
+  const [exporting, setExporting] = useState(false);
+  const charts = report.charts ?? [];
+  const tables = report.tables ?? [];
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await downloadChartsReport(report, lang);
+    } catch (err) {
+      console.error("[charts] PDF export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="ri-landscape">
+      <div className="ri-landscape-toolbar">
+        <h3 className="ri-landscape-title">{report.title}</h3>
+        <button type="button" className="ri-landscape-export" onClick={handleExport} disabled={exporting}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {exporting ? (lang === "en" ? "Generating..." : "Generando...") : (lang === "en" ? "Download PDF" : "Descargar PDF")}
+        </button>
+      </div>
+
+      {charts.map((chart, i) => (
+        <div key={`chart-${i}`} className="ri-landscape-card">
+          <h4 className="ri-landscape-card-title">
+            <span className="ri-landscape-dot" aria-hidden="true" />
+            {chart.title}
+          </h4>
+          <ChartRenderer chart={chart} />
+          {chart.description && <p className="ri-landscape-text">{chart.description}</p>}
+        </div>
+      ))}
+
+      {tables.map((table, i) => (
+        <div key={`table-${i}`} className="ri-landscape-card">
+          <h4 className="ri-landscape-card-title">
+            <span className="ri-landscape-dot" aria-hidden="true" />
+            {table.title}
+          </h4>
+          <div className="ri-landscape-table-wrap">
+            <table className="ri-landscape-table">
+              <thead>
+                <tr>
+                  {table.headers.map((h, hi) => (
+                    <th key={hi}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {table.rows.map((row, ri) => (
+                  <tr key={ri}>
+                    {row.map((cell, ci) => (
+                      <td key={ci}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+
+      {report.sources && report.sources.length > 0 && (
+        <PaperSourcesList papers={report.sources} lang={lang} />
+      )}
+    </div>
+  );
+}
+
 /**
  * Build the research report as an actual PDF file (via jsPDF) and trigger a
  * download — same visual style as the landscape PDF, with the report sections.
@@ -1392,7 +1821,7 @@ function MarkdownMessage({ content }: { content: string }) {
 }
 
 function createEmptyMessages(): Record<ToolId, Message[]> {
-  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [], landscape: [], report: [] };
+  return { papers: [], summary: [], review: [], explain: [], writing: [], findpapers: [], landscape: [], report: [], charts: [] };
 }
 
 function generateSessionId(): string {
@@ -1457,7 +1886,7 @@ function loadHistory(): ResearchSession[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as ResearchSession[];
-    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers", "landscape", "report"];
+    const valid: ToolId[] = ["papers", "summary", "review", "explain", "writing", "findpapers", "landscape", "report", "charts"];
     return parsed
       .filter((item): item is ResearchSession => Boolean(item?.id))
       .map((item) => ({
@@ -1947,6 +2376,91 @@ export default function ResearchMode() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unknown error";
         console.error("[ResearchMode] research report failed:", msg);
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // ── Charts & Tables tool ──────────────────────────────────────────────────
+    if (activeTool === "charts") {
+      const hasFile = Boolean(attachment?.content?.trim());
+      if (!trimmed && !hasFile) {
+        setError(
+          lang === "en"
+            ? "Enter a topic or upload a CSV / paper."
+            : "Escribí un tema o subí un CSV / paper.",
+        );
+        return;
+      }
+
+      const isCsv =
+        attachment?.mimeType === "text/csv" ||
+        attachment?.fileName?.toLowerCase().endsWith(".csv") ||
+        false;
+      const fileType: "csv" | "text" | undefined = isCsv ? "csv" : hasFile ? "text" : undefined;
+
+      const nextSessionId =
+        activeSession.id === DRAFT_SESSION_ID ? generateSessionId() : activeSession.id;
+      setLoading(true);
+      setError("");
+      setSessionState((prev) => ({
+        activeSessionId: nextSessionId,
+        sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => ({
+          ...session,
+          id: nextSessionId,
+          messages: { ...session.messages, charts: updated },
+          input: "",
+          attachment: null,
+          savedAt: Date.now(),
+        })),
+      }));
+      setPastedImage(null);
+
+      try {
+        const res = await fetchWithSupabaseAuth("/api/research/charts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: trimmed || undefined,
+            lang,
+            fileContent: attachment?.content || undefined,
+            fileType,
+          }),
+        });
+        const data = (await res.json()) as { charts?: ChartsReport; error?: string; usage?: unknown };
+        applyUsage(data.usage as Parameters<typeof applyUsage>[0]);
+
+        if (!res.ok || !data.charts) {
+          throw new Error(data.error || "Unknown error");
+        }
+
+        const assistantMsg: Message = {
+          role: "assistant",
+          content: lang === "en"
+            ? `Charts & tables: **${data.charts.title}**`
+            : `Tablas y gráficos: **${data.charts.title}**`,
+          chartsReport: data.charts,
+        };
+
+        setSessionState((prev) => ({
+          ...prev,
+          sessions: updateSessions(prev.sessions, prev.activeSessionId, (session) => {
+            const next = {
+              ...session,
+              messages: {
+                ...session.messages,
+                charts: [...(session.messages.charts ?? []), assistantMsg],
+              },
+              savedAt: Date.now(),
+            };
+            return { ...next, title: deriveSessionTitle(next, lang) };
+          }),
+        }));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("[ResearchMode] charts failed:", msg);
         setError(msg);
       } finally {
         setLoading(false);
@@ -2461,6 +2975,9 @@ export default function ResearchMode() {
                           )}
                           {message.researchReport && (
                             <ResearchReportView report={message.researchReport} lang={lang} />
+                          )}
+                          {message.chartsReport && (
+                            <ResearchChartsView report={message.chartsReport} lang={lang} />
                           )}
                         </>
                       ) : (
