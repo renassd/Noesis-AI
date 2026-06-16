@@ -12,6 +12,7 @@ import { fetchWithSupabaseAuth } from "@/lib/supabase-browser";
 import { useAiUsage } from "@/context/AiUsageContext";
 import { HeroMockup } from "./HeroMockup";
 import ThemePanel from "./theme/ThemePanel";
+import AccountSettingsPanel from "./AccountSettingsPanel";
 
 /* ── Profile dropdown ───────────────────────────────────────── */
 function ProfileDropdown({
@@ -23,13 +24,18 @@ function ProfileDropdown({
   signOut: () => void;
   en: boolean;
 }) {
-  const [open,        setOpen]        = useState(false);
-  const [themeOpen,   setThemeOpen]   = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [open,         setOpen]         = useState(false);
+  const [themeOpen,    setThemeOpen]    = useState(false);
+  const [profileOpen,  setProfileOpen]  = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab,  setSettingsTab]  = useState<"profile" | "email" | "password">("profile");
+  // Local override so the displayed name updates immediately after the user
+  // edits it in the settings panel (auth context refreshes on next session sync).
+  const [nameOverride, setNameOverride] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Priority: full name > portion before @ in email
-  const displayName  = name?.trim() || email.split("@")[0];
+  // Priority: local override > full name > portion before @ in email
+  const displayName  = nameOverride?.trim() || name?.trim() || email.split("@")[0];
   const initial      = displayName[0].toUpperCase();
   const planLabel    = usage?.plan === "pro" ? "Pro" : (en ? "Free" : "Gratis");
   const isPro        = usage?.plan === "pro";
@@ -58,6 +64,16 @@ function ProfileDropdown({
     <>
       {/* ThemePanel rendered outside the dropdown (uses portal, won't be clipped) */}
       <ThemePanel open={themeOpen} onClose={() => setThemeOpen(false)} />
+
+      {/* Account settings (uses portal, won't be clipped) */}
+      <AccountSettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        email={email}
+        name={displayName}
+        initialTab={settingsTab}
+        onNameUpdate={(newName) => setNameOverride(newName)}
+      />
 
       <div className="pd-root" ref={ref}>
         {/* ── Trigger: avatar + display name + chevron ── */}
@@ -160,24 +176,21 @@ function ProfileDropdown({
                 {en ? "Personalization" : "Personalización"}
               </button>
 
-              {/* Profile → reveals email inside dropdown */}
-              <button
-                type="button" role="menuitem"
-                className={`pd-item${profileOpen ? " pd-item--active" : ""}`}
-                onClick={() => setProfileOpen((v) => !v)}
-              >
-                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">person</span>
-                {en ? "Profile" : "Perfil"}
-                <span className="material-symbols-outlined pd-item-chevron" aria-hidden="true">
-                  {profileOpen ? "expand_less" : "chevron_right"}
-                </span>
-              </button>
-
-              {/* Settings → opens ThemePanel (same panel covers appearance + theme) */}
+              {/* Profile → opens Account settings on the Profile tab */}
               <button
                 type="button" role="menuitem"
                 className="pd-item"
-                onClick={() => { close(); setTimeout(() => setThemeOpen(true), 80); }}
+                onClick={() => { close(); setSettingsTab("profile"); setTimeout(() => setSettingsOpen(true), 80); }}
+              >
+                <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">person</span>
+                {en ? "Profile" : "Perfil"}
+              </button>
+
+              {/* Settings → opens Account settings panel (email / name / password) */}
+              <button
+                type="button" role="menuitem"
+                className="pd-item"
+                onClick={() => { close(); setSettingsTab("profile"); setTimeout(() => setSettingsOpen(true), 80); }}
               >
                 <span className="material-symbols-outlined pd-item-icon" aria-hidden="true">settings</span>
                 {en ? "Settings" : "Configuración"}

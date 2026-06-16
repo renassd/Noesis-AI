@@ -685,6 +685,229 @@ html.light .pd-item--signout:hover { background: rgba(239,68,68,0.07) !important
   .pd-trigger-name { display: none; }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Account settings panel  (asp-*)
+══════════════════════════════════════════════════════════════ */
+
+.asp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9100;
+  background: rgba(8, 12, 22, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: asp-fade 0.16s ease;
+}
+html.light .asp-overlay { background: rgba(15, 23, 42, 0.32); }
+
+@keyframes asp-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.asp-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9101;
+  width: calc(100vw - 32px);
+  min-width: 0;
+  max-width: 480px;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(18, 24, 40, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  animation: asp-pop 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (min-width: 460px) { .asp-panel { min-width: 420px; } }
+
+html.light .asp-panel {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+@keyframes asp-pop {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ── Header ── */
+.asp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+html.light .asp-header { border-bottom-color: rgba(15, 23, 42, 0.08); }
+
+.asp-title {
+  margin: 0;
+  font: 700 15px var(--font-body);
+  color: var(--ink, #f1f5f9);
+}
+html.light .asp-title { color: #0f172a; }
+
+.asp-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  flex-shrink: 0;
+}
+.asp-close:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+html.light .asp-close { background: rgba(15, 23, 42, 0.05); color: rgba(15, 23, 42, 0.6); }
+html.light .asp-close:hover { background: rgba(15, 23, 42, 0.1); color: #0f172a; }
+
+/* ── Tabs ── */
+.asp-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+html.light .asp-tabs { border-bottom-color: rgba(15, 23, 42, 0.08); }
+
+.asp-tab {
+  position: relative;
+  padding: 12px 12px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: rgba(255, 255, 255, 0.55);
+  font: 600 13px var(--font-body);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.asp-tab:hover { color: rgba(255, 255, 255, 0.85); }
+html.light .asp-tab { color: rgba(15, 23, 42, 0.5); }
+html.light .asp-tab:hover { color: rgba(15, 23, 42, 0.8); }
+
+.asp-tab--active {
+  color: var(--blue-500, #6b9fff);
+  border-bottom-color: var(--blue-700, #3b6de0);
+}
+html.light .asp-tab--active { color: var(--blue-700, #2e63de); }
+
+/* ── Body ── */
+.asp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.asp-avatar-row { display: flex; }
+
+.asp-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #fff;
+  font: 700 22px var(--font-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.asp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.asp-label {
+  font: 700 11px var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.45);
+}
+html.light .asp-label { color: rgba(15, 23, 42, 0.5); }
+
+.asp-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink, #f1f5f9);
+  font: 400 14px var(--font-body);
+  outline: none;
+  transition: border-color 0.12s;
+}
+.asp-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.asp-input:focus { border-color: var(--blue-500, #6b9fff); }
+.asp-input:read-only {
+  opacity: 0.6;
+  cursor: default;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html.light .asp-input {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(15, 23, 42, 0.02);
+  color: #0f172a;
+}
+html.light .asp-input::placeholder { color: rgba(15, 23, 42, 0.35); }
+html.light .asp-input:focus { border-color: var(--blue-700, #2e63de); }
+html.light .asp-input:read-only { border-color: rgba(15, 23, 42, 0.08); }
+
+.asp-btn {
+  align-self: flex-start;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb, #1e3a8a);
+  color: #fff;
+  font: 700 13px var(--font-body);
+  cursor: pointer;
+  transition: filter 0.12s, opacity 0.12s;
+}
+.asp-btn:hover { filter: brightness(1.08); }
+.asp-btn:disabled { opacity: 0.6; cursor: default; filter: none; }
+
+.asp-success {
+  margin: 0;
+  font: 500 12px var(--font-body);
+  color: #4ade80;
+}
+html.light .asp-success { color: #15803d; }
+
+.asp-error {
+  margin: 0;
+  font: 500 12px var(--font-body);
+  color: #f87171;
+}
+html.light .asp-error { color: #c2410c; }
+
+.asp-note {
+  margin: 0;
+  font: 400 11px var(--font-body);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.4);
+}
+html.light .asp-note { color: rgba(15, 23, 42, 0.45); }
+
 @media (max-width: 640px) {
   .topbar-user-email {
     display: none;
