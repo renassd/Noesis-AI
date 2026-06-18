@@ -253,6 +253,7 @@
   text-align: center;
 }
 
+.fc-card--study.fc-card--has-image .fc-front,
 .fc-card--study.fc-card--has-image .fc-back {
   align-items: stretch;
   justify-content: flex-start;

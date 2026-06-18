@@ -165,6 +165,11 @@ export default function FlashCard({
               {s.manualQuestionLabel}
             </span>
           )}
+          {imageUrl && (
+            <div className="fc-media">
+              <img src={imageUrl} alt={imageAlt} className="fc-media-image" />
+            </div>
+          )}
           <div className="fc-text" dangerouslySetInnerHTML={{ __html: renderInlineRichText(card.question) }} />
           {variant === "study" && (
             <span className="fc-hint fc-hint--front" aria-hidden="true">
