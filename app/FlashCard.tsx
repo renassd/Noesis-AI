@@ -190,11 +190,6 @@ export default function FlashCard({
               {s.manualAnswerLabel}
             </span>
           )}
-          {imageUrl && (
-            <div className="fc-media">
-              <img src={imageUrl} alt={imageAlt} className="fc-media-image" />
-            </div>
-          )}
           <div className="fc-text" dangerouslySetInnerHTML={{ __html: renderInlineRichText(card.answer) }} />
           {variant === "study" && (
             <span className="fc-hint fc-hint--back" aria-hidden="true">
