@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: "Neuvra AI — Tu sistema completo de aprendizaje",
   description:
     "Neuvra convierte información en comprensión y la comprensión en memoria. Un sistema de aprendizaje completo: comprensión activa, síntesis inteligente y motor de memoria.",
+  icons: {
+    icon: "/logo.jpeg",
+    shortcut: "/logo.jpeg",
+    apple: "/logo.jpeg",
+  },
 };
 
 export default function RootLayout({
