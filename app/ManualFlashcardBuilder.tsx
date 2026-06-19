@@ -14,7 +14,10 @@ const NEW_DECK = "__new__";
 interface Props {
   decks: Deck[];
   onSaveDeck: (name: string, cards: Flashcard[]) => Promise<boolean>;
-  onAppendCards?: (deckId: string, cards: Array<{ question: string; answer: string }>) => Promise<unknown>;
+  onAppendCards?: (
+    deckId: string,
+    cards: Array<{ question: string; answer: string; visual?: Partial<CardVisual> }>,
+  ) => Promise<unknown>;
   defaultDeckId?: string; // preselect when opened from a specific deck
 }
 
@@ -179,6 +182,7 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
         validCards.map((card) => ({
           question: card.question.trim(),
           answer: card.answer.trim(),
+          visual: card.visual,
         })),
       );
 
