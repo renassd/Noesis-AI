@@ -331,6 +331,26 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
                       {s.manualUseImportedImage}
                     </button>
                   )}
+                  {card.visual?.imageUrl && (
+                    <div className="manual-card__image-side">
+                      <button
+                        type="button"
+                        className={`manual-card__image-side-btn${(card.visual.imageSide ?? "question") === "question" ? " active" : ""}`}
+                        onClick={() => updateCardVisual(card.id, { ...card.visual, imageSide: "question" })}
+                        title={s.manualImageOnQuestion}
+                      >
+                        {s.manualQuestionLabel}
+                      </button>
+                      <button
+                        type="button"
+                        className={`manual-card__image-side-btn${card.visual.imageSide === "answer" ? " active" : ""}`}
+                        onClick={() => updateCardVisual(card.id, { ...card.visual, imageSide: "answer" })}
+                        title={s.manualImageOnAnswer}
+                      >
+                        {s.manualAnswerLabel}
+                      </button>
+                    </div>
+                  )}
                   <button type="button" className="manual-card__customize" onClick={() => setEditingCard(card)}>
                     {s.manualCustomize}
                   </button>

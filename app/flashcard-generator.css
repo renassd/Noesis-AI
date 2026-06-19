@@ -1051,6 +1051,27 @@
   color: var(--fg-ink);
 }
 
+.manual-card__image-side {
+  display: flex;
+  border: 1px solid rgba(20, 50, 140, 0.14);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.manual-card__image-side-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--fg-ink);
+  padding: 8px 12px;
+  font: 600 12px/1 var(--fg-font-body);
+  cursor: pointer;
+}
+
+.manual-card__image-side-btn.active {
+  background: var(--fg-blue-900);
+  color: #fff;
+}
+
 .manual-card__preview-frame {
   display: flex;
   justify-content: flex-start;
