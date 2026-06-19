@@ -107,12 +107,14 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
     setImportedImage({ dataUrl, fileName });
     setSaveResult(null);
     setCards((prev) =>
-      prev.map((card) => {
-        // Cards with no image yet, or still showing the previous reference
-        // image, pick up the new one automatically. Cards customized with a
-        // different image are left untouched.
-        const usingReferenceImage = !card.visual?.imageUrl || card.visual.imageUrl === previousDataUrl;
-        if (!usingReferenceImage) return card;
+      prev.map((card, index) => {
+        // Only the newest card without an image gets it automatically, so
+        // uploading a reference image doesn't stamp it onto every other
+        // card already in the form. Cards already showing the previous
+        // reference image still pick up the replacement.
+        const isNewestEmptyCard = index === prev.length - 1 && !card.visual?.imageUrl;
+        const usingReferenceImage = !!card.visual?.imageUrl && card.visual.imageUrl === previousDataUrl;
+        if (!isNewestEmptyCard && !usingReferenceImage) return card;
         return {
           ...card,
           visual: { ...(card.visual ?? {}), imageUrl: dataUrl, imageAlt: fileName, imagePrompt: fileName },
