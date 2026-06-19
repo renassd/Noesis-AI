@@ -44,6 +44,7 @@ export type CardVisual = {
   imageUrl?: string;
   imageAlt?: string;
   imagePrompt?: string;
+  imageSide?: "question" | "answer";
 };
 
 export const DEFAULT_CARD_VISUAL: CardVisual = {

@@ -87,6 +87,7 @@ export default function FlashCard({
       imageUrl: perCard.imageUrl ?? global.imageUrl,
       imageAlt: perCard.imageAlt ?? global.imageAlt,
       imagePrompt: perCard.imagePrompt ?? global.imagePrompt,
+      imageSide: perCard.imageSide ?? global.imageSide ?? "question",
     };
   }, [prefs.cardVisual, prefs.colorScheme, card.visual]);
 
@@ -117,11 +118,13 @@ export default function FlashCard({
 
   const imageUrl = visual.imageUrl;
   const imageAlt = visual.imageAlt || card.question;
+  const imageOnFront = visual.imageSide !== "answer";
   const cardClass = [
     "fc-card",
     `fc-card--${variant}`,
     flipped ? "fc-card--flipped" : "",
     imageUrl ? "fc-card--has-image" : "",
+    imageUrl && !imageOnFront ? "fc-card--image-answer" : "",
   ].filter(Boolean).join(" ");
 
   return (
@@ -165,7 +168,7 @@ export default function FlashCard({
               {s.manualQuestionLabel}
             </span>
           )}
-          {imageUrl && (
+          {imageUrl && imageOnFront && (
             <div className="fc-media">
               <img src={imageUrl} alt={imageAlt} className="fc-media-image" />
             </div>
@@ -189,6 +192,11 @@ export default function FlashCard({
             <span className="fc-label" style={{ color: template.accentColor }}>
               {s.manualAnswerLabel}
             </span>
+          )}
+          {imageUrl && !imageOnFront && (
+            <div className="fc-media">
+              <img src={imageUrl} alt={imageAlt} className="fc-media-image" />
+            </div>
           )}
           <div className="fc-text" dangerouslySetInnerHTML={{ __html: renderInlineRichText(card.answer) }} />
           {variant === "study" && (

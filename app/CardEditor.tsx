@@ -36,6 +36,7 @@ function diffVisual(visual: CardVisual): Partial<CardVisual> {
   if ((visual.imageUrl ?? "") !== (DEFAULT_CARD_VISUAL.imageUrl ?? "")) diff.imageUrl = visual.imageUrl;
   if ((visual.imageAlt ?? "") !== (DEFAULT_CARD_VISUAL.imageAlt ?? "")) diff.imageAlt = visual.imageAlt;
   if ((visual.imagePrompt ?? "") !== (DEFAULT_CARD_VISUAL.imagePrompt ?? "")) diff.imagePrompt = visual.imagePrompt;
+  if ((visual.imageSide ?? "question") !== "question") diff.imageSide = visual.imageSide;
 
   return diff;
 }
@@ -342,13 +343,35 @@ export default function CardEditor({ card, onSave, onClose }: CardEditorProps) {
                   {visual.imageUrl && (
                     <button
                       className="ce-detail-btn"
-                      onClick={() => patch({ imageUrl: "", imageAlt: "", imagePrompt: "" })}
+                      onClick={() => patch({ imageUrl: "", imageAlt: "", imagePrompt: "", imageSide: "question" })}
                       type="button"
                     >
                       Quitar imagen
                     </button>
                   )}
                 </div>
+
+                {visual.imageUrl && (
+                  <div className="ce-image-field">
+                    <span className="ce-color-label">Mostrar imagen en</span>
+                    <div className="ce-detail-row">
+                      <button
+                        className={`ce-detail-btn${(visual.imageSide ?? "question") === "question" ? " active" : ""}`}
+                        onClick={() => patch({ imageSide: "question" })}
+                        type="button"
+                      >
+                        Pregunta
+                      </button>
+                      <button
+                        className={`ce-detail-btn${visual.imageSide === "answer" ? " active" : ""}`}
+                        onClick={() => patch({ imageSide: "answer" })}
+                        type="button"
+                      >
+                        Respuesta
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="ce-image-field">
                   <span className="ce-color-label">URL de imagen</span>
