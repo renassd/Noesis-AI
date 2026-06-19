@@ -100,17 +100,21 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
   }
 
   function handleImportedImage(dataUrl: string, fileName: string) {
+    const previousDataUrl = importedImage?.dataUrl;
     setImportedImage({ dataUrl, fileName });
     setSaveResult(null);
     setCards((prev) =>
-      prev.map((card) =>
-        card.visual?.imageUrl
-          ? card
-          : {
-              ...card,
-              visual: { ...(card.visual ?? {}), imageUrl: dataUrl, imageAlt: fileName, imagePrompt: fileName },
-            },
-      ),
+      prev.map((card) => {
+        // Cards with no image yet, or still showing the previous reference
+        // image, pick up the new one automatically. Cards customized with a
+        // different image are left untouched.
+        const usingReferenceImage = !card.visual?.imageUrl || card.visual.imageUrl === previousDataUrl;
+        if (!usingReferenceImage) return card;
+        return {
+          ...card,
+          visual: { ...(card.visual ?? {}), imageUrl: dataUrl, imageAlt: fileName, imagePrompt: fileName },
+        };
+      }),
     );
   }
 
