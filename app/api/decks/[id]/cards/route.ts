@@ -27,7 +27,7 @@ export async function POST(
     }
 
     const body = (await req.json()) as {
-      cards?: Array<{ question?: string; answer?: string }>;
+      cards?: Array<{ question?: string; answer?: string; visual?: unknown }>;
     };
 
     const valid = (body.cards ?? []).filter(
@@ -49,9 +49,10 @@ export async function POST(
           deck_id: id,
           question: c.question!.trim(),
           answer: c.answer!.trim(),
+          visual: c.visual ?? null,
         })),
       )
-      .select("id, question, answer");
+      .select("id, question, answer, visual");
 
     if (insertErr) {
       return NextResponse.json({ error: insertErr.message }, { status: 500 });
@@ -63,6 +64,7 @@ export async function POST(
           id: c.id,
           question: c.question,
           answer: c.answer,
+          visual: c.visual ?? undefined,
         })),
       },
       { status: 201 },

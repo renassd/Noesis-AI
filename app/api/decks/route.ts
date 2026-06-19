@@ -26,7 +26,10 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false }));
 
     if (error?.message?.includes("visual")) {
-      console.warn("visual column not found; retrying without it. Run fix-visual-column.sql to add it.");
+      console.warn(
+        `visual column not found (${error.message}); retrying without it. ` +
+          "Run backend/supabase-migration-visual.sql in the Supabase SQL editor to add it.",
+      );
       ({ data: decks, error } = await supabaseAdmin
         .from("decks")
         .select("id, name, created_at, flashcards(id, question, answer)")

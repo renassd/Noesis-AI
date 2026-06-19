@@ -207,12 +207,13 @@ export function useDecks() {
 
   async function appendCards(
     deckId: string,
-    cards: Array<{ question: string; answer: string }>,
+    cards: Array<{ question: string; answer: string; visual?: Partial<CardVisual> }>,
   ): Promise<Deck["cards"] | null> {
     const newCards: Deck["cards"] = cards.map((c) => ({
       id: crypto.randomUUID(),
       question: c.question,
       answer: c.answer,
+      visual: c.visual,
     }));
 
     try {
