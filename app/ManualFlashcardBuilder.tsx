@@ -101,6 +101,17 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
 
   function handleImportedImage(dataUrl: string, fileName: string) {
     setImportedImage({ dataUrl, fileName });
+    setSaveResult(null);
+    setCards((prev) =>
+      prev.map((card) =>
+        card.visual?.imageUrl
+          ? card
+          : {
+              ...card,
+              visual: { ...(card.visual ?? {}), imageUrl: dataUrl, imageAlt: fileName, imagePrompt: fileName },
+            },
+      ),
+    );
   }
 
   function clearReferenceMaterial() {
