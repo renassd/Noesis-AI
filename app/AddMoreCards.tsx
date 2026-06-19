@@ -32,6 +32,7 @@ const AMC = {
     reviewN: (n: number) => `Review ${n} ${n === 1 ? "card" : "cards"} →`,
     // AI input
     aiPlaceholder: (name: string) => `Paste notes, a topic, or any text related to "${name}"…`,
+    aiImageOptionalPlaceholder: "Optional: add context or instructions for the image (or leave blank)…",
     aiMinError: "Add at least 30 characters of text or a topic description.",
     aiParseError: "The AI response couldn't be read as flashcards. Try fewer cards or shorter text.",
     aiError: "AI generation failed.",
@@ -82,6 +83,7 @@ const AMC = {
     reviewN: (n: number) => `Revisar ${n} ${n === 1 ? "tarjeta" : "tarjetas"} →`,
     // AI input
     aiPlaceholder: (name: string) => `Pegá apuntes, un tema o cualquier texto relacionado con "${name}"…`,
+    aiImageOptionalPlaceholder: "Opcional: agregá contexto o instrucciones para la imagen (o dejalo en blanco)…",
     aiMinError: "Agregá al menos 30 caracteres de texto o descripción del tema.",
     aiParseError: "No se pudo leer la respuesta de la IA como flashcards. Probá con menos tarjetas o texto más corto.",
     aiError: "Error al generar con IA.",
@@ -192,6 +194,7 @@ function buildAiPrompt(
   quantity: number,
   difficulty: Difficulty,
   langHint: string,
+  hasImage = false,
 ): string {
   const sample = existing
     .slice(0, 3)
@@ -207,14 +210,19 @@ function buildAiPrompt(
 
   const textChunk = text.slice(0, 2500);
 
+  const sourceNote = hasImage
+    ? textChunk
+      ? `Use the attached image and the text below as source material. Describe and explain what's shown in the image (diagram, photo, chart, etc.) as needed.`
+      : `Use the attached image as the only source material. Look closely at what it shows (diagram, photo, chart, handwriting, etc.) and base the flashcards on its visual content.`
+    : "";
+
   return `Generate exactly ${quantity} flashcards for the deck "${deckName}". ${diffNote}
 ${sample ? `Do NOT repeat these existing questions: ${sample}.` : ""}
+${sourceNote}
 ${langHint}
 Respond ONLY with a valid JSON array, no other text:
 [{"question":"...","answer":"..."}]
-
-TEXT:
-${textChunk}`;
+${textChunk ? `\nTEXT:\n${textChunk}` : ""}`;
 }
 
 // ─────────────────────────────────────────────
@@ -332,11 +340,13 @@ function AiInput({
   deck,
   onNext,
   fromText,
+  fromImage,
 }: {
   t: T;
   deck: Deck;
   onNext: (cards: DraftCard[]) => void;
   fromText?: string;
+  fromImage?: string;
 }) {
   const { applyUsage } = useAiUsage();
   const [text, setText] = useState(fromText ?? "");
@@ -345,24 +355,26 @@ function AiInput({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const minLength = fromImage ? 0 : 30;
+
   async function generate() {
     const trimmed = text.trim();
-    if (trimmed.length < 30) {
+    if (trimmed.length < minLength) {
       setError(t.aiMinError);
       return;
     }
     setError("");
     setLoading(true);
     try {
-      const langHint = langInstruction(detectLang(trimmed));
-      const prompt = buildAiPrompt(deck.name, deck.cards, trimmed, quantity, difficulty, langHint);
+      const langHint = langInstruction(detectLang(trimmed || deck.name));
+      const prompt = buildAiPrompt(deck.name, deck.cards, trimmed, quantity, difficulty, langHint, !!fromImage);
 
       const res = await fetchWithSupabaseAuth("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           max_tokens: 2000,
-          messages: [{ role: "user", content: prompt }],
+          messages: [{ role: "user", content: prompt, imageDataUrl: fromImage }],
           useMemory: true,
           memoryQuery: deck.name,
         }),
@@ -384,9 +396,14 @@ function AiInput({
 
   return (
     <div className="amc-ai">
+      {fromImage && (
+        <div className="amc-ai-image-preview">
+          <img src={fromImage} alt="" className="amc-ai-image-thumb" />
+        </div>
+      )}
       <textarea
         className="amc-ai-textarea"
-        placeholder={t.aiPlaceholder(deck.name)}
+        placeholder={fromImage ? t.aiImageOptionalPlaceholder : t.aiPlaceholder(deck.name)}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
@@ -429,7 +446,7 @@ function AiInput({
           className="amc-btn-primary"
           type="button"
           onClick={() => void generate()}
-          disabled={loading || text.trim().length < 30}
+          disabled={loading || text.trim().length < minLength}
         >
           {loading ? (
             <span className="amc-spinner-row">
@@ -444,8 +461,22 @@ function AiInput({
   );
 }
 
+function isImageFile(file: File) {
+  return file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name);
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("read error"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function PdfInput({ t, deck, onNext }: { t: T; deck: Deck; onNext: (cards: DraftCard[]) => void }) {
   const [extractedText, setExtractedText] = useState("");
+  const [extractedImage, setExtractedImage] = useState("");
   const [fileName, setFileName] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
@@ -460,6 +491,21 @@ function PdfInput({ t, deck, onNext }: { t: T; deck: Deck; onNext: (cards: Draft
     setExtracting(true);
     setError("");
     setFileName(file.name);
+
+    // Images go straight to the vision-capable AI instead of OCR-only
+    // extraction, so diagrams/photos without text still produce flashcards.
+    if (isImageFile(file)) {
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        setExtractedImage(dataUrl);
+      } catch {
+        setError(t.readError);
+      } finally {
+        setExtracting(false);
+      }
+      return;
+    }
+
     try {
       const form = new FormData();
       form.append("file", file);
@@ -472,6 +518,10 @@ function PdfInput({ t, deck, onNext }: { t: T; deck: Deck; onNext: (cards: Draft
     } finally {
       setExtracting(false);
     }
+  }
+
+  if (extractedImage) {
+    return <AiInput t={t} deck={deck} onNext={onNext} fromImage={extractedImage} />;
   }
 
   if (extractedText) {
