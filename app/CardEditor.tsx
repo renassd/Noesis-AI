@@ -357,14 +357,20 @@ export default function CardEditor({ card, onSave, onClose }: CardEditorProps) {
                     <div className="ce-detail-row">
                       <button
                         className={`ce-detail-btn${(visual.imageSide ?? "question") === "question" ? " active" : ""}`}
-                        onClick={() => patch({ imageSide: "question" })}
+                        onClick={() => {
+                          patch({ imageSide: "question" });
+                          setPreviewFlipped(false);
+                        }}
                         type="button"
                       >
                         Pregunta
                       </button>
                       <button
                         className={`ce-detail-btn${visual.imageSide === "answer" ? " active" : ""}`}
-                        onClick={() => patch({ imageSide: "answer" })}
+                        onClick={() => {
+                          patch({ imageSide: "answer" });
+                          setPreviewFlipped(true);
+                        }}
                         type="button"
                       >
                         Respuesta

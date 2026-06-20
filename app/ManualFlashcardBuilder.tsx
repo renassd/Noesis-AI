@@ -346,7 +346,10 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
                       <button
                         type="button"
                         className={`manual-card__image-side-btn${(card.visual.imageSide ?? "question") === "question" ? " active" : ""}`}
-                        onClick={() => updateCardVisual(card.id, { ...card.visual, imageSide: "question" })}
+                        onClick={() => {
+                          updateCardVisual(card.id, { ...card.visual, imageSide: "question" });
+                          setFlipped((prev) => ({ ...prev, [card.id]: false }));
+                        }}
                         title={s.manualImageOnQuestion}
                       >
                         {s.manualQuestionLabel}
@@ -354,7 +357,10 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
                       <button
                         type="button"
                         className={`manual-card__image-side-btn${card.visual.imageSide === "answer" ? " active" : ""}`}
-                        onClick={() => updateCardVisual(card.id, { ...card.visual, imageSide: "answer" })}
+                        onClick={() => {
+                          updateCardVisual(card.id, { ...card.visual, imageSide: "answer" });
+                          setFlipped((prev) => ({ ...prev, [card.id]: true }));
+                        }}
                         title={s.manualImageOnAnswer}
                       >
                         {s.manualAnswerLabel}
