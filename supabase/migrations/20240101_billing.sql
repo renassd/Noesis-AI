@@ -55,13 +55,19 @@ create table if not exists subscriptions (
   unique (user_id)
 );
 
--- Every user gets a free subscription row at sign-up
+-- Every user gets a free subscription row at sign-up.
+-- A failure here must never block account creation, so any error
+-- inserting the subscription row is logged and swallowed.
 create or replace function create_free_subscription()
 returns trigger language plpgsql security definer as $$
 begin
-  insert into subscriptions (user_id, plan_id, status)
-  values (new.id, 'free', 'active')
-  on conflict (user_id) do nothing;
+  begin
+    insert into subscriptions (user_id, plan_id, status)
+    values (new.id, 'free', 'active')
+    on conflict (user_id) do nothing;
+  exception when others then
+    raise warning 'create_free_subscription failed for user %: %', new.id, sqlerrm;
+  end;
   return new;
 end;
 $$;
