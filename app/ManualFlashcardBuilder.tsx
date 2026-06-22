@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import CardEditor from "./CardEditor";
 import FlashCard from "./FlashCard";
 import { ImportBar, type ImportedTextFile } from "./ImportBar";
@@ -56,6 +56,8 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
   const [importedImage, setImportedImage] = useState<{ dataUrl: string; fileName: string } | null>(null);
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
+  const [uploadTargetCardId, setUploadTargetCardId] = useState<string | null>(null);
+  const directImageInputRef = useRef<HTMLInputElement>(null);
 
   const validCards = useMemo(
     () => cards.filter((card) => card.question.trim() && card.answer.trim()),
@@ -140,6 +142,32 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
     });
   }
 
+  // Lets a single card get its own image, independent from the shared
+  // reference image, so different cards can each carry a different picture.
+  function requestDirectImageUpload(cardId: string) {
+    setUploadTargetCardId(cardId);
+    directImageInputRef.current?.click();
+  }
+
+  function handleDirectImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    const cardId = uploadTargetCardId;
+    event.target.value = "";
+    if (!file || !cardId) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const card = cards.find((item) => item.id === cardId);
+      updateCardVisual(cardId, {
+        ...(card?.visual ?? {}),
+        imageUrl: reader.result as string,
+        imageAlt: file.name,
+        imagePrompt: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
   // ── Save ──────────────────────────────────────────
 
   async function save() {
@@ -200,6 +228,13 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
 
   return (
     <div className="manual-builder">
+      <input
+        ref={directImageInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleDirectImageUpload}
+        style={{ display: "none" }}
+      />
       <div className="manual-builder__header">
         <div>
           <span className="manual-builder__eyebrow">{s.manualEyebrow}</span>
@@ -341,6 +376,13 @@ export default function ManualFlashcardBuilder({ decks, onSaveDeck, onAppendCard
                       {s.manualUseImportedImage}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    className="manual-card__attach"
+                    onClick={() => requestDirectImageUpload(card.id)}
+                  >
+                    {s.manualUploadCardImage}
+                  </button>
                   {card.visual?.imageUrl && (
                     <div className="manual-card__image-side">
                       <button

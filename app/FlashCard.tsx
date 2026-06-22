@@ -119,6 +119,17 @@ export default function FlashCard({
   const imageUrl = visual.imageUrl;
   const imageAlt = visual.imageAlt || card.question;
   const imageOnFront = visual.imageSide !== "answer";
+
+  // A face showing an image goes plain white so the template color
+  // doesn't bleed through the padding around the image box.
+  if (imageUrl && imageOnFront) {
+    frontStyle.backgroundColor = "#ffffff";
+    frontStyle.backgroundImage = undefined;
+  }
+  if (imageUrl && !imageOnFront) {
+    backStyle.backgroundColor = "#ffffff";
+    backStyle.backgroundImage = undefined;
+  }
   const cardClass = [
     "fc-card",
     `fc-card--${variant}`,
