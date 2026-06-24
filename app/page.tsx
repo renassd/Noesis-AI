@@ -396,32 +396,6 @@ function StatCard({
   );
 }
 
-/* ── Tagline floating cards (product visual) ────────────────── */
-function TaglineVisual({ lang }: { lang: "en" | "es" }) {
-  const cards = lang === "en"
-    ? [
-        { eyebrow: "Flashcard", title: "What strengthens long-term memory?", body: "Active recall and spaced repetition reinforce retrieval pathways over time." },
-        { eyebrow: "AI Tutor",  title: "Neuvra explains first",             body: "Clarify the concept, simplify it, then turn it into review-ready prompts." },
-        { eyebrow: "Deck",      title: "3 cards generated",                 body: "Definitions, exam points and study prompts from the same source." },
-      ]
-    : [
-        { eyebrow: "Flashcard", title: "¿Qué fortalece la memoria a largo plazo?", body: "El recuerdo activo y la repetición espaciada refuerzan la recuperación con el tiempo." },
-        { eyebrow: "Tutor IA",  title: "Neuvra explica primero",                   body: "Aclara la idea, la simplifica y luego la convierte en prompts listos para repasar." },
-        { eyebrow: "Mazo",      title: "3 tarjetas generadas",                     body: "Definiciones, focos de examen y prompts de estudio desde la misma fuente." },
-      ];
-  return (
-    <FadeReveal className="lp-tagline-visual" delay={120}>
-      {cards.map((c, i) => (
-        <div key={i} className="lp-glass lp-tagline-float-card">
-          <span className="lp-tagline-float-eyebrow">{c.eyebrow}</span>
-          <strong style={{ color: "#fff", fontSize: "0.9rem", display: "block", marginBottom: 6 }}>{c.title}</strong>
-          <p style={{ fontSize: "0.8rem", color: "var(--lp-muted)", margin: 0, lineHeight: 1.5 }}>{c.body}</p>
-        </div>
-      ))}
-    </FadeReveal>
-  );
-}
-
 /* ══════════════════════════════════════════════════════════════
    PAGE
 ══════════════════════════════════════════════════════════════ */
@@ -1487,98 +1461,15 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ══ TESTIMONIALS ═════════════════════════════════════════════ */}
-        <section className="lp-section lp-section--dim" aria-labelledby="testimonials-heading">
-          <div className="wrap">
-            <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 48, alignItems: "center" }}>
-              <FadeReveal style={{ flex: "0 0 280px" }}>
-                <h2 id="testimonials-heading" className="lp-h2" style={{ marginBottom: 24 }}>
-                  {en ? "Loved by students worldwide" : "Amado por estudiantes de todo el mundo"}
-                </h2>
-                <div style={{ display: "flex", gap: 12 }}>
-                  {(["arrow_back", "arrow_forward"] as const).map((icon, i) => (
-                    <button
-                      key={icon}
-                      type="button"
-                      className="lp-glass"
-                      style={{ width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "1px solid rgba(255,255,255,0.14)" }}
-                      aria-label={i === 0 ? (en ? "Previous testimonial" : "Testimonio anterior") : (en ? "Next testimonial" : "Testimonio siguiente")}
-                      onClick={() => {
-                        const track = document.getElementById("lp-testimonials-track");
-                        if (track) track.scrollBy({ left: i === 0 ? -400 : 400, behavior: "smooth" });
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 20, color: i === 1 ? "var(--lp-primary)" : "#fff" }} aria-hidden="true">{icon}</span>
-                    </button>
-                  ))}
-                </div>
-              </FadeReveal>
-
-              <div
-                id="lp-testimonials-track"
-                className="lp-testimonials-track"
-                role="list"
-                aria-label={en ? "Student testimonials" : "Testimonios de estudiantes"}
-                style={{ flex: 1, minWidth: 0 }}
-              >
-                {[
-                  {
-                    quote: en
-                      ? "Neuvra halved my study time for the MIR exam. The automatic flashcards are magical."
-                      : "Neuvra redujo mi tiempo de estudio a la mitad para el examen MIR. Las flashcards automáticas son mágicas.",
-                    name:  "Elena Rodriguez",
-                    role:  en ? "Medical Student" : "Estudiante de Medicina",
-                    i: 0,
-                  },
-                  {
-                    quote: en
-                      ? "The research assistant is incredibly accurate. It finds papers Google Scholar never showed me."
-                      : "El asistente de investigación es increíblemente preciso. Encuentra papers que Google Scholar ni siquiera me mostraba.",
-                    name:  "Marc Serra",
-                    role:  en ? "PhD Researcher" : "Investigador PhD",
-                    i: 1,
-                  },
-                ].map((tm) => (
-                  <article
-                    key={tm.name}
-                    className="lp-glass lp-testimonial-card"
-                    role="listitem"
-                    style={{ "--lp-i": tm.i } as React.CSSProperties}
-                  >
-                    <blockquote style={{ margin: 0 }}>
-                      <p style={{ fontSize: "1rem", color: "#fff", lineHeight: 1.65, fontStyle: "italic", marginBottom: 24 }}>
-                        "{tm.quote}"
-                      </p>
-                    </blockquote>
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div
-                        style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--lp-primary-ctr)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#fff", fontWeight: 700, fontSize: "1.1rem" }}
-                        aria-hidden="true"
-                      >
-                        {tm.name[0]}
-                      </div>
-                      <div>
-                        <p style={{ color: "#fff", fontWeight: 700, margin: 0, fontSize: "0.92rem" }}>{tm.name}</p>
-                        <p style={{ color: "var(--lp-muted)", fontSize: "0.82rem", margin: 0 }}>{tm.role}</p>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ══ EMOTIONAL CLOSING ════════════════════════════════════════ */}
-        <section className="lp-section" aria-labelledby="closing-heading">
+        {/* ══ EMOTIONAL CLOSING — FINAL CTA BANNER ════════════════════ */}
+        <section className="lp-section lp-closing-section" aria-labelledby="closing-heading">
           <div className="wrap">
             <FadeReveal className="lp-closing">
-              <div className="lp-closing-divider" aria-hidden="true" />
               <p className="lp-closing-quote" id="closing-heading">
                 {en ? (
-                  <>Knowing something and <em>truly understanding it</em> are two very different things.</>
+                  <>Knowing something and truly understanding it are two very different things.</>
                 ) : (
-                  <>Saber algo y <em>entenderlo de verdad</em> son dos cosas muy distintas.</>
+                  <>Saber algo y entenderlo de verdad son dos cosas muy distintas.</>
                 )}
               </p>
               <p className="lp-closing-sub">
@@ -1589,61 +1480,17 @@ export default function HomePage() {
               <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
                 <button
                   type="button"
-                  className="lp-btn lp-btn--primary"
+                  className="lp-btn lp-btn--closing-primary"
                   onClick={handleCta}
                   aria-label={en ? "Start your learning journey with Neuvra" : "Empezar tu viaje de aprendizaje con Neuvra"}
                 >
-                  {en ? "Start learning — it's free" : "Empezar a aprender — es gratis"}
+                  {en ? "Start for free" : "Empezar gratis"}
                 </button>
-                <a href="#journey" className="lp-btn lp-btn--ghost">
+                <a href="#journey" className="lp-btn lp-btn--closing-ghost">
                   {en ? "See how it works" : "Ver cómo funciona"}
                 </a>
               </div>
             </FadeReveal>
-          </div>
-        </section>
-
-        {/* ══ TAGLINE — CTA ════════════════════════════════════════════ */}
-        <section className="lp-section" aria-labelledby="tagline-heading">
-          <div className="wrap">
-            <div className="lp-glass lp-tagline-card">
-              <div className="lp-tagline-glow" aria-hidden="true" />
-
-              <FadeReveal>
-                <h2 id="tagline-heading" className="lp-h2" style={{ marginBottom: 14 }}>
-                  {en ? (<>Understand first.<br />Remember after.</>) : (<>Entendé primero.<br />Recordá después.</>)}
-                </h2>
-                <p className="lp-body" style={{ maxWidth: 460, marginBottom: 0 }}>
-                  {en
-                    ? "Neuvra connects the tools you use to understand with the tools you use to retain — in a single, focused learning system."
-                    : "Neuvra conecta las herramientas que usás para entender con las que usás para retener, en un único sistema de aprendizaje enfocado."}
-                </p>
-                <ul className="lp-tagline-features" aria-label={en ? "Key features" : "Funciones clave"}>
-                  {(en
-                    ? ["AI tutor that explains, not just answers", "Auto flashcards from any material", "Exam generator with AI grading", "Literature review with inline citations"]
-                    : ["Tutor de IA que explica, no solo responde", "Flashcards automáticas desde cualquier material", "Generador de exámenes con corrección IA", "Revisión de literatura con citas inline"]
-                  ).map((item) => (
-                    <li key={item}>
-                      <span className="lp-tagline-dot" aria-hidden="true" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <button
-                    type="button"
-                    className="lp-btn lp-btn--primary"
-                    onClick={handleCta}
-                    aria-label={en ? "Start learning with Neuvra" : "Empezar a aprender con Neuvra"}
-                  >
-                    {l.ctaPrimary}
-                  </button>
-                  <a href="#journey" className="lp-btn lp-btn--ghost">{l.ctaSecondary}</a>
-                </div>
-              </FadeReveal>
-
-              <TaglineVisual lang={lang} />
-            </div>
           </div>
         </section>
 
@@ -1658,37 +1505,33 @@ export default function HomePage() {
                 <div className="footer-brand-mark">
                   <Image src="/logo.jpeg" alt="Neuvra AI" width={36} height={36} />
                 </div>
-                <span style={{ fontFamily: "var(--lp-font-head)", fontWeight: 700 }}>Neuvra AI</span>
+                <span className="footer-wordmark">neuvraai</span>
               </div>
               <p className="footer-tagline">{l.footerTagline}</p>
-            </div>
-            <div className="footer-links-grid">
-              <div className="footer-col">
-                <h4>{l.footerProduct}</h4>
-                <Link href="/investigacion">{nav.research}</Link>
-                <Link href="/estudio">{nav.study}</Link>
-                <a href="#journey">{nav.howItWorks}</a>
-              </div>
-              <div className="footer-col">
-                <h4>{l.footerCompany}</h4>
-                <Link href={aboutHref}>{l.footerAbout}</Link>
-                <a href="#">{l.footerBlog}</a>
-                <a href="#">{l.footerContact}</a>
-              </div>
-              <div className="footer-col">
-                <h4>{l.footerLegal}</h4>
-                <a href="#">{l.footerPrivacy}</a>
-                <a href="#">{l.footerTerms}</a>
+              <div className="footer-social">
+                <a
+                  href="https://www.instagram.com/neuvra_ai/?utm_source=ig_web_button_share_sheet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="footer-social-icon"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.8" />
+                    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+                    <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
+                  </svg>
+                </a>
               </div>
             </div>
+            <nav className="footer-links-grid footer-links-grid--simple" aria-label={en ? "Footer navigation" : "Navegación del pie de página"}>
+              <a href="#journey">{nav.howItWorks}</a>
+              <a href="#pricing">{en ? "Plans" : "Planes"}</a>
+              <Link href={aboutHref}>{en ? "Who We Are" : "Quienes Somos"}</Link>
+            </nav>
           </div>
           <div className="footer-bottom">
             <span>© {new Date().getFullYear()} Neuvra AI. {l.footerRights}</span>
-            <div className="footer-social">
-              <a href="#" aria-label="WhatsApp">wa</a>
-              <a href="#" aria-label="Instagram">ig</a>
-              <a href="mailto:neuvraai@gmail.com" aria-label="Email">mail</a>
-            </div>
           </div>
         </div>
       </footer>
